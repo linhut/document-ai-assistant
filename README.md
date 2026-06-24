@@ -11,51 +11,39 @@
   <img src="https://img.shields.io/badge/node-20+-green" alt="node">
   <img src="https://img.shields.io/badge/electron-35-blue" alt="electron">
   <img src="https://img.shields.io/badge/license-MIT-brightgreen" alt="license">
+  <img src="https://img.shields.io/badge/tests-39%20passed-brightgreen" alt="tests">
 </p>
 
 ---
 
 ## 功能特性
 
-- **格式检测** — 依据 GB/T 9704 标准自动检查公文格式（字体、字号、缩进、行距、页边距等）
-- **智能修复** — 一键自动修复格式问题，生成优化后的 .docx 文档
-- **AI 深度分析** — 接入大模型进行语义级分析，发现规则引擎无法识别的问题
-- **22 种文种** — 支持通知、报告、请示、会议纪要、决定、决议等全部法定公文文种
+- **格式检测** — 依据 GB/T 9704 标准自动检查公文格式（字体、字号、缩进、行距、页边距等），190 条检查规则
+- **智能修复** — 一键自动修复格式问题，180 条修复规则，生成优化后的 .docx 文档
+- **AI 深度分析** — 接入大模型进行语义级分析，按 22 种文种定制检查规则，发现规则引擎无法识别的问题
+- **22 种文种** — 支持通知、报告、请示、会议纪要、决定、决议、函、通报等全部法定公文文种
 - **多 AI 服务商** — 支持 DeepSeek、通义千问、智谱、Moonshot、MiniMax、腾讯混元、豆包等 23+ 服务商
+- **AI 建议应用** — AI 发现的问题可勾选后一键应用到文档
 - **模板管理** — 内置官方模板 + 自定义模板，支持三级优先级合并
 - **本地运行** — 数据不离开本机，API Key 加密存储
 
-## 技术架构
-
-```
-Electron Shell
-  ├── React 19 + TypeScript + Vite + TailwindCSS
-  └── FastAPI Backend (Python 3.12+)
-        ├── Document Pipeline: Parse → Check → Fix → Generate
-        ├── Rule Engine: YAML rules (3-tier merge: official < custom < user)
-        ├── AI Provider: Strategy pattern (OpenAI/Claude/Custom compatible)
-        └── SQLite: documents, check results, AI configs
-```
-
 ## 快速开始
 
-### 环境要求
+### 方式一：一键启动（Windows）
 
-- Node.js >= 20
-- Python >= 3.12
+双击 `启动应用.bat`，自动安装依赖并启动。
 
-### 安装与运行
+### 方式二：手动启动
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/YOUR_USERNAME/document-ai-assistant.git
+git clone https://github.com/linhut/document-ai-assistant.git
 cd document-ai-assistant
 
 # 2. 启动后端
 cd backend
 pip install -r requirements.txt
 python main.py
-# 后端运行在 http://127.0.0.1:8765
 
 # 3. 启动前端（新终端）
 cd frontend
@@ -63,49 +51,95 @@ npm install
 npm run electron:dev
 ```
 
-### 构建桌面应用
+### 环境要求
+
+- Python >= 3.12（[下载](https://python.org)）
+- Node.js >= 20（[下载](https://nodejs.org)）
+
+### 构建桌面安装包
 
 ```bash
 cd frontend
 npm run electron:build:preview
-# 输出: frontend/release/*.exe (NSIS 安装包)
+# 输出: frontend/release/*.exe
 ```
 
-## 项目结构
+## 技术架构
 
 ```
-├── backend/                 # Python 后端
-│   ├── api/routes/          # FastAPI 路由 (documents, check, optimize, ai, rules)
-│   ├── core/document/       # 文档处理核心 (parser, generator, modifier)
-│   ├── core/rules/          # 规则引擎 (loader, checker, fixer, engine)
-│   ├── ai/                  # AI Provider 架构
-│   ├── db/                  # SQLAlchemy 数据模型
-│   └── services/            # 业务逻辑层
-├── frontend/                # Electron + React 前端
-│   ├── electron/            # Electron 主进程 + preload
-│   ├── src/pages/           # 页面组件
-│   ├── src/components/ui/   # Radix UI 基础组件
-│   └── src/api/             # API 客户端
-├── rules/official/          # 22 种文种 YAML 规则文件
-├── templates/               # 官方公文模板
-├── TTF/                     # 公文字体文件
-└── tests/                   # 测试用例
+Electron Shell
+  ├── React 19 + TypeScript + Vite + TailwindCSS + Radix UI
+  └── FastAPI Backend (Python 3.12+)
+        ├── Document Pipeline: Parse → Check → Fix → Generate
+        ├── Rule Engine: 190 条检查 + 180 条修复 (YAML 配置)
+        ├── AI Provider: 23+ 服务商 (Strategy 模式)
+        └── SQLite: 文档、检查结果、AI 配置（加密存储）
 ```
 
 ## AI 配置
 
 在应用内「AI 配置」页面选择服务商并填入 API Key，支持：
 
-| 服务商 | 说明 |
-|---|---|
-| DeepSeek | deepseek-chat / deepseek-v3 |
-| 阿里云百炼 | qwen-turbo / qwen-max |
-| 智谱 AI | glm-4-flash / glm-4 |
-| Moonshot | moonshot-v1-8k / moonshot-v1-128k |
-| 豆包 / 火山方舟 | doubao 系列 |
-| OpenRouter | 聚合 100+ 模型 |
-| Ollama | 本地模型 |
-| 自定义 | 任意 OpenAI 兼容接口 |
+| 服务商 | 默认模型 | 说明 |
+|---|---|---|
+| DeepSeek | deepseek-chat | 国产首选，性价比高 |
+| 阿里云百炼 | qwen-turbo | 通义千问系列 |
+| 智谱 AI | glm-4-flash | GLM 系列 |
+| Moonshot | moonshot-v1-8k | Kimi 长上下文 |
+| 豆包 / 火山方舟 | doubao-1.5-pro | 字节跳动 |
+| MiniMax | MiniMax-Text-01 | 海螺 AI |
+| 腾讯混元 | hunyuan-lite | 腾讯 |
+| OpenRouter | openai/gpt-4o-mini | 聚合 100+ 模型 |
+| Ollama | qwen2.5:7b | 本地模型，无需联网 |
+| 自定义 | — | 任意 OpenAI 兼容接口 |
+
+## 项目结构
+
+```
+├── backend/                 # Python 后端
+│   ├── api/routes/          # FastAPI 路由
+│   ├── core/document/       # 文档处理（解析、生成、修改）
+│   ├── core/rules/          # 规则引擎（加载、检查、修复）
+│   ├── ai/                  # AI Provider 架构
+│   └── db/                  # 数据模型
+├── frontend/                # Electron + React 前端
+│   ├── electron/            # Electron 主进程
+│   └── src/                 # React 应用
+├── rules/official/          # 22 种文种 YAML 规则
+├── templates/               # 公文模板
+├── tests/                   # 39 个自动化测试
+└── docs/                    # 文档
+```
+
+## 与同类工具对比
+
+| 维度 | 本项目 | AIPoliDoc | 小恐龙公文助手 |
+|---|---|---|---|
+| AI 分析 | ✅ 23+ 服务商 | ✅ 仅 DeepSeek | ❌ 无 |
+| 规则检查 | ✅ 190 条规则 | ❌ 无 | ❌ 无 |
+| 文种覆盖 | 22 种法定文种 | 学术论文为主 | 通用公文 |
+| 独立运行 | ✅ 桌面应用 | ✅ 桌面应用 | ❌ 需 Word |
+| 开源 | ✅ MIT | ✅ MIT | ❌ 闭源 |
+| 自动修复 | ✅ 180 条修复规则 | ❌ | ✅ 格式化 |
+| AI 建议应用 | ✅ 勾选应用 | ❌ | ❌ |
+| 测试覆盖 | ✅ 39 个测试 | ❌ | ❌ |
+
+## FAQ
+
+**Q: 启动后提示"无法连接到后端服务"？**
+A: 确认后端已运行（终端显示 `Uvicorn running on http://127.0.0.1:8765`）。如果端口被占用，运行 `python main.py --force`。
+
+**Q: AI 分析报错 429（限流）？**
+A: API 请求频率超限，系统会自动重试（最多 5 次）。等待 1-2 分钟后重试，或切换到其他 AI 服务商。
+
+**Q: 优化后的文档字体不对？**
+A: 请确保系统安装了公文字体（仿宋_GB2312、黑体、楷体_GB2312、方正小标宋简体）。TTF 目录下有字体文件，双击安装即可。
+
+**Q: 如何添加自定义规则？**
+A: 在「规则管理」页面可以查看和编辑规则。自定义规则保存在 `data/user_rules/`，优先级高于官方规则。
+
+**Q: 支持 .doc 格式吗？**
+A: 目前仅支持 .docx 格式。.doc 文件请先用 Word 另存为 .docx。
 
 ## 开发日志
 
