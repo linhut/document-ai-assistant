@@ -42,7 +42,7 @@ export default function About() {
     { icon: '🤖', title: 'AI 增强', description: '支持多家大模型智能分析' },
     { icon: '📝', title: '规则驱动', description: '易于扩展与维护配置规则' },
     { icon: '🎨', title: '界面美观', description: '专业桌面应用体验' },
-    { icon: '📚', title: '15种模板', description: '政府机关和常用文档模板' },
+    { icon: '📚', title: '22种文种', description: '覆盖全部法定公文文种' },
   ];
 
   const techStack = [
@@ -81,7 +81,7 @@ export default function About() {
             <p className="text-center text-primary-700 max-w-3xl mx-auto">
               本软件旨在为政府机关、企事业单位提供公文格式智能检测与优化服务。
               采用本地运行模式，数据不上传云端，保障文档安全。
-              支持 15 种公文模板，提供一键检测、自动修复、AI 智能分析等功能。
+              支持 22 种法定公文文种，提供一键检测、自动修复、AI 智能分析等功能。
             </p>
           </CardContent>
         </Card>
@@ -158,13 +158,13 @@ export default function About() {
             <CardContent className="space-y-3">
               <div>
                 <div className="text-sm text-primary-600">GitHub</div>
-                <a href="#" className="text-accent hover:underline flex items-center gap-1">
-                  项目地址 v1.0 正式版发布后开源
+                <a href="https://github.com/linhut/document-ai-assistant" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline flex items-center gap-1">
+                  github.com/linhut/document-ai-assistant
                   <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
               <div className="text-sm text-primary-600 bg-primary-50 p-3 rounded">
-                欢迎贡献代码、提交问题反馈和功能建议
+                欢迎 Star、Fork、提交 Issue 和 PR
               </div>
             </CardContent>
           </Card>
