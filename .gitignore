@@ -1,0 +1,58 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.class
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+*.db
+.pytest_cache/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/out/
+frontend/release/
+frontend/dist-resources/
+.npm
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+Thumbs.db:encryptable
+
+# Build outputs
+*.exe
+*.msi
+*.nsis
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+
+# Runtime data (contains DB, uploads, encryption keys)
+data/
+output/
+
+# Backup files
+*.bak
+
+# PyInstaller
+backend/build/
+backend/dist/
+
+# Office plugin build
+office-plugin/node_modules/
+office-plugin/dist/

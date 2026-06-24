@@ -1,0 +1,69 @@
+# ============================================================
+# 请示 - 样式模板
+# 一文一事，不得多头请示
+# ============================================================
+
+name: "请示"
+type: "request"
+version: "1.0"
+author: "公文智能优化助手"
+standard: "GB/T 9704-2012"
+
+page:
+  size: "A4"
+  margins:
+    top: "3.7cm"
+    bottom: "3.5cm"
+    left: "2.8cm"
+    right: "2.6cm"
+
+styles:
+  title:
+    style_name: "公文标题"
+    font_east_asia: "方正小标宋简体"
+    font_latin: "Times New Roman"
+    size: "22pt"
+    bold: false
+    alignment: "center"
+    space_after: "20pt"
+  body:
+    style_name: "公文正文"
+    font_east_asia: "仿宋_GB2312"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    alignment: "justify"
+    line_spacing: "28.95pt"
+    first_line_indent: "2em"
+  subtitle:
+    style_name: "公文小标题"
+    font_east_asia: "黑体"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    bold: true
+    alignment: "left"
+    line_spacing: "28.95pt"
+    first_line_indent: "2em"
+  signature:
+    style_name: "公文落款"
+    font_east_asia: "仿宋_GB2312"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    alignment: "right"
+
+sample:
+  title: "关于XXX事项的请示"
+  paragraphs:
+    - "XXX（上级机关）："
+    - ""
+    - "根据XXX工作需要，现就XXX事项请示如下："
+    - "一、基本情况"
+    - "（具体内容）"
+    - "二、请示事项"
+    - "（具体内容）"
+    - "三、建议方案"
+    - "（具体内容）"
+    - "以上请示妥否，请批复。"
+    - ""
+    - ""
+    - "（单位名称）"
+    - "XXXX年XX月XX日"

@@ -1,0 +1,87 @@
+# ============================================================
+# 制度 - 样式模板
+# 规章制度、管理办法和工作规范
+# 基于 GB/T 9704-2012 党政机关公文格式
+# ============================================================
+
+name: "制度"
+type: "regulation"
+version: "1.0"
+author: "公文智能优化助手"
+standard: "GB/T 9704-2012"
+
+# 页面设置
+page:
+  size: "A4"
+  margins:
+    top: "3.7cm"
+    bottom: "3.5cm"
+    left: "2.8cm"
+    right: "2.6cm"
+
+# 样式定义
+styles:
+  title:
+    style_name: "公文标题"
+    font_east_asia: "方正小标宋简体"
+    font_latin: "Times New Roman"
+    size: "22pt"
+    bold: false
+    alignment: "center"
+    space_after: "20pt"
+
+  body:
+    style_name: "公文正文"
+    font_east_asia: "仿宋_GB2312"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    alignment: "justify"
+    line_spacing: "28.95pt"
+    first_line_indent: "2em"
+
+  subtitle:
+    style_name: "公文小标题"
+    font_east_asia: "黑体"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    bold: true
+    alignment: "left"
+    line_spacing: "28.95pt"
+    first_line_indent: "2em"
+
+  signature:
+    style_name: "公文落款"
+    font_east_asia: "仿宋_GB2312"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    alignment: "right"
+
+# 示例内容
+sample:
+  title: "XXX管理办法"
+  paragraphs:
+    - ""
+    - "第一章  总则"
+    - ""
+    - "第一条  为加强XXX管理，规范XXX行为，根据XXX有关规定，制定本办法。"
+    - "第二条  本办法适用于XXX范围内的XXX活动。"
+    - "第三条  XXX工作应当遵循XXX原则。"
+    - ""
+    - "第二章  XXX"
+    - ""
+    - "第四条  （具体内容）"
+    - "第五条  （具体内容）"
+    - ""
+    - "第三章  XXX"
+    - ""
+    - "第六条  （具体内容）"
+    - "第七条  （具体内容）"
+    - ""
+    - "第四章  附则"
+    - ""
+    - "第八条  本办法由XXX负责解释。"
+    - "第九条  本办法自XXXX年XX月XX日起施行。"
+    - ""
+    - ""
+    - "（单位名称）"
+    - "XXXX年XX月XX日"

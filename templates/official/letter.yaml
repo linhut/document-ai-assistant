@@ -1,0 +1,55 @@
+# ============================================================
+# 函 - 样式模板
+# 商洽性、询问性、答复性公文
+# ============================================================
+
+name: "函"
+type: "letter"
+version: "1.0"
+author: "公文智能优化助手"
+standard: "GB/T 9704-2012"
+
+page:
+  size: "A4"
+  margins:
+    top: "3.7cm"
+    bottom: "3.5cm"
+    left: "2.8cm"
+    right: "2.6cm"
+
+styles:
+  title:
+    style_name: "公文标题"
+    font_east_asia: "方正小标宋简体"
+    font_latin: "Times New Roman"
+    size: "22pt"
+    bold: false
+    alignment: "center"
+    space_after: "20pt"
+  body:
+    style_name: "公文正文"
+    font_east_asia: "仿宋_GB2312"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    alignment: "justify"
+    line_spacing: "28.95pt"
+    first_line_indent: "2em"
+  signature:
+    style_name: "公文落款"
+    font_east_asia: "仿宋_GB2312"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    alignment: "right"
+
+sample:
+  title: "关于XXX事项的函"
+  paragraphs:
+    - "XXX（受文单位）："
+    - ""
+    - "你单位《关于XXX的XXX》收悉。经研究，现函复如下："
+    - "（具体内容）"
+    - "特此函告。"
+    - ""
+    - ""
+    - "（单位名称）"
+    - "XXXX年XX月XX日"

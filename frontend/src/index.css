@@ -1,0 +1,189 @@
+@import "tailwindcss";
+
+/* 温暖大地色系 - 专业办公软件风格 */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-50: var(--primary-50);
+  --color-primary-100: var(--primary-100);
+  --color-primary-200: var(--primary-200);
+  --color-primary-300: var(--primary-300);
+  --color-primary-400: var(--primary-400);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-500: var(--primary-500);
+  --color-primary-600: var(--primary-600);
+  --color-primary-700: var(--primary-700);
+  --color-primary-800: var(--primary-800);
+  --color-primary-900: var(--primary-900);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  /* 严重度颜色 */
+  --color-severity-p0: var(--severity-p0);
+  --color-severity-p0-bg: var(--severity-p0-bg);
+  --color-severity-p1: var(--severity-p1);
+  --color-severity-p1-bg: var(--severity-p1-bg);
+  --color-severity-p2: var(--severity-p2);
+  --color-severity-p2-bg: var(--severity-p2-bg);
+  /* 状态反馈色 */
+  --color-status-success: var(--status-success);
+  --color-status-success-bg: var(--status-success-bg);
+  --color-status-error: var(--status-error);
+  --color-status-error-bg: var(--status-error-bg);
+  --color-status-warning: var(--status-warning);
+  --color-status-warning-bg: var(--status-warning-bg);
+  --color-status-info: var(--status-info);
+  --color-status-info-bg: var(--status-info-bg);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: "Inter", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Consolas", "Courier New", monospace;
+}
+
+:root {
+  /* 温暖大地色系 */
+  --background: #F7F4EF;
+  --foreground: #2A1F1A;
+  --card: #FFFFFF;
+  --card-foreground: #2A1F1A;
+  --popover: #FFFFFF;
+  --popover-foreground: #2A1F1A;
+  --primary: #8B7355;
+  --primary-50: #FAF8F5;
+  --primary-100: #F0ECE5;
+  --primary-200: #E0D7CB;
+  --primary-300: #C4B8A5;
+  --primary-400: #A89980;
+  --primary-foreground: #FFFFFF;
+  --primary-500: #7A6548;
+  --primary-600: #6B5644;
+  --primary-700: #524135;
+  --primary-800: #46372C;
+  --primary-900: #3D3226;
+  --secondary: #E7E1D7;
+  --secondary-foreground: #2A1F1A;
+  --muted: #E7E1D7;
+  --muted-foreground: #6B5644;
+  --accent: #C4612F;
+  --accent-light: #F5E6DE;
+  --accent-hover: #B8572A;
+  --accent-foreground: #FFFFFF;
+  --destructive: #B85C50;
+  --destructive-foreground: #FFFFFF;
+  --border: #E7E1D7;
+  --input: #E7E1D7;
+  --ring: #C4612F;
+  --radius: 0.5rem;
+  /* 严重度颜色 — 暖色调统一 */
+  --severity-p0: #B85C50;
+  --severity-p0-bg: #FDE8E4;
+  --severity-p1: #C4872F;
+  --severity-p1-bg: #FEF3E2;
+  --severity-p2: #6B7F8F;
+  --severity-p2-bg: #EEF1F4;
+  /* 状态反馈色 — 暖色调统一 */
+  --status-success: #5C8A5C;
+  --status-success-bg: #EDF5ED;
+  --status-error: #B85C50;
+  --status-error-bg: #FDE8E4;
+  --status-warning: #C4872F;
+  --status-warning-bg: #FEF3E2;
+  --status-info: #6B7F8F;
+  --status-info-bg: #EEF1F4;
+}
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  overflow: hidden;
+}
+
+/* 响应式卡片网格：auto-fill + minmax(220px)，CSS Grid 原生响应 */
+.grid-auto-fill {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+/* 页面内容容器：max-width 1600px + width 100%，窗口≤1600px 时 100% 填充 */
+.page-content {
+  max-width: 1600px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F7F4EF;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D4C9B8;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8B7355;
+}
+
+/* Toast 通知动画 */
+@keyframes toast-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes toast-out {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(100%); opacity: 0; }
+}
+.toast-enter { animation: toast-in 0.3s ease-out; }
+.toast-exit { animation: toast-out 0.2s ease-in forwards; }
+
+/* 页面过渡 */
+.page-enter {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}

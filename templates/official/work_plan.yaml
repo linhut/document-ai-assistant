@@ -1,0 +1,87 @@
+# ============================================================
+# 工作方案 - 样式模板
+# 工作计划、实施方案和行动方案
+# 基于 GB/T 9704-2012 党政机关公文格式
+# ============================================================
+
+name: "工作方案"
+type: "work_plan"
+version: "1.0"
+author: "公文智能优化助手"
+standard: "GB/T 9704-2012"
+
+# 页面设置
+page:
+  size: "A4"
+  margins:
+    top: "3.7cm"
+    bottom: "3.5cm"
+    left: "2.8cm"
+    right: "2.6cm"
+
+# 样式定义
+styles:
+  title:
+    style_name: "公文标题"
+    font_east_asia: "方正小标宋简体"
+    font_latin: "Times New Roman"
+    size: "22pt"
+    bold: false
+    alignment: "center"
+    space_after: "20pt"
+
+  body:
+    style_name: "公文正文"
+    font_east_asia: "仿宋_GB2312"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    alignment: "justify"
+    line_spacing: "28.95pt"
+    first_line_indent: "2em"
+
+  subtitle:
+    style_name: "公文小标题"
+    font_east_asia: "黑体"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    bold: true
+    alignment: "left"
+    line_spacing: "28.95pt"
+    first_line_indent: "2em"
+
+  signature:
+    style_name: "公文落款"
+    font_east_asia: "仿宋_GB2312"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    alignment: "right"
+
+# 示例内容
+sample:
+  title: "关于XXX工作的实施方案"
+  paragraphs:
+    - ""
+    - "为深入贯彻落实XXX精神，扎实推进XXX工作，制定本方案。"
+    - ""
+    - "一、指导思想"
+    - "（具体内容）"
+    - ""
+    - "二、工作目标"
+    - "（具体内容）"
+    - ""
+    - "三、主要任务"
+    - "（一）XXX。"
+    - "（二）XXX。"
+    - "（三）XXX。"
+    - ""
+    - "四、实施步骤"
+    - "（一）准备阶段（XXXX年XX月—XX月）。"
+    - "（二）实施阶段（XXXX年XX月—XX月）。"
+    - "（三）总结阶段（XXXX年XX月—XX月）。"
+    - ""
+    - "五、保障措施"
+    - "（具体内容）"
+    - ""
+    - ""
+    - "（单位名称）"
+    - "XXXX年XX月XX日"

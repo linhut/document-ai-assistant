@@ -1,0 +1,70 @@
+# ============================================================
+# 报告 - 样式模板
+# ============================================================
+
+name: "报告"
+type: "report"
+version: "1.0"
+author: "公文智能优化助手"
+standard: "GB/T 9704-2012"
+
+page:
+  size: "A4"
+  margins:
+    top: "3.7cm"
+    bottom: "3.5cm"
+    left: "2.8cm"
+    right: "2.6cm"
+
+styles:
+  title:
+    style_name: "公文标题"
+    font_east_asia: "方正小标宋简体"
+    font_latin: "Times New Roman"
+    size: "22pt"
+    bold: false
+    alignment: "center"
+    space_after: "20pt"
+  body:
+    style_name: "公文正文"
+    font_east_asia: "仿宋_GB2312"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    alignment: "justify"
+    line_spacing: "28.95pt"
+    first_line_indent: "2em"
+  subtitle:
+    style_name: "公文小标题"
+    font_east_asia: "黑体"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    bold: true
+    alignment: "left"
+    line_spacing: "28.95pt"
+    first_line_indent: "2em"
+  signature:
+    style_name: "公文落款"
+    font_east_asia: "仿宋_GB2312"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    alignment: "right"
+
+sample:
+  title: "关于XXX工作的报告"
+  paragraphs:
+    - "XXX（上级机关）："
+    - ""
+    - "根据XXX要求，现将XXX工作情况报告如下："
+    - "一、工作开展情况"
+    - "（具体内容）"
+    - "二、主要成效"
+    - "（具体内容）"
+    - "三、存在问题"
+    - "（具体内容）"
+    - "四、下一步工作计划"
+    - "（具体内容）"
+    - "特此报告。"
+    - ""
+    - ""
+    - "（单位名称）"
+    - "XXXX年XX月XX日"

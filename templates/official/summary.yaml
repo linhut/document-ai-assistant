@@ -1,0 +1,77 @@
+# ============================================================
+# 总结 - 样式模板
+# 工作总结、年度总结和汇报总结
+# 基于 GB/T 9704-2012 党政机关公文格式
+# ============================================================
+
+name: "总结"
+type: "summary"
+version: "1.0"
+author: "公文智能优化助手"
+standard: "GB/T 9704-2012"
+
+# 页面设置
+page:
+  size: "A4"
+  margins:
+    top: "3.7cm"
+    bottom: "3.5cm"
+    left: "2.8cm"
+    right: "2.6cm"
+
+# 样式定义
+styles:
+  title:
+    style_name: "公文标题"
+    font_east_asia: "方正小标宋简体"
+    font_latin: "Times New Roman"
+    size: "22pt"
+    bold: false
+    alignment: "center"
+    space_after: "20pt"
+
+  body:
+    style_name: "公文正文"
+    font_east_asia: "仿宋_GB2312"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    alignment: "justify"
+    line_spacing: "28.95pt"
+    first_line_indent: "2em"
+
+  subtitle:
+    style_name: "公文小标题"
+    font_east_asia: "黑体"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    bold: true
+    alignment: "left"
+    line_spacing: "28.95pt"
+    first_line_indent: "2em"
+
+  signature:
+    style_name: "公文落款"
+    font_east_asia: "仿宋_GB2312"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    alignment: "right"
+
+# 示例内容
+sample:
+  title: "关于XXX工作的总结"
+  paragraphs:
+    - "XXX（上级机关）："
+    - ""
+    - "根据XXX要求，现将XXX工作情况总结如下："
+    - "一、基本情况"
+    - "（总体概述工作背景和完成情况）"
+    - "二、主要做法和成效"
+    - "（具体内容）"
+    - "三、存在的主要问题"
+    - "（具体内容）"
+    - "四、下一步工作打算"
+    - "（具体内容）"
+    - ""
+    - ""
+    - "（单位名称）"
+    - "XXXX年XX月XX日"
