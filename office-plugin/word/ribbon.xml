@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ribbon.xml — 公文智能校审助手 Word 功能区定义
+  将此文件作为 CustomUI 部件嵌入 .dotm 模板
+-->
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui"
+          onLoad="OnRibbonLoad">
+  <ribbon>
+    <tabs>
+      <!-- ==================== 公文校审 选项卡 ==================== -->
+      <tab id="tabGwAssist" label="公文校审" insertAfterMso="TabHome">
+
+        <!-- 分组1：文档类型 -->
+        <group id="grpDocType" label="文档类型">
+          <dropDown id="ddDocType"
+                    onAction="OnDocTypeChange"
+                    getItemCount="OnDocTypeGetItemCount"
+                    getItemLabel="OnDocTypeGetItemLabel"
+                    getItemID="OnDocTypeGetItemId"
+                    getSelectedItemIndex="OnDocTypeGetSelectedItemIndex"
+                    sizeString="通知XXXXXXX"
+                    showLabel="true" />
+        </group>
+
+        <!-- 分组2：校审操作 -->
+        <group id="grpCheck" label="格式校审">
+          <button id="btnCheck"
+                  label="格式检查"
+                  screentip="检查当前文档格式"
+                  supertip="根据选定的公文类型和 GB/T 9704 标准，自动检查当前文档的格式问题，包括字体、字号、行距、缩进、对齐等。"
+                  onAction="OnCheckClick"
+                  imageMso="ReviewAcceptChange"
+                  size="large" />
+
+          <button id="btnOptimize"
+                  label="一键优化"
+                  screentip="自动修复格式问题"
+                  supertip="自动修复文档中发现的所有格式问题，包括标题字体、正文字号、段落缩进、行距等，生成符合国标的公文。"
+                  onAction="OnOptimizeClick"
+                  imageMso="TableAutoFormat"
+                  size="large" />
+        </group>
+
+        <!-- 分组3：模板 -->
+        <group id="grpTemplate" label="模板工具">
+          <button id="btnApplyTemplate"
+                  label="套用模板"
+                  screentip="套用公文模板样式"
+                  supertip="选择一个公文模板，将模板的格式样式（字体、字号、行距、页边距等）应用到当前文档。"
+                  onAction="OnApplyTemplateClick"
+                  imageMso="FileNewDefault"
+                  size="large" />
+        </group>
+
+        <!-- 分组4：帮助 -->
+        <group id="grpHelp" label="帮助">
+          <button id="btnAbout"
+                  label="关于"
+                  screentip="关于公文校审助手"
+                  onAction="OnAboutClick"
+                  imageMso="Info"
+                  size="normal" />
+        </group>
+
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>
