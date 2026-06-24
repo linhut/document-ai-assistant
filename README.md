@@ -36,6 +36,27 @@ Electron Shell
         ├── AI Provider: Strategy pattern (OpenAI/Claude/Custom compatible)
         └── SQLite: documents, check results, AI configs
 ```
+## 功能界面
+
+### 工作台
+<img width="1681" height="1082" alt="image" src="https://github.com/user-attachments/assets/617ad742-75a6-4a98-938b-cb27819fb1d9" />
+
+### 文档处理
+<img width="1681" height="1082" alt="image" src="https://github.com/user-attachments/assets/0cda25cd-707c-475c-b265-905b41984e43" />
+
+### 校审中心
+<img width="1681" height="1082" alt="image" src="https://github.com/user-attachments/assets/17b4843a-a74b-471a-bb50-a19b754eb47b" />
+
+### 模板中心
+<img width="1681" height="1082" alt="image" src="https://github.com/user-attachments/assets/b98a7681-06c0-4ef9-b91d-fc6d7b2baa65" />
+
+### AI配置
+<img width="1681" height="1082" alt="image" src="https://github.com/user-attachments/assets/d18e8bf0-1c3d-4ace-a5bb-22c8f57aade7" />
+
+### 关于
+<img width="1681" height="1082" alt="image" src="https://github.com/user-attachments/assets/11131fc8-13fc-4ba5-b41b-49d692a4e46a" />
+<img width="1681" height="1082" alt="image" src="https://github.com/user-attachments/assets/28c057e1-fd2a-4352-9d08-38f7ea8e9b59" />
+
 
 ## 快速开始
 
