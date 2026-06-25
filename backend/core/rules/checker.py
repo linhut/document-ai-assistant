@@ -191,59 +191,59 @@ def _check_heading_level(model, rule_id, severity, name, field_path, expected, m
         except (ValueError, TypeError):
             pass
 
-    # 检查该级别的第一个标题段落（主要标题）
-    title_para = headings[0]
+    # 检查该级别的所有标题段落
+    for title_para in headings:
 
-    if sub_field == "font":
-        for run in title_para.runs:
-            if run.format.font_name and run.format.font_name != expected:
+        if sub_field == "font":
+            for run in title_para.runs:
+                if run.format.font_name and run.format.font_name != expected:
+                    issues.append(CheckIssue(
+                        rule_id=rule_id, check_type="format", severity=severity,
+                        name=name, location=f"paragraph:{title_para.index}",
+                        original_text=run.format.font_name, suggested_fix=str(expected),
+                        reason=message,
+                    ))
+                    break
+        elif sub_field == "size":
+            for run in title_para.runs:
+                if run.format.font_size_pt and expected_val and abs(run.format.font_size_pt - expected_val) > 0.5:
+                    issues.append(CheckIssue(
+                        rule_id=rule_id, check_type="format", severity=severity,
+                        name=name, location=f"paragraph:{title_para.index}",
+                        original_text=f"{run.format.font_size_pt}pt",
+                        suggested_fix=str(expected),
+                        reason=message,
+                    ))
+                    break
+        elif sub_field == "align":
+            actual = title_para.format.alignment
+            if actual and actual != str(expected).lower():
                 issues.append(CheckIssue(
                     rule_id=rule_id, check_type="format", severity=severity,
                     name=name, location=f"paragraph:{title_para.index}",
-                    original_text=run.format.font_name, suggested_fix=str(expected),
+                    original_text=actual, suggested_fix=str(expected),
                     reason=message,
                 ))
-                break
-    elif sub_field == "size":
-        for run in title_para.runs:
-            if run.format.font_size_pt and expected_val and abs(run.format.font_size_pt - expected_val) > 0.5:
-                issues.append(CheckIssue(
-                    rule_id=rule_id, check_type="format", severity=severity,
-                    name=name, location=f"paragraph:{title_para.index}",
-                    original_text=f"{run.format.font_size_pt}pt",
-                    suggested_fix=str(expected),
-                    reason=message,
-                ))
-                break
-    elif sub_field == "align":
-        actual = title_para.format.alignment
-        if actual and actual != str(expected).lower():
-            issues.append(CheckIssue(
-                rule_id=rule_id, check_type="format", severity=severity,
-                name=name, location=f"paragraph:{title_para.index}",
-                original_text=actual, suggested_fix=str(expected),
-                reason=message,
-            ))
-    elif sub_field == "first_line_indent":
-        if title_para.format.first_line_indent_pt is not None and expected_val:
-            if abs(title_para.format.first_line_indent_pt - expected_val) > 4:
-                issues.append(CheckIssue(
-                    rule_id=rule_id, check_type="format", severity=severity,
-                    name=name, location=f"paragraph:{title_para.index}",
-                    original_text=f"{title_para.format.first_line_indent_pt}pt",
-                    suggested_fix=str(expected),
-                    reason=message,
-                ))
-    elif sub_field == "line_spacing":
-        if title_para.format.line_spacing_pt and expected_val:
-            if abs(title_para.format.line_spacing_pt - expected_val) > 1:
-                issues.append(CheckIssue(
-                    rule_id=rule_id, check_type="format", severity=severity,
-                    name=name, location=f"paragraph:{title_para.index}",
-                    original_text=f"{title_para.format.line_spacing_pt}pt",
-                    suggested_fix=str(expected),
-                    reason=message,
-                ))
+        elif sub_field == "first_line_indent":
+            if title_para.format.first_line_indent_pt is not None and expected_val:
+                if abs(title_para.format.first_line_indent_pt - expected_val) > 4:
+                    issues.append(CheckIssue(
+                        rule_id=rule_id, check_type="format", severity=severity,
+                        name=name, location=f"paragraph:{title_para.index}",
+                        original_text=f"{title_para.format.first_line_indent_pt}pt",
+                        suggested_fix=str(expected),
+                        reason=message,
+                    ))
+        elif sub_field == "line_spacing":
+            if title_para.format.line_spacing_pt and expected_val:
+                if abs(title_para.format.line_spacing_pt - expected_val) > 1:
+                    issues.append(CheckIssue(
+                        rule_id=rule_id, check_type="format", severity=severity,
+                        name=name, location=f"paragraph:{title_para.index}",
+                        original_text=f"{title_para.format.line_spacing_pt}pt",
+                        suggested_fix=str(expected),
+                        reason=message,
+                    ))
 
     return issues
 
@@ -272,7 +272,7 @@ def _check_body(model, rule_id, severity, name, field_path, expected, message) -
         except (ValueError, TypeError):
             logger.warning(f"Cannot convert expected value '{expected}' to float for field '{sub_field}'")
 
-    for para in body_paras[:10]:  # Check first 10 body paragraphs
+    for para in body_paras:  # Check ALL body paragraphs
         if sub_field == "font":
             for run in para.runs:
                 if run.format.font_name and run.format.font_name != expected:
@@ -378,14 +378,14 @@ def _check_page_setup(model, rule_id, severity, name, field_path, expected, mess
 
 
 def _check_signature_area(model, rule_id, severity, name, field_path, expected, message, rules) -> list[CheckIssue]:
-    """Check signature/date area formatting."""
+    """Check signature/date area formatting. Only check last 2 non-empty paragraphs (落款+日期)."""
     issues = []
     paras = [p for p in model.paragraphs if not p.is_heading and p.text.strip()]
     if not paras:
         return issues
 
-    # Signature area is typically the last few paragraphs
-    sig_paras = paras[-5:] if len(paras) >= 5 else paras[-3:]
+    # Signature area: only last 2 paragraphs (落款单位 + 日期)
+    sig_paras = paras[-2:] if len(paras) >= 2 else paras
     sub_field = field_path.split(".", 1)[1] if "." in field_path else ""
 
     for para in sig_paras:
@@ -408,7 +408,7 @@ def _check_common_issues(model: DocumentModel) -> list[CheckIssue]:
     for para in model.paragraphs:
         text = para.text
 
-        # Extra spaces
+        # Extra spaces (2+ consecutive spaces)
         if "  " in text:
             issues.append(CheckIssue(
                 rule_id="CHK-HEUR-001", check_type="format", severity="P1",
@@ -431,19 +431,6 @@ def _check_common_issues(model: DocumentModel) -> list[CheckIssue]:
                     suggested_fix="移除多余空行",
                     reason="连续出现多个空行",
                 ))
-
-        # Chinese punctuation mixed with English
-        for ch, eng in [("，", ","), ("。", "."), ("；", ";"), ("：", ":"), ("（", "("), ("）", ")")]:
-            if ch in text and eng in text:
-                issues.append(CheckIssue(
-                    rule_id="CHK-HEUR-003", check_type="expression", severity="P1",
-                    name="中英文标点混用",
-                    location=f"paragraph:{para.index}",
-                    original_text=text[:80],
-                    suggested_fix="统一使用中文标点",
-                    reason=f"段落中同时出现了中文'{ch}'和英文'{eng}'标点",
-                ))
-                break
 
     # --- 页码检查（GB/T 9704: 公文应标注页码）---
     has_page_num = False
