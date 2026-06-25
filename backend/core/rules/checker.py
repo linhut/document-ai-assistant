@@ -378,14 +378,14 @@ def _check_page_setup(model, rule_id, severity, name, field_path, expected, mess
 
 
 def _check_signature_area(model, rule_id, severity, name, field_path, expected, message, rules) -> list[CheckIssue]:
-    """Check signature/date area formatting."""
+    """Check signature/date area formatting. Only check last 2 non-empty paragraphs (落款+日期)."""
     issues = []
     paras = [p for p in model.paragraphs if not p.is_heading and p.text.strip()]
     if not paras:
         return issues
 
-    # Signature area is typically the last few paragraphs
-    sig_paras = paras[-5:] if len(paras) >= 5 else paras[-3:]
+    # Signature area: only last 2 paragraphs (落款单位 + 日期)
+    sig_paras = paras[-2:] if len(paras) >= 2 else paras
     sub_field = field_path.split(".", 1)[1] if "." in field_path else ""
 
     for para in sig_paras:
@@ -408,7 +408,7 @@ def _check_common_issues(model: DocumentModel) -> list[CheckIssue]:
     for para in model.paragraphs:
         text = para.text
 
-        # Extra spaces
+        # Extra spaces (2+ consecutive spaces)
         if "  " in text:
             issues.append(CheckIssue(
                 rule_id="CHK-HEUR-001", check_type="format", severity="P1",
@@ -431,19 +431,6 @@ def _check_common_issues(model: DocumentModel) -> list[CheckIssue]:
                     suggested_fix="移除多余空行",
                     reason="连续出现多个空行",
                 ))
-
-        # Chinese punctuation mixed with English
-        for ch, eng in [("，", ","), ("。", "."), ("；", ";"), ("：", ":"), ("（", "("), ("）", ")")]:
-            if ch in text and eng in text:
-                issues.append(CheckIssue(
-                    rule_id="CHK-HEUR-003", check_type="expression", severity="P1",
-                    name="中英文标点混用",
-                    location=f"paragraph:{para.index}",
-                    original_text=text[:80],
-                    suggested_fix="统一使用中文标点",
-                    reason=f"段落中同时出现了中文'{ch}'和英文'{eng}'标点",
-                ))
-                break
 
     # --- 页码检查（GB/T 9704: 公文应标注页码）---
     has_page_num = False

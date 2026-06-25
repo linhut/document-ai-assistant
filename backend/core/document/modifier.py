@@ -39,8 +39,8 @@ def _select_paragraphs(model: DocumentModel, target: str) -> list[Paragraph]:
     - "heading_1"  → 一级标题 (heading_level=1)
     - "heading_2"  → 二级标题 (heading_level=2)
     - "heading_3"  → 三级标题 (heading_level=3)
-    - "body"       → 所有非标题、非空段落
-    - "signature"  → 最后3个非空段落
+    - "body"       → 所有非标题、非空、非签名段落
+    - "signature"  → 最后2个非空段落（落款+日期）
     - "all"        → 所有段落
     """
     if target == "title":
@@ -54,10 +54,14 @@ def _select_paragraphs(model: DocumentModel, target: str) -> list[Paragraph]:
     elif target == "heading_3":
         return [p for p in model.paragraphs if p.is_heading and p.heading_level == 3]
     elif target == "body":
-        return [p for p in model.paragraphs if not p.is_heading and p.text.strip()]
+        # 排除签名段落（最后2个非空段落）
+        non_empty = [p for p in model.paragraphs if p.text.strip()]
+        sig_set = set(id(p) for p in non_empty[-2:]) if len(non_empty) >= 2 else set()
+        return [p for p in model.paragraphs
+                if not p.is_heading and p.text.strip() and id(p) not in sig_set]
     elif target == "signature":
         non_empty = [p for p in model.paragraphs if p.text.strip()]
-        return non_empty[-3:] if len(non_empty) >= 3 else non_empty
+        return non_empty[-2:] if len(non_empty) >= 2 else non_empty
     elif target == "all":
         return list(model.paragraphs)
     else:
@@ -130,16 +134,11 @@ def modify_margins(model: DocumentModel, margins: dict[str, str | float]) -> Non
 
 
 def remove_extra_spaces(model: DocumentModel) -> None:
-    """清除段落中的连续空格。"""
+    """清除段落中的多余空格（连续2个以上空格压缩为1个）。"""
     for para in model.paragraphs:
-        if para.text:
-            cleaned = re.sub(r' {2,}', ' ', para.text)
-            if cleaned != para.text:
-                para.text = cleaned
-                if para.runs:
-                    para.runs[0].text = cleaned
-                    for r in para.runs[1:]:
-                        r.text = ""
+        for run in para.runs:
+            if run.text and '  ' in run.text:
+                run.text = re.sub(r' {2,}', ' ', run.text)
 
 
 def remove_extra_blank_lines(model: DocumentModel) -> None:
