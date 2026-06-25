@@ -322,6 +322,25 @@ def _add_runs_via_xml(p_element, para_model: Paragraph):
     if para_model.runs:
         for run_model in para_model.runs:
             r = OxmlElement('w:r')
+            # 添加 run 格式属性
+            rPr = OxmlElement('w:rPr')
+            fmt = run_model.format
+            if fmt.font_name:
+                rFonts = OxmlElement('w:rFonts')
+                rFonts.set(qn('w:ascii'), fmt.font_name)
+                rFonts.set(qn('w:hAnsi'), fmt.font_name)
+                rFonts.set(qn('w:eastAsia'), fmt.font_name)
+                rPr.append(rFonts)
+            if fmt.font_size_pt:
+                sz = OxmlElement('w:sz')
+                sz.set(qn('w:val'), str(int(fmt.font_size_pt * 2)))  # half-points
+                rPr.append(sz)
+            if fmt.bold:
+                rPr.append(OxmlElement('w:b'))
+            if fmt.italic:
+                rPr.append(OxmlElement('w:i'))
+            if len(rPr) > 0:
+                r.append(rPr)
             t = OxmlElement('w:t')
             t.text = run_model.text
             t.set(qn('xml:space'), 'preserve')

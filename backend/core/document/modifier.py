@@ -75,30 +75,32 @@ def _select_paragraphs(model: DocumentModel, target: str) -> list[Paragraph]:
 
 def modify_font(model: DocumentModel, target: str, font_name: str) -> None:
     """
-    修改指定段落的所有 run 的字体名称。
-    Note: 实际的 eastAsia XML 写入由 generator 的 set_run_font 完成。
+    修改指定段落的字体名称（仅修改不匹配的 run）。
     """
     if not font_name:
         return
     for para in _select_paragraphs(model, target):
         for run in para.runs:
-            run.format.font_name = font_name
+            if run.format.font_name and run.format.font_name != font_name:
+                run.format.font_name = font_name
 
 
 def modify_size(model: DocumentModel, target: str, size_pt: float | None) -> None:
-    """修改指定段落的所有 run 的字号。"""
+    """修改指定段落的字号（仅修改不匹配的 run）。"""
     if size_pt is None:
         return
     for para in _select_paragraphs(model, target):
         for run in para.runs:
-            run.format.font_size_pt = size_pt
+            if run.format.font_size_pt and abs(run.format.font_size_pt - size_pt) > 0.5:
+                run.format.font_size_pt = size_pt
 
 
 def modify_alignment(model: DocumentModel, target: str, alignment: str) -> None:
-    """修改指定段落的对齐方式。"""
+    """修改指定段落的对齐方式（仅修改不匹配的段落）。"""
     alignment = alignment.lower()
     for para in _select_paragraphs(model, target):
-        para.format.alignment = alignment
+        if para.format.alignment and para.format.alignment != alignment:
+            para.format.alignment = alignment
 
 
 def modify_line_spacing(model: DocumentModel, target: str, spacing_pt: float | None) -> None:
