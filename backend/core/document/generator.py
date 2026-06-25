@@ -199,13 +199,24 @@ def _replace_paragraphs(doc: Document, model: DocumentModel):
 
 def _replace_paragraph_content(doc: Document, p_element, para_model: Paragraph):
     """
-    替换一个 <w:p> 元素的内容（清除旧 runs，写入新 runs），保留段落属性。
+    替换一个 <w:p> 元素的内容（清除旧文本 runs，写入新 runs），保留段落属性和图片。
     """
-    # 清除所有现有的 <w:r> 和 <w:hyperlink> 子元素
+    # 清除文本 runs，但保留含图片/绘图的 runs
     for child in list(p_element):
         tag = child.tag.split('}')[-1] if '}' in child.tag else child.tag
-        if tag in ('r', 'hyperlink'):
-            p_element.remove(child)
+        if tag == 'r':
+            # 检查 run 是否包含图片（w:drawing 或 w:pict）
+            has_image = False
+            for sub in child:
+                sub_tag = sub.tag.split('}')[-1] if '}' in sub.tag else sub.tag
+                if sub_tag in ('drawing', 'pict'):
+                    has_image = True
+                    break
+            if not has_image:
+                p_element.remove(child)
+        elif tag == 'hyperlink':
+            # 保留超链接（可能包含图片）
+            pass
 
     # 更新段落属性 (w:pPr)
     _update_pPr(p_element, para_model)
@@ -220,7 +231,8 @@ def _replace_paragraph_content(doc: Document, p_element, para_model: Paragraph):
 
 
 def _update_pPr(p_element, para_model: Paragraph):
-    """更新 <w:p> 元素的 <w:pPr> 段落属性。"""
+    """更新 <w:p> 元素的 <w:pPr> 段落属性。
+    关键原则：model 有值才替换，None 保留原文档格式不删除。"""
     fmt = para_model.format
 
     # 获取或创建 pPr
@@ -229,11 +241,11 @@ def _update_pPr(p_element, para_model: Paragraph):
         pPr = OxmlElement('w:pPr')
         p_element.insert(0, pPr)
 
-    # 对齐方式
-    jc = pPr.find(qn('w:jc'))
-    if jc is not None:
-        pPr.remove(jc)
+    # 对齐方式：仅当 model 有值时替换
     if fmt.alignment:
+        jc = pPr.find(qn('w:jc'))
+        if jc is not None:
+            pPr.remove(jc)
         jc = OxmlElement('w:jc')
         alignment_map = {
             "left": "left", "center": "center",
@@ -242,20 +254,17 @@ def _update_pPr(p_element, para_model: Paragraph):
         jc.set(qn('w:val'), alignment_map.get(fmt.alignment, "left"))
         pPr.append(jc)
 
-    # 缩进
-    ind = pPr.find(qn('w:ind'))
-    if ind is not None:
-        pPr.remove(ind)
+    # 缩进：仅当 model 有值时替换，否则保留原文档缩进
     has_indent = (fmt.first_line_indent_pt is not None or
                   fmt.left_indent_pt is not None or
                   fmt.right_indent_pt is not None)
     if has_indent:
+        ind = pPr.find(qn('w:ind'))
+        if ind is not None:
+            pPr.remove(ind)
         ind = OxmlElement('w:ind')
         if fmt.first_line_indent_pt is not None:
-            # 转换为 twips (1 pt = 20 twips)
             ind.set(qn('w:firstLine'), str(int(fmt.first_line_indent_pt * 20)))
-            # 同时写入字符单位（中文文档兼容性，公文标准字号16pt）
-            # 1字符 = 字号磅值，2em = 2字符 = 200（百分之一字符）
             chars = int(round(fmt.first_line_indent_pt / 16 * 100))
             if chars > 0:
                 ind.set(qn('w:firstLineChars'), str(chars))
@@ -265,24 +274,25 @@ def _update_pPr(p_element, para_model: Paragraph):
             ind.set(qn('w:right'), str(int(fmt.right_indent_pt * 20)))
         pPr.append(ind)
 
-    # 行距
-    spacing = pPr.find(qn('w:spacing'))
-    if spacing is not None:
-        pPr.remove(spacing)
+    # 行距：仅当 model 有值时替换，否则保留原文档行距
     has_spacing = (fmt.line_spacing_pt is not None or
                    fmt.space_before_pt is not None or
                    fmt.space_after_pt is not None)
     if has_spacing:
+        spacing = pPr.find(qn('w:spacing'))
+        if spacing is not None:
+            pPr.remove(spacing)
         spacing = OxmlElement('w:spacing')
         if fmt.line_spacing_pt is not None:
             spacing_pt = max(6, min(200, fmt.line_spacing_pt))
             rule = fmt.line_spacing_rule or "exact"
             if rule == "multiple":
                 # 倍数行距：w:line 值为 240 分之一行（如 1.5x = 360）
-                # line_spacing_pt 存储的是转换后的pt值，需要反算回倍数
-                # 公文标准字号16pt，1em=16pt，1倍行距≈240
-                spacing.set(qn('w:line'), str(int(spacing_pt * 20)))
-                # multiple模式不设置w:lineRule（或设为"auto"）
+                # line_spacing_pt 存储的是 pt 值，需要反算回倍数
+                # 公文标准字号16pt，1倍行距=240（即 16pt * 15 = 240）
+                # pt → 240ths: value = spacing_pt / 16 * 240
+                line_val = int(round(spacing_pt / 16 * 240))
+                spacing.set(qn('w:line'), str(line_val))
                 spacing.set(qn('w:lineRule'), 'auto')
             elif rule == "atLeast":
                 spacing.set(qn('w:line'), str(int(spacing_pt * 20)))
@@ -323,6 +333,25 @@ def _add_runs_via_xml(p_element, para_model: Paragraph):
     if para_model.runs:
         for run_model in para_model.runs:
             r = OxmlElement('w:r')
+            # 添加 run 格式属性
+            rPr = OxmlElement('w:rPr')
+            fmt = run_model.format
+            if fmt.font_name:
+                rFonts = OxmlElement('w:rFonts')
+                rFonts.set(qn('w:ascii'), fmt.font_name)
+                rFonts.set(qn('w:hAnsi'), fmt.font_name)
+                rFonts.set(qn('w:eastAsia'), fmt.font_name)
+                rPr.append(rFonts)
+            if fmt.font_size_pt:
+                sz = OxmlElement('w:sz')
+                sz.set(qn('w:val'), str(int(fmt.font_size_pt * 2)))  # half-points
+                rPr.append(sz)
+            if fmt.bold:
+                rPr.append(OxmlElement('w:b'))
+            if fmt.italic:
+                rPr.append(OxmlElement('w:i'))
+            if len(rPr) > 0:
+                r.append(rPr)
             t = OxmlElement('w:t')
             t.text = run_model.text
             t.set(qn('xml:space'), 'preserve')

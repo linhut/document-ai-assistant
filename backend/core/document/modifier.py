@@ -39,8 +39,8 @@ def _select_paragraphs(model: DocumentModel, target: str) -> list[Paragraph]:
     - "heading_1"  → 一级标题 (heading_level=1)
     - "heading_2"  → 二级标题 (heading_level=2)
     - "heading_3"  → 三级标题 (heading_level=3)
-    - "body"       → 所有非标题、非空段落
-    - "signature"  → 最后3个非空段落
+    - "body"       → 所有非标题、非空、非签名段落
+    - "signature"  → 最后2个非空段落（落款+日期）
     - "all"        → 所有段落
     """
     if target == "title":
@@ -54,10 +54,14 @@ def _select_paragraphs(model: DocumentModel, target: str) -> list[Paragraph]:
     elif target == "heading_3":
         return [p for p in model.paragraphs if p.is_heading and p.heading_level == 3]
     elif target == "body":
-        return [p for p in model.paragraphs if not p.is_heading and p.text.strip()]
+        # 排除签名段落（最后2个非空段落）
+        non_empty = [p for p in model.paragraphs if p.text.strip()]
+        sig_set = set(id(p) for p in non_empty[-2:]) if len(non_empty) >= 2 else set()
+        return [p for p in model.paragraphs
+                if not p.is_heading and p.text.strip() and id(p) not in sig_set]
     elif target == "signature":
         non_empty = [p for p in model.paragraphs if p.text.strip()]
-        return non_empty[-3:] if len(non_empty) >= 3 else non_empty
+        return non_empty[-2:] if len(non_empty) >= 2 else non_empty
     elif target == "all":
         return list(model.paragraphs)
     else:
@@ -71,30 +75,32 @@ def _select_paragraphs(model: DocumentModel, target: str) -> list[Paragraph]:
 
 def modify_font(model: DocumentModel, target: str, font_name: str) -> None:
     """
-    修改指定段落的所有 run 的字体名称。
-    Note: 实际的 eastAsia XML 写入由 generator 的 set_run_font 完成。
+    修改指定段落的字体名称（仅修改不匹配的 run）。
     """
     if not font_name:
         return
     for para in _select_paragraphs(model, target):
         for run in para.runs:
-            run.format.font_name = font_name
+            if run.format.font_name and run.format.font_name != font_name:
+                run.format.font_name = font_name
 
 
 def modify_size(model: DocumentModel, target: str, size_pt: float | None) -> None:
-    """修改指定段落的所有 run 的字号。"""
+    """修改指定段落的字号（仅修改不匹配的 run）。"""
     if size_pt is None:
         return
     for para in _select_paragraphs(model, target):
         for run in para.runs:
-            run.format.font_size_pt = size_pt
+            if run.format.font_size_pt and abs(run.format.font_size_pt - size_pt) > 0.5:
+                run.format.font_size_pt = size_pt
 
 
 def modify_alignment(model: DocumentModel, target: str, alignment: str) -> None:
-    """修改指定段落的对齐方式。"""
+    """修改指定段落的对齐方式（仅修改不匹配的段落）。"""
     alignment = alignment.lower()
     for para in _select_paragraphs(model, target):
-        para.format.alignment = alignment
+        if para.format.alignment and para.format.alignment != alignment:
+            para.format.alignment = alignment
 
 
 def modify_line_spacing(model: DocumentModel, target: str, spacing_pt: float | None) -> None:
@@ -130,16 +136,11 @@ def modify_margins(model: DocumentModel, margins: dict[str, str | float]) -> Non
 
 
 def remove_extra_spaces(model: DocumentModel) -> None:
-    """清除段落中的连续空格。"""
+    """清除段落中的多余空格（连续2个以上空格压缩为1个）。"""
     for para in model.paragraphs:
-        if para.text:
-            cleaned = re.sub(r' {2,}', ' ', para.text)
-            if cleaned != para.text:
-                para.text = cleaned
-                if para.runs:
-                    para.runs[0].text = cleaned
-                    for r in para.runs[1:]:
-                        r.text = ""
+        for run in para.runs:
+            if run.text and '  ' in run.text:
+                run.text = re.sub(r' {2,}', ' ', run.text)
 
 
 def remove_extra_blank_lines(model: DocumentModel) -> None:

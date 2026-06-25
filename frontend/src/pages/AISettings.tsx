@@ -226,9 +226,10 @@ export default function AISettings() {
                 <Badge variant={isConnected ? 'default' : 'secondary'}>
                   {isConnected ? '✓ 已连接' : '未配置'}
                 </Badge>
-                <Switch
-                  checked={isConnected}
-                  onCheckedChange={async (newState) => {
+                <span title={isConnected ? '点击禁用 AI 服务' : '点击启用 AI 服务'}>
+                  <Switch
+                    checked={isConnected}
+                    onCheckedChange={async (newState) => {
                     setIsConnected(newState);
                     try {
                       await apiClient.post('/api/ai/config', {
@@ -241,8 +242,8 @@ export default function AISettings() {
                       console.error('切换 AI 状态失败');
                     }
                   }}
-                  title={isConnected ? '点击禁用 AI 服务' : '点击启用 AI 服务'}
                 />
+                </span>
               </div>
             </div>
           </CardContent>

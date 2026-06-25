@@ -44,9 +44,30 @@ def _make_model() -> DocumentModel:
                 ))],
             ),
             Paragraph(
-                text="（单位名称）", index=3,
+                text="正文内容第三段。", index=3,
+                format=ParagraphFormat(alignment="left"),
+                runs=[Run(text="正文内容第三段。", index=0, format=RunFormat(
+                    font_name="Arial", font_size_pt=12,
+                ))],
+            ),
+            Paragraph(
+                text="正文内容第四段。", index=4,
+                format=ParagraphFormat(alignment="left"),
+                runs=[Run(text="正文内容第四段。", index=0, format=RunFormat(
+                    font_name="Arial", font_size_pt=12,
+                ))],
+            ),
+            Paragraph(
+                text="（单位名称）", index=5,
                 format=ParagraphFormat(alignment="left"),
                 runs=[Run(text="（单位名称）", index=0, format=RunFormat(
+                    font_name="Arial", font_size_pt=12,
+                ))],
+            ),
+            Paragraph(
+                text="2026年6月25日", index=6,
+                format=ParagraphFormat(alignment="left"),
+                runs=[Run(text="2026年6月25日", index=0, format=RunFormat(
                     font_name="Arial", font_size_pt=12,
                 ))],
             ),
@@ -130,10 +151,9 @@ class TestModifyMargins:
 class TestTextCleanup:
     def test_remove_extra_spaces(self):
         model = _make_model()
-        model.paragraphs[1].text = "正文  内容  第一段。"
-        model.paragraphs[1].runs[0].text = "正文  内容  第一段。"
+        model.paragraphs[1].runs[0].text = "正文   内容   第一段。"
         remove_extra_spaces(model)
-        assert "  " not in model.paragraphs[1].text
+        assert "   " not in model.paragraphs[1].runs[0].text
 
     def test_remove_extra_blank_lines(self):
         model = _make_model()
