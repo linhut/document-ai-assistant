@@ -1,3 +1,6 @@
+# This file is part of the Official Document AI Assistant.
+# (c) 2026 Jose AI (https://www.linhut.cn)
+# Licensed under the MIT License. See the LICENSE file for details.
 """
 Ollama Provider — 本地大模型。
 支持任何兼容 OpenAI API 的本地模型服务。

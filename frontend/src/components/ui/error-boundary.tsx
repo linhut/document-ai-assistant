@@ -1,3 +1,8 @@
+/*
+ * This file is part of the Official Document AI Assistant.
+ * (c) 2026 Jose AI (https://www.linhut.cn)
+ * Licensed under the MIT License. See the LICENSE file for details.
+ */
 /**
  * ErrorBoundary - 全局错误边界
  * 捕获子组件渲染错误，显示友好错误页面而非白屏

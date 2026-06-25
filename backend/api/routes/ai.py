@@ -1,3 +1,6 @@
+# This file is part of the Official Document AI Assistant.
+# (c) 2026 Jose AI (https://www.linhut.cn)
+# Licensed under the MIT License. See the LICENSE file for details.
 """
 AI API routes: AI-powered analysis and suggestions.
 支持多模型管理、模型列表获取、连接测试。

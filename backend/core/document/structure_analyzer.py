@@ -1,3 +1,6 @@
+# This file is part of the Official Document AI Assistant.
+# (c) 2026 Jose AI (https://www.linhut.cn)
+# Licensed under the MIT License. See the LICENSE file for details.
 """
 文档结构分析器 - 智能识别文档结构
 基于AIPoliDoc项目的思路，结合我们的公文格式需求
