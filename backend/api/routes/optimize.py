@@ -50,9 +50,18 @@ async def download_optimized(doc_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Document not found")
 
     # 优先使用 DB 中存储的 optimized_path（由 optimize_document 写入）
-    if doc.optimized_path and Path(doc.optimized_path).exists():
-        out_path = Path(doc.optimized_path)
-    else:
+    out_path = None
+    if doc.optimized_path:
+        p = Path(doc.optimized_path)
+        if p.exists():
+            out_path = p
+        else:
+            # 尝试按文件名在 OUTPUT_DIR 中查找
+            from config import OUTPUT_DIR
+            fallback = OUTPUT_DIR / p.name
+            if fallback.exists():
+                out_path = fallback
+    if not out_path:
         # 回退：按命名规则拼接路径
         out_name = Path(doc.filename).stem + _OPTIMIZED_SUFFIX
         from config import OUTPUT_DIR

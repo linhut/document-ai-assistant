@@ -1,110 +1,19 @@
 template_name: 会议纪要
 document_type: meeting
-title:
-  font: 方正小标宋简体
-  font_fallback: SimSun
-  size: 22pt
-  align: center
-  bold: false
-body:
-  font: 仿宋_GB2312
-  font_fallback: FangSong
-  size: 16pt
-  line_spacing: 28.95pt
-  first_line_indent: 2em
-  align: justify
+
+# --- 会议纪要特有内容检查 ---
 check_rules:
-- id: CHK-M001
-  name: 标题格式检查
-  severity: P0
-  field: title.font
-  expected: 方正小标宋简体
-  message: 标题应使用方正小标宋简体
-- id: CHK-M002
-  name: 会议时间检查
-  severity: P1
-  field: content.time
-  expected: 包含会议时间
-  message: 应注明会议时间
-- id: CHK-M003
-  name: 会议地点检查
-  severity: P1
-  field: content.location
-  expected: 包含会议地点
-  message: 应注明会议地点
-- id: CHK-M004
-  name: 参会人员检查
-  severity: P1
-  field: content.attendees
-  expected: 包含参会人员
-  message: 应注明参会人员
-- id: CHK-M005
-  name: 议题检查
-  severity: P1
-  field: content.topics
-  expected: 包含会议议题
-  message: 应记录会议议题
-- id: CHK-M006
-  name: 决定事项检查
-  severity: P1
-  field: content.decisions
-  expected: 包含决定事项
-  message: 应记录会议决定事项
-- id: CHK-M007
-  severity: P0
-  field: body.font
-  expected: 仿宋_GB2312
-  name: 正文字体
-  message: 正文应使用仿宋_GB2312字体
-- id: CHK-M008
-  severity: P0
-  field: body.size
-  expected: 16pt
-  name: 正文字号
-  message: 正文应使用三号字（16pt）
-- id: CHK-M009
-  severity: P1
-  field: body.first_line_indent
-  expected: 2em
-  name: 正文首行缩进
-  message: 正文首行应缩进2字符
-- id: CHK-M010
-  severity: P1
-  field: body.line_spacing
-  expected: 28.95pt
-  name: 正文行距
-  message: 正文行距应为固定值28-29磅
-fix_rules:
-- id: FIX-M001
-  ref_check: CHK-M001
-  action: set_font
-  target: doc_title
-  value: 方正小标宋简体
-- id: FIX-M003
-  action: set_font
-  target: body
-  value: 仿宋_GB2312
-- id: FIX-M004
-  action: set_size
-  target: body
-  value: 16pt
-- id: FIX-M007
-  ref_check: CHK-M007
-  action: set_font
-  target: body
-  value: 仿宋_GB2312
-- id: FIX-M008
-  ref_check: CHK-M008
-  action: set_size
-  target: body
-  value: 16pt
-- id: FIX-M001
-  ref_check: CHK-M009
-  action: set_first_line_indent
-  target: body
-  value: 2em
-- id: FIX-M001
-  ref_check: CHK-M010
-  action: set_line_spacing
-  target: body
-  value: 28.95pt
+  - id: CHK-M001
+    name: 会议要素检查
+    severity: P1
+    field: content.meeting_elements
+    expected: 要素齐全
+    message: 会议纪要应包含会议名称、时间、地点、主持人、参会人员
+
+  - id: CHK-M002
+    name: 议定事项检查
+    severity: P1
+    field: content.decisions
+    expected: 议定事项明确
+    message: 会议纪要应明确议定事项、责任人和完成时限
+fix_rules: []

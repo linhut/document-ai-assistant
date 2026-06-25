@@ -1,82 +1,12 @@
 template_name: 公报
 document_type: communique
-title:
-  font: 方正小标宋简体
-  font_fallback: SimSun
-  size: 22pt
-  align: center
-  bold: false
-body:
-  font: 仿宋_GB2312
-  font_fallback: FangSong
-  size: 16pt
-  line_spacing: 28.95pt
-  first_line_indent: 2em
-  align: justify
+
+# --- 公报特有内容检查 ---
 check_rules:
-- id: CHK-CG001
-  name: 标题字体检查
-  severity: P0
-  field: title.font
-  expected: 方正小标宋简体
-  message: 标题应使用方正小标宋简体
-- id: CHK-CG002
-  name: 标题字号检查
-  severity: P0
-  field: title.size
-  expected: 22pt
-  message: 标题应使用二号字(22pt)
-- id: CHK-CG003
-  name: 正文字体检查
-  severity: P0
-  field: body.font
-  expected: 仿宋_GB2312
-  message: 正文应使用仿宋_GB2312字体
-- id: CHK-CG004
-  name: 正文行距检查
-  severity: P1
-  field: body.line_spacing
-  expected: 28.95pt
-  message: 正文行距应为28.95pt（固定值）
-- id: CHK-CG005
-  severity: P0
-  field: body.size
-  expected: 16pt
-  name: 正文字号
-  message: 正文应使用三号字（16pt）
-- id: CHK-CG006
-  severity: P1
-  field: body.first_line_indent
-  expected: 2em
-  name: 正文首行缩进
-  message: 正文首行应缩进2字符
-fix_rules:
-- id: FIX-CG001
-  ref_check: CHK-CG001
-  action: set_font
-  target: doc_title
-  value: 方正小标宋简体
-- id: FIX-CG002
-  ref_check: CHK-CG002
-  action: set_size
-  target: doc_title
-  value: 22pt
-- id: FIX-CG003
-  ref_check: CHK-CG003
-  action: set_font
-  target: body
-  value: 仿宋_GB2312
-- id: FIX-CG004
-  action: set_size
-  target: body
-  value: 16pt
-- id: FIX-CG005
-  ref_check: CHK-CG005
-  action: set_size
-  target: body
-  value: 16pt
-- id: FIX-CG001
-  ref_check: CHK-CG006
-  action: set_first_line_indent
-  target: body
-  value: 2em
+  - id: CHK-CG001
+    name: 公报事项检查
+    severity: P1
+    field: content.items
+    expected: 事项完整
+    message: 公报应内容完整、表述准确
+fix_rules: []

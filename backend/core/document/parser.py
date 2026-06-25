@@ -42,8 +42,10 @@ _HEADING_FONT_MAP = {
 _H1_PATTERN = re.compile(r'^[一二三四五六七八九十]+、')
 # 二级标题序号模式（"（一）""（二）"等）
 _H2_PATTERN = re.compile(r'^（[一二三四五六七八九十]+）')
-# 三级标题序号模式（"1.""2."等阿拉伯数字）
-_H3_PATTERN = re.compile(r'^\d+[.、]')
+# 三级标题序号模式（"1.""2."等阿拉伯数字+句点）
+_H3_PATTERN = re.compile(r'^\d+[.]')
+# 四级标题序号模式（"（1）""（2）"等半角/全角括号+阿拉伯数字）
+_H4_PATTERN = re.compile(r'^[（(]\d+[）)]')
 
 
 def parse_docx(file_path: Path | str) -> DocumentModel:
@@ -79,6 +81,9 @@ def parse_docx(file_path: Path | str) -> DocumentModel:
 
     # 4.1 后处理：位置/统计启发式（补偿未排版文档的标题检测不足）
     _post_detect_headings(paragraphs)
+
+    # 4.2 段落角色标注
+    _assign_paragraph_roles(paragraphs)
 
     # 5. 解析表格
     tables = []
@@ -266,6 +271,9 @@ def _parse_paragraph(para, index: int) -> Paragraph:
             format=RunFormat(),
         ))
 
+    # ---- 段落样式 fallback：当 run 没有直接格式时，从段落样式读取 ----
+    _apply_style_fallback(para, runs, para_format)
+
     # ---- 内容验证：Word 样式可能是错的 ----
     # 很多文档模板将正文误标为 Heading 3，需要验证内容是否真的像标题
     if is_heading and heading_level and heading_level >= 2:
@@ -406,6 +414,10 @@ def _detect_heading_heuristic(
     if _H3_PATTERN.match(text_stripped) and len(text_stripped) < 40:
         return True, 3
 
+    # B-4: "（1）" 开头 + 短文本 → 四级标题
+    if _H4_PATTERN.match(text_stripped) and len(text_stripped) < 40:
+        return True, 4
+
     return False, None
 
 
@@ -464,8 +476,187 @@ def _post_detect_headings(paragraphs: list[Paragraph]) -> None:
 
 
 # ---------------------------------------------------------------------------
+#  Paragraph Role Assignment (段落角色标注)
+# ---------------------------------------------------------------------------
+
+# 日期模式
+_DATE_RE = re.compile(r'^\d{4}年\d{1,2}月\d{1,2}日$')
+_DATE_ALT_RE = re.compile(r'^\d{4}[.\-/]\d{1,2}[.\-/]\d{1,2}$')
+
+# 主送机关特征词
+_RECIPIENT_KEYWORDS = [
+    '各部门', '各科室', '各单位', '全体', '各有关', '各相关',
+    '局', '办', '委', '厅', '处', '室', '院', '中心',
+]
+
+# 附件模式
+_ATTACHMENT_RE = re.compile(r'^附件[：:]')
+
+# 抄送模式
+_CC_RE = re.compile(r'^抄送[：:]')
+
+# 印发模式
+_PRINT_RE = re.compile(r'^印发机关|^印发日期')
+
+
+def _assign_paragraph_roles(paragraphs: list[Paragraph]) -> None:
+    """
+    后处理：为每个段落标注 role（角色）。
+    role 值: title / recipient / body / signature / date / attachment / cc / notes
+    """
+    non_empty = [(i, p) for i, p in enumerate(paragraphs) if p.text.strip()]
+    if not non_empty:
+        return
+
+    # 第一段非空段落 = 标题
+    first_idx, first_para = non_empty[0]
+    if first_para.is_heading and first_para.heading_level == 0:
+        first_para.role = 'title'
+    elif not first_para.is_heading and len(first_para.text.strip()) < 30:
+        first_para.role = 'title'
+
+    # 最后几段：日期、落款、抄送、印发
+    for i in range(len(non_empty) - 1, max(len(non_empty) - 6, 0), -1):
+        idx, para = non_empty[i]
+        text = para.text.strip()
+
+        # 日期
+        if _DATE_RE.match(text) or _DATE_ALT_RE.match(text):
+            para.role = 'date'
+            continue
+
+        # 抄送
+        if _CC_RE.match(text):
+            para.role = 'cc'
+            continue
+
+        # 印发
+        if _PRINT_RE.match(text):
+            para.role = 'cc'
+            continue
+
+    # 落款：日期前的短文本（< 20 字，或含机关关键词）
+    date_indices = [i for i, p in non_empty if p.role == 'date']
+    if date_indices:
+        date_idx = date_indices[-1]
+        for i in range(len(non_empty)):
+            idx, para = non_empty[i]
+            if idx == date_idx - 1 and not para.is_heading:
+                text = para.text.strip()
+                if len(text) < 20:
+                    para.role = 'signature'
+                elif any(kw in text for kw in ['人民政府', '委员会', '办公厅', '办公室', '管理局', '局', '部']):
+                    if len(text) < 40:
+                        para.role = 'signature'
+
+    # 主送机关：标题后第一段，以冒号结尾
+    if len(non_empty) >= 2:
+        second_idx, second_para = non_empty[1]
+        if not second_para.role:
+            text = second_para.text.strip()
+            if text.endswith(('：', ':')) and len(text) < 50:
+                second_para.role = 'recipient'
+            elif any(kw in text for kw in _RECIPIENT_KEYWORDS) and text.endswith(('：', ':')):
+                second_para.role = 'recipient'
+
+    # 附件
+    for idx, para in non_empty:
+        if not para.role and _ATTACHMENT_RE.match(para.text.strip()):
+            para.role = 'attachment'
+
+    # 其余非空段落默认为 body
+    for idx, para in non_empty:
+        if not para.role:
+            para.role = 'body'
+
+
+# ---------------------------------------------------------------------------
 #  Paragraph Format
 # ---------------------------------------------------------------------------
+
+def _apply_style_fallback(para, runs: list[Run], para_format: ParagraphFormat) -> None:
+    """
+    当 run 没有直接格式时，从段落样式读取默认值。
+    确保预览时 font_size_pt / font_name 等字段不会是 None。
+    """
+    try:
+        style = para.style
+        if style is None:
+            return
+
+        # 读取样式的字体大小
+        style_font_size = None
+        try:
+            if style.font and style.font.size:
+                style_font_size = round(style.font.size.pt, 1)
+        except Exception:
+            pass
+
+        # 读取样式的字体名称
+        style_font_name = None
+        try:
+            if style.font and style.font.name:
+                style_font_name = style.font.name
+        except Exception:
+            pass
+
+        # 读取样式的行距
+        style_line_spacing = None
+        try:
+            if style.paragraph_format and style.paragraph_format.line_spacing:
+                from docx.shared import Length
+                sp = style.paragraph_format.line_spacing
+                if isinstance(sp, (int, float)) and sp > 3:
+                    style_line_spacing = round(float(sp), 2)
+                elif isinstance(sp, (int, float)):
+                    style_line_spacing = round(float(sp) * 16, 2)
+                else:
+                    style_line_spacing = round(Length(sp, 0).pt, 2)
+        except Exception:
+            pass
+
+        # 读取样式的对齐
+        style_alignment = None
+        try:
+            if style.paragraph_format and style.paragraph_format.alignment is not None:
+                from docx.enum.text import WD_ALIGN_PARAGRAPH
+                _map = {
+                    WD_ALIGN_PARAGRAPH.LEFT: "left",
+                    WD_ALIGN_PARAGRAPH.CENTER: "center",
+                    WD_ALIGN_PARAGRAPH.RIGHT: "right",
+                    WD_ALIGN_PARAGRAPH.JUSTIFY: "justify",
+                }
+                style_alignment = _map.get(style.paragraph_format.alignment)
+        except Exception:
+            pass
+
+        # 读取样式的首行缩进
+        style_indent = None
+        try:
+            if style.paragraph_format and style.paragraph_format.first_line_indent:
+                from docx.shared import Length as L
+                style_indent = round(L(style.paragraph_format.first_line_indent, 0).pt, 1)
+        except Exception:
+            pass
+
+        # 应用 fallback：run 没有直接格式时用样式值
+        for run in runs:
+            if run.format.font_size_pt is None and style_font_size:
+                run.format.font_size_pt = style_font_size
+            if not run.format.font_name and style_font_name:
+                run.format.font_name = style_font_name
+
+        # 段落级格式 fallback
+        if para_format.line_spacing_pt is None and style_line_spacing:
+            para_format.line_spacing_pt = style_line_spacing
+        if para_format.alignment is None and style_alignment:
+            para_format.alignment = style_alignment
+        if para_format.first_line_indent_pt is None and style_indent:
+            para_format.first_line_indent_pt = style_indent
+
+    except Exception:
+        pass
+
 
 def _parse_paragraph_format(para) -> ParagraphFormat:
     """Parse paragraph-level formatting comprehensively."""

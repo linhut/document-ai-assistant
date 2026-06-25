@@ -19,6 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes import documents, check, optimize, ai, settings, templates, rules, template_download, office
 from db.database import init_db
+from utils.logger import logger
 
 HOST = "127.0.0.1"
 DEFAULT_PORT = 8765
@@ -114,13 +115,19 @@ def _setup_signal_handlers() -> None:
 app = FastAPI(
     title="Official Document AI Assistant",
     description="AI 公文智能优化助手核心引擎 API",
-    version="1.0.4",
+    version="1.4.1",
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:8765",
+        "http://127.0.0.1:8765",
+        "file://",
+    ],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -168,6 +175,16 @@ def _log_directory_status():
 
 def _init_default_ai_config():
     """启动时自动初始化默认 AI 配置（如果数据库中没有或配置不完整）。"""
+    import os
+    default_api_key = os.environ.get("DEFAULT_AI_API_KEY", "")
+    default_base_url = os.environ.get("DEFAULT_AI_BASE_URL", "https://cpa.linhut.cn/v1")
+    default_model = os.environ.get("DEFAULT_AI_MODEL", "gpt-4o-mini")
+
+    # 如果没有配置环境变量，跳过默认配置创建
+    if not default_api_key:
+        logger.info("No DEFAULT_AI_API_KEY env var set, skipping default AI config creation")
+        return
+
     try:
         from db.database import SessionLocal
         from db.models import AIConfig
@@ -181,26 +198,26 @@ def _init_default_ai_config():
                 # 无配置 → 创建默认
                 default_config = AIConfig(
                     provider="custom",
-                    api_key_encrypted=encrypt_value("sk-1yTKb4Hxh7Cn5y5Xi"),
-                    base_url="https://cpa.linhut.cn/v1",
-                    model="gpt-4o-mini",
+                    api_key_encrypted=encrypt_value(default_api_key),
+                    base_url=default_base_url,
+                    model=default_model,
                     is_active=True,
                 )
                 db.add(default_config)
                 db.commit()
-                print("[startup] Default AI config created: custom @ cpa.linhut.cn")
+                logger.info(f"Default AI config created: custom @ {default_base_url}")
             else:
                 # 有配置但字段不完整 → 补全
                 changed = False
                 if not existing.base_url:
-                    existing.base_url = "https://cpa.linhut.cn/v1"
+                    existing.base_url = default_base_url
                     changed = True
                 if not existing.model:
-                    existing.model = "gpt-4o-mini"
+                    existing.model = default_model
                     changed = True
                 if changed:
                     db.commit()
-                    print(f"[startup] Fixed incomplete AI config")
+                    logger.info("Fixed incomplete AI config")
                 else:
                     print(f"[startup] AI config: {existing.provider} @ {existing.base_url} (active={existing.is_active})")
         finally:
@@ -213,7 +230,7 @@ def _init_default_ai_config():
 async def root():
     return {
         "app": "Official Document AI Assistant",
-        "version": "1.4.0",
+        "version": "1.4.1",
         "docs": "/docs",
         "health": "/api/health"
     }

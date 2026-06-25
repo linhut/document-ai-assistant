@@ -20,8 +20,48 @@ from utils.logger import logger
 
 _rule_engine = RuleEngine()
 
+
+def clear_rule_cache() -> None:
+    """清除规则引擎缓存，供外部模块调用。"""
+    _rule_engine.clear_cache()
+
 # 输出文件名后缀
 _OPTIMIZED_SUFFIX = "_optimized.docx"
+
+# 文件名→文档类型映射（基于关键词）
+_TYPE_KEYWORDS: dict[str, str] = {
+    "命令": "command", "令": "command",
+    "决定": "decision",
+    "公告": "notice_public",
+    "通告": "announcement",
+    "通知": "notice",
+    "通报": "bulletin",
+    "议案": "bill",
+    "报告": "report",
+    "请示": "request",
+    "批复": "reply",
+    "函": "letter",
+    "纪要": "minutes", "会议纪要": "meeting",
+    "决议": "resolution",
+    "指示": "instruction",
+    "制度": "regulation",
+    "公报": "communique",
+    "意见": "opinion",
+    "总结": "summary",
+    "方案": "work_plan", "计划": "work_plan",
+    "桌签": "table_sign",
+    "技术方案": "technical_proposal",
+}
+
+
+def _detect_doc_type(filename: str) -> str:
+    """根据文件名关键词推断文档类型，无法识别时返回 'notice'。"""
+    stem = Path(filename).stem
+    # 按关键词长度降序匹配（"会议纪要" 优先于 "纪要"，"技术方案" 优先于 "方案"）
+    for keyword in sorted(_TYPE_KEYWORDS, key=len, reverse=True):
+        if keyword in stem:
+            return _TYPE_KEYWORDS[keyword]
+    return "notice"
 
 
 def _safe_filename(filename: str) -> str:
@@ -56,7 +96,7 @@ def upload_document(db: Session, file_path: Path, filename: str) -> Document:
         filename=safe_name,
         file_path=str(dest),
         file_hash=doc_hash,
-        document_type="notice",
+        document_type=_detect_doc_type(filename),
         status="uploaded",
         page_count=1,
         paragraph_count=paragraph_count,
@@ -88,7 +128,7 @@ def check_document(db: Session, doc_id: int, doc_type: str | None = None) -> dic
         model = parse_docx(doc.file_path)
     except Exception as e:
         logger.error(f"parse_docx failed for doc {doc_id}: {e}")
-        raise ValueError(f"文档解析失败，请确认文件格式正确（.docx）: {str(e)[:100]}")
+        raise ValueError(f"文档解析失败，请确认文件格式正确（.docx/.doc/.wps）: {str(e)}")
 
     # Rule-based checks using RuleEngine
     try:
@@ -165,7 +205,7 @@ def optimize_document(
         model = parse_docx(doc.file_path)
     except Exception as e:
         logger.error(f"parse_docx failed for doc {doc_id} during optimize: {e}")
-        raise ValueError(f"文档解析失败，请确认文件格式正确（.docx）: {str(e)[:100]}")
+        raise ValueError(f"文档解析失败，请确认文件格式正确（.docx/.doc/.wps）: {str(e)}")
 
     # 规则检查 + 修复
     try:
@@ -176,7 +216,7 @@ def optimize_document(
             fixed_model = model
     except Exception as e:
         logger.error(f"RuleEngine failed for doc {doc_id}, type={doc_type}: {e}")
-        raise ValueError(f"规则引擎处理失败: {str(e)[:100]}")
+        raise ValueError(f"规则引擎处理失败: {str(e)}")
 
     # 生成优化后的文档
     out_name = Path(doc.filename).stem + _OPTIMIZED_SUFFIX
@@ -185,7 +225,7 @@ def optimize_document(
         generate_docx(fixed_model, str(out_path))
     except Exception as e:
         logger.error(f"generate_docx failed for doc {doc_id}: {e}")
-        raise ValueError(f"文档生成失败: {str(e)[:100]}")
+        raise ValueError(f"文档生成失败: {str(e)}")
 
     # 更新数据库（带 rollback 保护）
     try:

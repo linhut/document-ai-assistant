@@ -4,6 +4,38 @@
 
 ---
 
+## [1.4.1] - 2026-06-25
+
+### 预览空白修复（P0）
+
+- **A4PreviewModal 错误处理** — catch 块不再静默吞错，改为显示错误信息 + 重试按钮
+- **空段落状态** — A4Preview 和 A4PreviewModal 均增加 paragraphs.length===0 判断，显示"暂无预览内容"
+- **路径解析增强** — preview 和 download 端点增加 OUTPUT_DIR 文件名回退查找，兼容绝对路径失效场景
+
+### 规则引擎按文档类型优化（P0）
+
+- **22 个 YAML 规则文件清理** — 移除与 _common.yaml 重复的格式规则和 check/fix_rules，每个文件仅保留类型特有内容检查
+- **manager.py 去重合并** — _deep_merge 改为按 field/target+action 去重，不再产生重复检查和修复
+- **一级标题对齐修正** — heading_1 从 center 改为 left（GB/T 9704 要求左空二字）
+- **补充 GB/T 9704 规则** — 新增页码格式检查（CHK-C023/C024）
+- **文档类型自动检测** — upload_document 根据文件名关键词推断类型（通知/请示/报告等），不再全部默认 notice
+
+### 安全修复（P0）
+
+- **API Key 移除硬编码** — 默认密钥改为环境变量 DEFAULT_AI_API_KEY 注入，源码不再包含明文密钥
+- **CORS 配置收紧** — allow_origins 从 "*" 改为 localhost 白名单，allow_credentials 改为 False
+- **前端密钥移除** — AISettings 页面不再显示明文测试 KEY
+
+### 后端修复（P1）
+
+- **版本号统一** — FastAPI/health/office 版本统一为 1.4.0
+- **规则缓存失效** — rules.py 的 PUT/DELETE/import 操作后自动清除引擎缓存
+- **错误消息不截断** — ValueError 消息和 AI raw_response 不再截断
+- **模板写入正确目录** — create_template 写入 USER_RULES_DIR 而非只读的 RULES_DIR
+- **临时文件清理** — 上传完成后删除 TEMP_DIR 中的临时文件
+
+---
+
 ## [1.0.5] - 2026-06-25
 
 ### AI 分析全面升级

@@ -14,6 +14,7 @@ import TemplateRules from './pages/TemplateRules';
 import Rules from './pages/Rules';
 import AISettings from './pages/AISettings';
 import About from './pages/About';
+import A4Preview from './pages/A4Preview';
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
             <Route path="/templates/:templateId/rules" element={<TemplateRules />} />
             <Route path="/rules" element={<Rules />} />
             <Route path="/settings/ai" element={<AISettings />} />
+            <Route path="/document/preview" element={<A4Preview />} />
             <Route path="/about" element={<About />} />
           </Routes>
         </ErrorBoundary>

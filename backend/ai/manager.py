@@ -33,12 +33,13 @@ _PROVIDER_REGISTRY: dict[str, type[AIProvider]] = {
     "custom": CustomProvider,
 }
 
-# 默认内置配置（聚合服务）
+# 默认内置配置（聚合服务）— 密钥通过环境变量注入，不硬编码
+import os
 DEFAULT_PROVIDER_CONFIG = {
     "provider": "openai",
-    "base_url": "https://cpa.linhut.cn/v1",
-    "api_key": "sk-1yTKb4Hxh7Cn5y5Xi",
-    "model": "gpt-4o-mini",
+    "base_url": os.environ.get("DEFAULT_AI_BASE_URL", "https://cpa.linhut.cn/v1"),
+    "api_key": os.environ.get("DEFAULT_AI_API_KEY", ""),
+    "model": os.environ.get("DEFAULT_AI_MODEL", "gpt-4o-mini"),
 }
 
 

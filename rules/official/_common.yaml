@@ -150,11 +150,11 @@ check_rules:
     message: "一级标题应使用三号字(16pt)（GB/T 9704标准）"
 
   - id: CHK-C022
-    name: "一级标题居中检查"
+    name: "一级标题左对齐检查"
     severity: P1
     field: heading_1.align
-    expected: "center"
-    message: "一级标题应居中排列"
+    expected: "left"
+    message: "一级标题应左空二字编排（GB/T 9704标准）"
 
   # --- 二级标题检查 (CHK-C010, C015) ---
   - id: CHK-C010
@@ -237,6 +237,21 @@ check_rules:
     expected: "right"
     message: "成文日期应右空四字编排（GB/T 9704标准）"
 
+  # --- 页码检查 (CHK-C023~C024) ---
+  - id: CHK-C023
+    name: "页码格式检查"
+    severity: P1
+    field: page_number.font
+    expected: "宋体"
+    message: "页码应使用4号半角宋体阿拉伯数字（GB/T 9704标准）"
+
+  - id: CHK-C024
+    name: "页码位置检查"
+    severity: P1
+    field: page_number.alignment
+    expected: "center"
+    message: "页码应居中标注，格式为"— X —"（GB/T 9704标准）"
+
 # ============================================================
 #  通用修复规则（共16条）
 # ============================================================
@@ -314,6 +329,12 @@ fix_rules:
     target: heading_1
     value: 16pt
 
+  - id: FIX-C021
+    ref_check: CHK-C022
+    action: set_alignment
+    target: heading_1
+    value: "left"
+
   # --- 二级标题修复 ---
   - id: FIX-C007
     ref_check: CHK-C010
@@ -334,6 +355,17 @@ fix_rules:
     target: heading_3
     value: "仿宋_GB2312"
 
+  - id: FIX-C022
+    ref_check: CHK-C020
+    action: set_size
+    target: heading_3
+    value: 16pt
+
+  - id: FIX-C023
+    action: set_bold
+    target: heading_3
+    value: true
+
   # --- 落款和日期修复 ---
   - id: FIX-C013
     ref_check: CHK-C016
@@ -348,4 +380,12 @@ fix_rules:
 
   - id: FIX-C005
     action: remove_extra_blank_lines
+    target: all
+
+  - id: FIX-C019
+    action: normalize_punctuation
+    target: all
+
+  - id: FIX-C020
+    action: normalize_headings
     target: all

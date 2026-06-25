@@ -1,0 +1,35 @@
+template_name: 技术方案
+document_type: technical_proposal
+
+# --- 技术方案特有格式覆盖 ---
+# 正文可使用较小字号（四号/14pt），区别于标准公文的三号/16pt
+body:
+  size: 14pt
+
+# --- 技术方案特有内容检查 ---
+check_rules:
+  - id: CHK-TP001
+    name: 技术背景检查
+    severity: P1
+    field: content.background
+    expected: 包含技术背景
+    message: 技术方案应包含项目背景和技术现状
+
+  - id: CHK-TP002
+    name: 方案对比检查
+    severity: P1
+    field: content.alternatives
+    expected: 有方案对比
+    message: 技术方案应有多种方案的对比分析
+
+  - id: CHK-TP003
+    name: 实施计划检查
+    severity: P1
+    field: content.implementation_plan
+    expected: 有实施计划
+    message: 技术方案应包含详细的实施计划和时间表
+fix_rules:
+  - id: FIX-TP001
+    action: set_size
+    target: body
+    value: 14pt

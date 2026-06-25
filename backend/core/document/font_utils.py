@@ -253,29 +253,50 @@ def validate_font_name(font_name: str | None) -> bool:
 
 def validate_document_fonts(doc) -> list[dict]:
     """
-    检查整个文档中是否存在无效字体。
-    用于生成后的质量检查。
+    检查整个文档中是否存在无效字体（含表格、页眉页脚）。
+    用于生成后的质量检查和自动修复。
 
     Args:
         doc: python-docx Document 对象
 
     Returns:
-        所有发现的无效字体报告列表
+        所有发现的无效字体报告列表（含 run_obj 引用用于自动修复）
     """
     issues = []
 
-    for para_idx, para in enumerate(doc.paragraphs):
-        for run_idx, run in enumerate(para.runs):
+    def _check_runs(runs, location_prefix):
+        for run_idx, run in enumerate(runs):
             font_info = detect_font_from_run(run)
             for attr in ["ascii", "hAnsi", "eastAsia", "cs"]:
                 fname = font_info.get(attr)
                 if fname and not validate_font_name(fname):
                     issues.append({
-                        "paragraph": para_idx,
+                        "paragraph": location_prefix,
                         "run": run_idx,
                         "attribute": attr,
                         "font_name": fname,
                         "text": run.text[:50],
+                        "run_obj": run,  # 保留引用用于自动修复
                     })
+
+    # 1. 正文段落
+    for para_idx, para in enumerate(doc.paragraphs):
+        _check_runs(para.runs, f"body:{para_idx}")
+
+    # 2. 表格单元格
+    for tbl_idx, table in enumerate(doc.tables):
+        for row_idx, row in enumerate(table.rows):
+            for col_idx, cell in enumerate(row.cells):
+                for para in cell.paragraphs:
+                    _check_runs(para.runs, f"table:{tbl_idx}.{row_idx}.{col_idx}")
+
+    # 3. 页眉页脚
+    for section_idx, section in enumerate(doc.sections):
+        if section.header:
+            for para in section.header.paragraphs:
+                _check_runs(para.runs, f"header:{section_idx}")
+        if section.footer:
+            for para in section.footer.paragraphs:
+                _check_runs(para.runs, f"footer:{section_idx}")
 
     return issues

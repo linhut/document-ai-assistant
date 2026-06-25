@@ -415,7 +415,7 @@ export default function AISettings() {
             <p>• Claude Provider 使用 Anthropic Messages API，需对应的 API Key</p>
             <p>• Ollama 为本地模型，需先在本地安装并启动 Ollama 服务</p>
             <p className="text-xs text-primary-400 mt-2 pt-2 border-t border-primary-200">
-              提供自建测试KEY：sk-1yTKb4Hxh7Cn5y5Xi
+              如需测试KEY，请联系管理员获取
             </p>
           </CardContent>
         </Card>

@@ -1,7 +1,7 @@
 # This file is part of the Official Document AI Assistant.
 # (c) 2026 Jose AI (https://www.linhut.cn)
 # Licensed under the MIT License. See the LICENSE file for details.
-﻿"""
+"""
 Rule Manager: unified rule loading with priority layering.
 
 Priority: user > custom > official
@@ -92,14 +92,39 @@ def _load_yaml(path: Path) -> dict:
 
 
 def _deep_merge(base: dict, overlay: dict) -> None:
-    """Merge overlay into base in-place, with list concatenation for fix_rules/check_rules."""
+    """Merge overlay into base in-place, with deduplication for fix_rules/check_rules."""
     for key, val in overlay.items():
         if key in ("fix_rules", "check_rules") and isinstance(val, list):
-            base.setdefault(key, []).extend(val)
+            existing = base.setdefault(key, [])
+            if key == "check_rules":
+                _dedup_extend(existing, val, dedup_key=lambda r: r.get("field"))
+            elif key == "fix_rules":
+                _dedup_extend(existing, val, dedup_key=lambda r: (r.get("target"), r.get("action")))
         elif key in base and isinstance(base[key], dict) and isinstance(val, dict):
             _deep_merge(base[key], val)
         else:
             base[key] = copy.deepcopy(val)
+
+
+def _dedup_extend(base_list: list, new_items: list, dedup_key) -> None:
+    """Extend base_list with new_items, replacing duplicates by dedup_key."""
+    existing_keys = {dedup_key(item) for item in base_list if dedup_key(item) is not None}
+    # First add items whose key is already in base (override)
+    for item in new_items:
+        k = dedup_key(item)
+        if k is not None and k in existing_keys:
+            # Replace existing item with same key
+            for i, existing in enumerate(base_list):
+                if dedup_key(existing) == k:
+                    base_list[i] = copy.deepcopy(item)
+                    break
+    # Then add truly new items
+    for item in new_items:
+        k = dedup_key(item)
+        if k is None or k not in existing_keys:
+            base_list.append(copy.deepcopy(item))
+            if k is not None:
+                existing_keys.add(k)
 
 
 def save_rule(key: str, content: dict, source_type: str = "user") -> bool:

@@ -23,6 +23,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { apiClient, downloadFile } from '@/api/client';
 import { useToast } from '@/components/ui/toast';
 import { detectActiveAI, type AIStatus } from '@/lib/ai-status';
+import A4PreviewModal from '@/components/A4PreviewModal';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -126,6 +127,8 @@ export default function CheckCenter() {
   const [aiStatus, setAiStatus] = useState<AIStatus | null>(null);
   const [selectedAiIds, setSelectedAiIds] = useState<Set<number>>(new Set());
   const [isApplyingAi, setIsApplyingAi] = useState(false);
+  const [showA4Preview, setShowA4Preview] = useState(false);
+  const [a4RefreshKey, setA4RefreshKey] = useState(0);
   const aiTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   /* ---- 初始化 ---- */
@@ -199,6 +202,7 @@ export default function CheckCenter() {
       const r = await apiClient.post(`/api/optimize/${docId}`, payload);
       success('成功', `已应用 ${r.fixes_applied} 个修复`);
       setIsOptimized(true);
+      setA4RefreshKey(k => k + 1);
       if (docId) await fetchResults(docId);
     } catch (e: any) {
       showError('错误', '修复失败：' + (e.response?.data?.detail || '请重试'));
@@ -295,6 +299,7 @@ export default function CheckCenter() {
       if (r.success) {
         success('成功', r.message || `已应用 ${r.applied_count} 项建议`);
         setIsOptimized(true);
+        setA4RefreshKey(k => k + 1);
         setSelectedAiIds(new Set());
         if (docId) await fetchResults(docId);
       } else {
@@ -340,6 +345,11 @@ export default function CheckCenter() {
           {isOptimized && (
             <Button variant="outline" onClick={handleDownload}>
               <Download className="h-4 w-4 mr-1" />下载优化文档
+            </Button>
+          )}
+          {docId && (
+            <Button variant="outline" onClick={() => setShowA4Preview(true)}>
+              <FileText className="h-4 w-4 mr-1" />A4 预览
             </Button>
           )}
         </div>}
@@ -623,6 +633,15 @@ export default function CheckCenter() {
           </div>
         </div>
       </div>
+
+      {/* A4 预览弹窗 */}
+      {showA4Preview && docId && (
+        <A4PreviewModal
+          docId={docId}
+          refreshKey={a4RefreshKey}
+          onClose={() => setShowA4Preview(false)}
+        />
+      )}
     </div>
   );
 }
