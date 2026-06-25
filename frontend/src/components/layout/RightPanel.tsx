@@ -1,3 +1,8 @@
+/*
+ * This file is part of the Official Document AI Assistant.
+ * (c) 2026 Jose AI (https://www.linhut.cn)
+ * Licensed under the MIT License. See the LICENSE file for details.
+ */
 /**
  * RightPanel - 右侧辅助面板（280px，静态渲染）
  * 由 AppLayout 控制是否渲染（≥1440px 时渲染）

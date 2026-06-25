@@ -1,3 +1,6 @@
+# This file is part of the Official Document AI Assistant.
+# (c) 2026 Jose AI (https://www.linhut.cn)
+# Licensed under the MIT License. See the LICENSE file for details.
 """
 一键验证脚本 — 测试文档生成 + 字体 + 后端API
 用法：cd backend && python verify_all.py

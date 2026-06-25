@@ -1,3 +1,6 @@
+# This file is part of the Official Document AI Assistant.
+# (c) 2026 Jose AI (https://www.linhut.cn)
+# Licensed under the MIT License. See the LICENSE file for details.
 """
 Pydantic data models for the intermediate document representation.
 All operations work on this JSON model -- never directly on python-docx objects.

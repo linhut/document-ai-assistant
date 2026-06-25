@@ -22,6 +22,7 @@
 </p>
 
 <p align="center">
+  <a href="#功能界面">功能界面</a> ·
   <a href="#功能特性">功能特性</a> ·
   <a href="#快速开始">快速开始</a> ·
   <a href="#技术架构">技术架构</a> ·
@@ -30,6 +31,40 @@
   <a href="#开发日志">开发日志</a>
 </p>
  
+---
+
+## 🖥 功能界面
+
+<table>
+  <tr>
+    <td align="center"><b>工作台</b></td>
+    <td align="center"><b>文档处理</b></td>
+  </tr>
+  <tr>
+    <td><img src="https://github.com/user-attachments/assets/617ad742-75a6-4a98-938b-cb27819fb1d9" alt="工作台" width="400"></td>
+    <td><img src="https://github.com/user-attachments/assets/0cda25cd-707c-475c-b265-905b41984e43" alt="文档处理" width="400"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>校审中心</b></td>
+    <td align="center"><b>模板中心</b></td>
+  </tr>
+  <tr>
+    <td><img src="https://github.com/user-attachments/assets/17b4843a-a74b-471a-bb50-a19b754eb47b" alt="校审中心" width="400"></td>
+    <td><img src="https://github.com/user-attachments/assets/b98a7681-06c0-4ef9-b91d-fc6d7b2baa65" alt="模板中心" width="400"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>AI 配置</b></td>
+    <td align="center"><b>关于</b></td>
+  </tr>
+  <tr>
+    <td><img src="https://github.com/user-attachments/assets/d18e8bf0-1c3d-4ace-a5bb-22c8f57aade7" alt="AI 配置" width="400"></td>
+    <td>
+      <img src="https://github.com/user-attachments/assets/11131fc8-13fc-4ba5-b41b-49d692a4e46a" alt="关于" width="400"><br>
+      <img src="https://github.com/user-attachments/assets/28c057e1-fd2a-4352-9d08-38f7ea8e9b59" alt="关于-详情" width="400">
+    </td>
+  </tr>
+</table>
+
 ---
 
 ## 📋 功能特性

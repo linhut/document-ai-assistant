@@ -1,3 +1,8 @@
+/*
+ * This file is part of the Official Document AI Assistant.
+ * (c) 2026 Jose AI (https://www.linhut.cn)
+ * Licensed under the MIT License. See the LICENSE file for details.
+ */
 /**
  * Templates - 模板中心（优化版 - 改进用户体验）
  */
