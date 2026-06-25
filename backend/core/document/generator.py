@@ -220,7 +220,8 @@ def _replace_paragraph_content(doc: Document, p_element, para_model: Paragraph):
 
 
 def _update_pPr(p_element, para_model: Paragraph):
-    """更新 <w:p> 元素的 <w:pPr> 段落属性。"""
+    """更新 <w:p> 元素的 <w:pPr> 段落属性。
+    关键原则：model 有值才替换，None 保留原文档格式不删除。"""
     fmt = para_model.format
 
     # 获取或创建 pPr
@@ -229,11 +230,11 @@ def _update_pPr(p_element, para_model: Paragraph):
         pPr = OxmlElement('w:pPr')
         p_element.insert(0, pPr)
 
-    # 对齐方式
-    jc = pPr.find(qn('w:jc'))
-    if jc is not None:
-        pPr.remove(jc)
+    # 对齐方式：仅当 model 有值时替换
     if fmt.alignment:
+        jc = pPr.find(qn('w:jc'))
+        if jc is not None:
+            pPr.remove(jc)
         jc = OxmlElement('w:jc')
         alignment_map = {
             "left": "left", "center": "center",
@@ -242,20 +243,17 @@ def _update_pPr(p_element, para_model: Paragraph):
         jc.set(qn('w:val'), alignment_map.get(fmt.alignment, "left"))
         pPr.append(jc)
 
-    # 缩进
-    ind = pPr.find(qn('w:ind'))
-    if ind is not None:
-        pPr.remove(ind)
+    # 缩进：仅当 model 有值时替换，否则保留原文档缩进
     has_indent = (fmt.first_line_indent_pt is not None or
                   fmt.left_indent_pt is not None or
                   fmt.right_indent_pt is not None)
     if has_indent:
+        ind = pPr.find(qn('w:ind'))
+        if ind is not None:
+            pPr.remove(ind)
         ind = OxmlElement('w:ind')
         if fmt.first_line_indent_pt is not None:
-            # 转换为 twips (1 pt = 20 twips)
             ind.set(qn('w:firstLine'), str(int(fmt.first_line_indent_pt * 20)))
-            # 同时写入字符单位（中文文档兼容性，公文标准字号16pt）
-            # 1字符 = 字号磅值，2em = 2字符 = 200（百分之一字符）
             chars = int(round(fmt.first_line_indent_pt / 16 * 100))
             if chars > 0:
                 ind.set(qn('w:firstLineChars'), str(chars))
@@ -265,24 +263,25 @@ def _update_pPr(p_element, para_model: Paragraph):
             ind.set(qn('w:right'), str(int(fmt.right_indent_pt * 20)))
         pPr.append(ind)
 
-    # 行距
-    spacing = pPr.find(qn('w:spacing'))
-    if spacing is not None:
-        pPr.remove(spacing)
+    # 行距：仅当 model 有值时替换，否则保留原文档行距
     has_spacing = (fmt.line_spacing_pt is not None or
                    fmt.space_before_pt is not None or
                    fmt.space_after_pt is not None)
     if has_spacing:
+        spacing = pPr.find(qn('w:spacing'))
+        if spacing is not None:
+            pPr.remove(spacing)
         spacing = OxmlElement('w:spacing')
         if fmt.line_spacing_pt is not None:
             spacing_pt = max(6, min(200, fmt.line_spacing_pt))
             rule = fmt.line_spacing_rule or "exact"
             if rule == "multiple":
                 # 倍数行距：w:line 值为 240 分之一行（如 1.5x = 360）
-                # line_spacing_pt 存储的是转换后的pt值，需要反算回倍数
-                # 公文标准字号16pt，1em=16pt，1倍行距≈240
-                spacing.set(qn('w:line'), str(int(spacing_pt * 20)))
-                # multiple模式不设置w:lineRule（或设为"auto"）
+                # line_spacing_pt 存储的是 pt 值，需要反算回倍数
+                # 公文标准字号16pt，1倍行距=240（即 16pt * 15 = 240）
+                # pt → 240ths: value = spacing_pt / 16 * 240
+                line_val = int(round(spacing_pt / 16 * 240))
+                spacing.set(qn('w:line'), str(line_val))
                 spacing.set(qn('w:lineRule'), 'auto')
             elif rule == "atLeast":
                 spacing.set(qn('w:line'), str(int(spacing_pt * 20)))
