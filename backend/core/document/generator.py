@@ -77,14 +77,11 @@ def generate_docx(model: DocumentModel, output_path: Path | str) -> Path:
     # 5. Update metadata
     _update_metadata(doc, model)
 
-    # 6. Post-generation font validation
+    # 6. Post-generation font validation & auto-fix
     font_issues = validate_document_fonts(doc)
     if font_issues:
-        logger.warning(f"Found {len(font_issues)} font issues after generation:")
-        for fi in font_issues[:5]:
-            logger.warning(f"  para={fi['paragraph']}, run={fi['run']}, "
-                           f"attr={fi['attribute']}, font={fi['font_name']}, "
-                           f"text='{fi['text']}'")
+        logger.warning(f"Found {len(font_issues)} font issues, auto-fixing...")
+        _auto_fix_fonts(doc, font_issues)
 
     # 7. Save
     doc.save(str(output_path))
@@ -96,6 +93,38 @@ def generate_docx(model: DocumentModel, output_path: Path | str) -> Path:
 # ---------------------------------------------------------------------------
 #  Document Defaults & Page Setup
 # ---------------------------------------------------------------------------
+
+def _auto_fix_fonts(doc: Document, font_issues: list[dict]):
+    """自动替换检测到的无效字体（MS Gothic 等）为合规字体。"""
+    from core.document.font_utils import FONT_FALLBACK_MAP, INVALID_FONT_PATTERNS
+
+    def _get_replacement(attr: str, invalid_font: str) -> str:
+        """根据属性类型和无效字体名，返回合规替换字体。"""
+        # 先查 fallback map
+        fallback = FONT_FALLBACK_MAP.get(invalid_font)
+        if fallback:
+            return fallback
+        # 未命中则按属性类型返回默认值
+        if attr == "eastAsia" or attr == "cs":
+            return BODY_FONT
+        return LATIN_FONT
+
+    fixed_count = 0
+    seen_runs = set()
+    for issue in font_issues:
+        run = issue.get("run_obj")
+        if run is None or id(run) in seen_runs:
+            continue
+        seen_runs.add(id(run))
+        try:
+            set_run_font(run, BODY_FONT)
+            fixed_count += 1
+        except Exception as e:
+            logger.debug(f"Auto-fix font failed: {e}")
+
+    if fixed_count:
+        logger.info(f"Auto-fixed {fixed_count} runs with invalid fonts")
+
 
 def _apply_document_defaults(doc: Document):
     """
@@ -340,10 +369,12 @@ def _add_runs_via_xml(p_element, para_model: Paragraph):
             rPr = OxmlElement('w:rPr')
             fmt = run_model.format
             if fmt.font_name:
+                # 使用统一的字体设置，区分拉丁/中文字体
                 rFonts = OxmlElement('w:rFonts')
-                rFonts.set(qn('w:ascii'), fmt.font_name)
-                rFonts.set(qn('w:hAnsi'), fmt.font_name)
+                rFonts.set(qn('w:ascii'), LATIN_FONT)
+                rFonts.set(qn('w:hAnsi'), LATIN_FONT)
                 rFonts.set(qn('w:eastAsia'), fmt.font_name)
+                rFonts.set(qn('w:cs'), LATIN_FONT)
                 rPr.append(rFonts)
             if fmt.font_size_pt:
                 sz = OxmlElement('w:sz')
@@ -362,6 +393,14 @@ def _add_runs_via_xml(p_element, para_model: Paragraph):
             p_element.append(r)
     elif para_model.text:
         r = OxmlElement('w:r')
+        rPr = OxmlElement('w:rPr')
+        rFonts = OxmlElement('w:rFonts')
+        rFonts.set(qn('w:ascii'), LATIN_FONT)
+        rFonts.set(qn('w:hAnsi'), LATIN_FONT)
+        rFonts.set(qn('w:eastAsia'), BODY_FONT)
+        rFonts.set(qn('w:cs'), LATIN_FONT)
+        rPr.append(rFonts)
+        r.append(rPr)
         t = OxmlElement('w:t')
         t.text = para_model.text
         t.set(qn('xml:space'), 'preserve')
@@ -582,13 +621,18 @@ def _apply_paragraph_format(para, para_model: Paragraph):
     # Line spacing
     if fmt.line_spacing_pt is not None:
         spacing_pt = max(6, min(200, fmt.line_spacing_pt))
-        pf.line_spacing = Pt(spacing_pt)
         rule = fmt.line_spacing_rule or "exact"
         if rule == "multiple":
+            # MULTIPLE 模式：python-docx 期望倍数（如 1.5），而非 Pt 值
+            # 公文标准字号 16pt，行距 28.95pt → 28.95/16 ≈ 1.8
+            multiple = spacing_pt / 16.0
+            pf.line_spacing = multiple
             pf.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
         elif rule == "atLeast":
+            pf.line_spacing = Pt(spacing_pt)
             pf.line_spacing_rule = WD_LINE_SPACING.AT_LEAST
         else:
+            pf.line_spacing = Pt(spacing_pt)
             pf.line_spacing_rule = WD_LINE_SPACING.EXACTLY
 
 

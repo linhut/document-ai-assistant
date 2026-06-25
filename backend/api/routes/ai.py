@@ -260,7 +260,7 @@ async def ai_analyze(doc_id: int, provider: str = "openai", document_type: str =
             "success": True,
             "provider": provider_name,
             "issues": result.issues,
-            "raw_response": result.raw_response[:500],
+            "raw_response": result.raw_response,
         }
     except Exception as e:
         logger.error(f"AI analyze failed: {e}")

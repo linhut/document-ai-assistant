@@ -1,101 +1,19 @@
 template_name: 批复
 document_type: reply
-title:
-  font: 方正小标宋简体
-  font_fallback: SimSun
-  size: 22pt
-  align: center
-  bold: false
-  spacing_after: 20
-body:
-  font: 仿宋_GB2312
-  font_fallback: FangSong
-  size: 16pt
-  line_spacing: 28.95pt
-  first_line_indent: 2em
-  align: justify
+
+# --- 批复特有内容检查 ---
 check_rules:
-- id: CHK-RP01
-  name: 标题字体检查
-  severity: P0
-  field: title.font
-  expected: 方正小标宋简体
-  message: 标题应使用方正小标宋简体
-- id: CHK-RP02
-  name: 标题字号检查
-  severity: P0
-  field: title.size
-  expected: 22pt
-  message: 标题应使用二号字(22pt)
-- id: CHK-RP03
-  name: 标题居中检查
-  severity: P0
-  field: title.align
-  expected: center
-  message: 标题应居中对齐
-- id: CHK-RP04
-  name: 正文字体检查
-  severity: P0
-  field: body.font
-  expected: 仿宋_GB2312
-  message: 正文应使用仿宋_GB2312字体
-- id: CHK-RP05
-  name: 正文字号检查
-  severity: P0
-  field: body.size
-  expected: 16pt
-  message: 正文应使用三号字(16pt)
-- id: CHK-RP06
-  name: 批复结语检查
-  severity: P1
-  field: body.conclusion
-  expected: 此复
-  message: 批复应使用规范结语'此复'
-- id: CHK-RP07
-  severity: P1
-  field: body.first_line_indent
-  expected: 2em
-  name: 正文首行缩进
-  message: 正文首行应缩进2字符
-- id: CHK-RP08
-  severity: P1
-  field: body.line_spacing
-  expected: 28.95pt
-  name: 正文行距
-  message: 正文行距应为固定值28-29磅
-fix_rules:
-- id: FIX-RP01
-  ref_check: CHK-RP01
-  action: set_font
-  target: doc_title
-  value: 方正小标宋简体
-- id: FIX-RP02
-  ref_check: CHK-RP02
-  action: set_size
-  target: doc_title
-  value: 22pt
-- id: FIX-RP03
-  ref_check: CHK-RP03
-  action: set_align
-  target: doc_title
-  value: center
-- id: FIX-RP04
-  ref_check: CHK-RP04
-  action: set_font
-  target: body
-  value: 仿宋_GB2312
-- id: FIX-RP05
-  ref_check: CHK-RP05
-  action: set_size
-  target: body
-  value: 16pt
-- id: FIX-RP01
-  ref_check: CHK-RP07
-  action: set_first_line_indent
-  target: body
-  value: 2em
-- id: FIX-RP01
-  ref_check: CHK-RP08
-  action: set_line_spacing
-  target: body
-  value: 28.95pt
+  - id: CHK-RP001
+    name: 批复对象检查
+    severity: P0
+    field: content.reply_to
+    expected: 引述请示标题
+    message: 批复开头应引述下级机关请示的标题和文号
+
+  - id: CHK-RP002
+    name: 批复结语检查
+    severity: P2
+    field: ending.check
+    expected: 包含规范结语
+    message: 批复应以"此复"、"特此批复"等结语结尾
+fix_rules: []

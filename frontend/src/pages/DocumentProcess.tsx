@@ -77,20 +77,25 @@ export default function DocumentProcess() {
   const governmentTypes = documentTypes.filter(t => t.category === 'government');
   const commonTypes = documentTypes.filter(t => t.category === 'common');
 
+  const isSupportedFormat = (name: string) => {
+    const ext = name.toLowerCase().split('.').pop();
+    return ext === 'docx' || ext === 'doc' || ext === 'wps';
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
-    if (selectedFile && selectedFile.name.endsWith('.docx')) {
+    if (selectedFile && isSupportedFormat(selectedFile.name)) {
       setFile(selectedFile);
       setErrorMessage('');
     } else {
-      warning('提示', '请选择 .docx 格式的 Word 文档');
+      warning('提示', '请选择 .docx、.doc 或 .wps 格式的文档');
     }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile && droppedFile.name.endsWith('.docx')) {
+    if (droppedFile && isSupportedFormat(droppedFile.name)) {
       setFile(droppedFile);
       setErrorMessage('');
     }
@@ -178,7 +183,7 @@ export default function DocumentProcess() {
                   或点击选择 Word 文档
                 </p>
                 <p className="text-xs text-primary-400 mt-4">
-                  支持格式：.docx | 建议 10MB 以内
+                  支持格式：.docx / .doc / .wps | 建议 10MB 以内
                 </p>
                 <p className="text-xs text-status-warning mt-1">
                   大型文档（超过10MB）建议使用 WPS/Word 插件
@@ -187,7 +192,7 @@ export default function DocumentProcess() {
               <input
                 id="file-input"
                 type="file"
-                accept=".docx"
+                accept=".docx,.doc,.wps"
                 className="hidden"
                 onChange={handleFileSelect}
               />

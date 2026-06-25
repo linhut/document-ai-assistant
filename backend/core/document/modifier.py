@@ -57,12 +57,20 @@ def _select_paragraphs(model: DocumentModel, target: str) -> list[Paragraph]:
     elif target == "heading_3":
         return [p for p in model.paragraphs if p.is_heading and p.heading_level == 3]
     elif target == "body":
-        # 排除签名段落（最后2个非空段落）
+        # 优先使用 role 字段，回退到启发式
+        role_body = [p for p in model.paragraphs if p.role == 'body']
+        if role_body:
+            return role_body
+        # 回退：排除签名段落（最后2个非空段落）
         non_empty = [p for p in model.paragraphs if p.text.strip()]
         sig_set = set(id(p) for p in non_empty[-2:]) if len(non_empty) >= 2 else set()
         return [p for p in model.paragraphs
                 if not p.is_heading and p.text.strip() and id(p) not in sig_set]
     elif target == "signature":
+        # 优先使用 role 字段
+        role_sig = [p for p in model.paragraphs if p.role in ('signature', 'date')]
+        if role_sig:
+            return role_sig
         non_empty = [p for p in model.paragraphs if p.text.strip()]
         return non_empty[-2:] if len(non_empty) >= 2 else non_empty
     elif target == "all":
@@ -78,40 +86,44 @@ def _select_paragraphs(model: DocumentModel, target: str) -> list[Paragraph]:
 
 def modify_font(model: DocumentModel, target: str, font_name: str) -> None:
     """
-    修改指定段落的字体名称（仅修改不匹配的 run）。
+    修改指定段落的字体名称。
+    无论当前值是否为 None，统一设置为目标字体。
     """
     if not font_name:
         return
     for para in _select_paragraphs(model, target):
         for run in para.runs:
-            if run.format.font_name and run.format.font_name != font_name:
+            if run.format.font_name != font_name:
                 run.format.font_name = font_name
 
 
 def modify_size(model: DocumentModel, target: str, size_pt: float | None) -> None:
-    """修改指定段落的字号（仅修改不匹配的 run）。"""
+    """修改指定段落的字号。无论当前值是否为 None，统一设置为目标字号。"""
     if size_pt is None:
         return
     for para in _select_paragraphs(model, target):
         for run in para.runs:
-            if run.format.font_size_pt and abs(run.format.font_size_pt - size_pt) > 0.5:
+            if run.format.font_size_pt is None or abs(run.format.font_size_pt - size_pt) > 0.5:
                 run.format.font_size_pt = size_pt
 
 
 def modify_alignment(model: DocumentModel, target: str, alignment: str) -> None:
-    """修改指定段落的对齐方式（仅修改不匹配的段落）。"""
+    """修改指定段落的对齐方式。无论当前值是否为 None，统一设置。"""
     alignment = alignment.lower()
     for para in _select_paragraphs(model, target):
-        if para.format.alignment and para.format.alignment != alignment:
+        if para.format.alignment != alignment:
             para.format.alignment = alignment
 
 
-def modify_line_spacing(model: DocumentModel, target: str, spacing_pt: float | None) -> None:
-    """修改指定段落的行距。"""
+def modify_line_spacing(model: DocumentModel, target: str, spacing_pt: float | None,
+                        spacing_rule: str | None = None) -> None:
+    """修改指定段落的行距。同时设置行距规则（exact/multiple）。"""
     if spacing_pt is None:
         return
     for para in _select_paragraphs(model, target):
         para.format.line_spacing_pt = spacing_pt
+        if spacing_rule:
+            para.format.line_spacing_rule = spacing_rule
 
 
 def modify_first_line_indent(model: DocumentModel, target: str, indent_pt: float | None) -> None:
@@ -120,6 +132,13 @@ def modify_first_line_indent(model: DocumentModel, target: str, indent_pt: float
         return
     for para in _select_paragraphs(model, target):
         para.format.first_line_indent_pt = indent_pt
+
+
+def modify_bold(model: DocumentModel, target: str, bold: bool) -> None:
+    """修改指定段落所有 run 的加粗状态。"""
+    for para in _select_paragraphs(model, target):
+        for run in para.runs:
+            run.format.bold = bold
 
 
 def modify_margins(model: DocumentModel, margins: dict[str, str | float]) -> None:
@@ -157,6 +176,172 @@ def remove_extra_blank_lines(model: DocumentModel) -> None:
 
     for idx in sorted(to_remove, reverse=True):
         model.paragraphs.pop(idx)
+
+
+# ---------------------------------------------------------------------------
+#  标点规范化（参考 GB/T 15834 标点符号用法）
+# ---------------------------------------------------------------------------
+
+# 半角→全角映射表（仅在中文语境中转换）
+_PUNCT_MAP = {
+    ',': '，',
+    ':': '：',
+    ';': '；',
+    '?': '？',
+    '!': '！',
+    '(': '（',
+    ')': '）',
+    '[': '【',
+    ']': '】',
+}
+
+# 句号特殊处理：仅在中文字符后转换 . → 。（避免破坏 URL、数字小数点）
+_PERIOD_RE = re.compile(r'([一-鿿　-〿＀-￯])\.(?=[^\d]|$)')
+
+# 中文标点后多余空格
+_PUNCT_SPACE_RE = re.compile(r'([，。；：！？）】])\s{2,}')
+
+# 中文标点前多余空格（逗号/句号前不应有空格）
+_PUNCT_BEFORE_SPACE_RE = re.compile(r'\s+([，。；：！？])')
+
+
+def normalize_punctuation(model: DocumentModel) -> int:
+    """
+    标点规范化：半角→全角，清理标点前后多余空格。
+    对每个 run 单独处理，保持 run 级格式不丢失。
+    返回总修改次数。
+    """
+    total_changes = 0
+    for para in model.paragraphs:
+        for run in para.runs:
+            if not run.text:
+                continue
+            original = run.text
+            text = run.text
+
+            # 1. 半角标点→全角（逐字符处理，避免破坏英文/URL）
+            result = []
+            for i, ch in enumerate(text):
+                if ch in _PUNCT_MAP:
+                    # 判断上下文：如果前后都是 ASCII 字母数字，则不转换（保护英文环境）
+                    prev_ch = text[i-1] if i > 0 else ''
+                    next_ch = text[i+1] if i < len(text)-1 else ''
+                    # 括号始终转换（中文文档中半角括号几乎总是错误的）
+                    if ch in '()[]':
+                        result.append(_PUNCT_MAP[ch])
+                    # 逗号/冒号/分号等：如果不在纯英文环境中则转换
+                    elif prev_ch.isascii() and next_ch.isascii() and prev_ch.strip() and next_ch.strip():
+                        result.append(ch)  # 保留半角（可能是英文环境）
+                    else:
+                        result.append(_PUNCT_MAP[ch])
+                else:
+                    result.append(ch)
+            text = ''.join(result)
+
+            # 2. 句号：仅中文字符后转换
+            text = _PERIOD_RE.sub(r'\1。', text)
+
+            # 3. 清理中文标点后多余空格
+            text = _PUNCT_SPACE_RE.sub(r'\1', text)
+
+            # 4. 清理中文标点前多余空格
+            text = _PUNCT_BEFORE_SPACE_RE.sub(r'\1', text)
+
+            if text != original:
+                changes = sum(1 for a, b in zip(original, text) if a != b)
+                total_changes += changes
+                run.text = text
+
+    return total_changes
+
+
+def normalize_heading_content(model: DocumentModel) -> int:
+    """
+    标题编号统一化：
+    - 一级标题：1、→ 一、（阿拉伯数字转中文）
+    - 二级标题：(一)→（一）（半角括号转全角）
+    - 三级标题：1．→ 1.（全角句号转半角）
+    - 四级标题：(1)→（1）（半角括号转全角）
+    返回修改次数。
+    """
+    changes = 0
+    for para in model.paragraphs:
+        if not para.text.strip():
+            continue
+        text = para.text.strip()
+
+        # 一级标题：1、xxx → 一、xxx
+        m = re.match(r'^(\d+)[、，](.+)', text)
+        if m and para.is_heading and (para.heading_level == 1 or para.heading_level is None):
+            num = int(m.group(1))
+            cn = _arabic_to_chinese(num)
+            if cn:
+                new_text = f'{cn}、{m.group(2)}'
+                if new_text != text:
+                    para.text = new_text
+                    if para.runs:
+                        para.runs[0].text = new_text
+                        for r in para.runs[1:]:
+                            r.text = ""
+                    changes += 1
+                continue
+
+        # 二级标题：(一)xxx → （一）xxx
+        m = re.match(r'^\(([一二三四五六七八九十]+)\)(.+)', text)
+        if m:
+            new_text = f'（{m.group(1)}）{m.group(2)}'
+            if new_text != text:
+                para.text = new_text
+                if para.runs:
+                    para.runs[0].text = new_text
+                    for r in para.runs[1:]:
+                        r.text = ""
+                changes += 1
+            continue
+
+        # 三级标题：1．xxx → 1.xxx（全角句号→半角）
+        m = re.match(r'^(\d+)[．。](.+)', text)
+        if m:
+            new_text = f'{m.group(1)}.{m.group(2)}'
+            if new_text != text:
+                para.text = new_text
+                if para.runs:
+                    para.runs[0].text = new_text
+                    for r in para.runs[1:]:
+                        r.text = ""
+                changes += 1
+            continue
+
+        # 四级标题：(1)xxx → （1）xxx
+        m = re.match(r'^\((\d+)\)(.+)', text)
+        if m:
+            new_text = f'（{m.group(1)}）{m.group(2)}'
+            if new_text != text:
+                para.text = new_text
+                if para.runs:
+                    para.runs[0].text = new_text
+                    for r in para.runs[1:]:
+                        r.text = ""
+                changes += 1
+
+    return changes
+
+
+def _arabic_to_chinese(n: int) -> str:
+    """阿拉伯数字转中文数字（1-99）。"""
+    if n < 1 or n > 99:
+        return ''
+    digits = '零一二三四五六七八九十'
+    if n <= 10:
+        return digits[n]
+    if n < 20:
+        return f'十{digits[n % 10]}' if n % 10 else '十'
+    tens = n // 10
+    ones = n % 10
+    result = f'{digits[tens]}十'
+    if ones:
+        result += digits[ones]
+    return result
 
 
 def replace_paragraph_text(model: DocumentModel, para_index: int, new_text: str) -> None:

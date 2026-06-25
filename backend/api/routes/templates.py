@@ -255,6 +255,15 @@ async def list_templates():
             "rule_file": "table_sign.yaml",
             "enabled": True
         },
+        {
+            "id": "technical_proposal",
+            "name": "技术方案",
+            "description": "项目技术方案、实施方案、技术报告",
+            "icon": "🔧",
+            "category": "common",
+            "rule_file": "technical_proposal.yaml",
+            "enabled": True
+        },
     ]
 
     # Check which rule files exist
@@ -290,7 +299,9 @@ async def get_template(template_id: str):
 @router.post("/create")
 async def create_template(data: TemplateCreate):
     """Create a new template from basic model."""
-    template_file = RULES_DIR / f"{data.document_type}.yaml"
+    from config import USER_RULES_DIR
+    USER_RULES_DIR.mkdir(parents=True, exist_ok=True)
+    template_file = USER_RULES_DIR / f"{data.document_type}.yaml"
 
     if template_file.exists():
         raise HTTPException(status_code=400, detail="Template already exists")

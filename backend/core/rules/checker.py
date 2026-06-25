@@ -252,9 +252,11 @@ def _check_heading_level(model, rule_id, severity, name, field_path, expected, m
 
 
 def _check_body(model, rule_id, severity, name, field_path, expected, message) -> list[CheckIssue]:
-    """Check body paragraph formatting."""
+    """Check body paragraph formatting (excluding signature/date)."""
     issues = []
-    body_paras = [p for p in model.paragraphs if not p.is_heading and p.text.strip()]
+    _EXCLUDE_ROLES = {'signature', 'date'}
+    body_paras = [p for p in model.paragraphs
+                  if not p.is_heading and p.text.strip() and p.role not in _EXCLUDE_ROLES]
     if not body_paras:
         return issues
 

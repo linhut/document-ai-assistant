@@ -324,7 +324,7 @@ export default function Workspace() {
                   </div>
                   <h3 className="font-semibold text-primary-900">上传公文</h3>
                   <p className="text-sm text-primary-600 mt-1">
-                    上传 .docx 文件开始格式校审
+                    上传 .docx / .doc / .wps 文件开始格式校审
                   </p>
                 </CardContent>
               </Card>

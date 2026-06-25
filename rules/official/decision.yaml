@@ -1,113 +1,23 @@
 template_name: 决定
 document_type: decision
+
+# --- 决定特有格式覆盖 ---
 title:
-  font: 方正小标宋简体
-  font_fallback: SimSun
-  size: 22pt
-  align: center
-  bold: false
-body:
-  font: 仿宋_GB2312
-  font_fallback: FangSong
-  size: 16pt
-  line_spacing: 28.95pt
-  first_line_indent: 2em
-  align: justify
+  bold: true
+
+# --- 决定特有内容检查 ---
 check_rules:
-- id: CHK-D001
-  name: 标题字体检查
-  severity: P0
-  field: title.font
-  expected: 方正小标宋简体
-  message: 标题应使用方正小标宋简体
-- id: CHK-D002
-  name: 标题字号检查
-  severity: P0
-  field: title.size
-  expected: 22pt
-  message: 标题应使用二号字(22pt)
-- id: CHK-D003
-  name: 事项结构检查
-  severity: P1
-  field: structure.items
-  expected: 事项分条列项
-  message: 决定事项应分条列项，层次清晰
-- id: CHK-D004
-  name: 执行要求检查
-  severity: P1
-  field: structure.requirements
-  expected: 包含执行要求
-  message: 决定应包含执行要求或落实措施
-- id: CHK-D005
-  name: 落款检查
-  severity: P1
-  field: signature.align
-  expected: right
-  message: 落款应右对齐
-- id: CHK-D006
-  severity: P0
-  field: body.font
-  expected: 仿宋_GB2312
-  name: 正文字体
-  message: 正文应使用仿宋_GB2312字体
-- id: CHK-D007
-  severity: P0
-  field: body.size
-  expected: 16pt
-  name: 正文字号
-  message: 正文应使用三号字（16pt）
-- id: CHK-D008
-  severity: P1
-  field: body.first_line_indent
-  expected: 2em
-  name: 正文首行缩进
-  message: 正文首行应缩进2字符
-- id: CHK-D009
-  severity: P1
-  field: body.line_spacing
-  expected: 28.95pt
-  name: 正文行距
-  message: 正文行距应为固定值28-29磅
-fix_rules:
-- id: FIX-D001
-  ref_check: CHK-D001
-  action: set_font
-  target: doc_title
-  value: 方正小标宋简体
-- id: FIX-D002
-  ref_check: CHK-D002
-  action: set_size
-  target: doc_title
-  value: 22pt
-- id: FIX-D003
-  action: set_font
-  target: body
-  value: 仿宋_GB2312
-- id: FIX-D004
-  action: set_size
-  target: body
-  value: 16pt
-- id: FIX-D005
-  action: set_align
-  target: signature
-  value: right
-- id: FIX-D006
-  ref_check: CHK-D006
-  action: set_font
-  target: body
-  value: 仿宋_GB2312
-- id: FIX-D007
-  ref_check: CHK-D007
-  action: set_size
-  target: body
-  value: 16pt
-- id: FIX-D001
-  ref_check: CHK-D008
-  action: set_first_line_indent
-  target: body
-  value: 2em
-- id: FIX-D001
-  ref_check: CHK-D009
-  action: set_line_spacing
-  target: body
-  value: 28.95pt
+  - id: CHK-D001
+    name: 决定依据检查
+    severity: P1
+    field: content.legal_basis
+    expected: 包含法规依据
+    message: 决定应明确法规或事实依据
+
+  - id: CHK-D002
+    name: 决定事项检查
+    severity: P1
+    field: content.decision_items
+    expected: 决定事项明确
+    message: 决定事项应具体、明确
+fix_rules: []
