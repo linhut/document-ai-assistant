@@ -199,13 +199,24 @@ def _replace_paragraphs(doc: Document, model: DocumentModel):
 
 def _replace_paragraph_content(doc: Document, p_element, para_model: Paragraph):
     """
-    替换一个 <w:p> 元素的内容（清除旧 runs，写入新 runs），保留段落属性。
+    替换一个 <w:p> 元素的内容（清除旧文本 runs，写入新 runs），保留段落属性和图片。
     """
-    # 清除所有现有的 <w:r> 和 <w:hyperlink> 子元素
+    # 清除文本 runs，但保留含图片/绘图的 runs
     for child in list(p_element):
         tag = child.tag.split('}')[-1] if '}' in child.tag else child.tag
-        if tag in ('r', 'hyperlink'):
-            p_element.remove(child)
+        if tag == 'r':
+            # 检查 run 是否包含图片（w:drawing 或 w:pict）
+            has_image = False
+            for sub in child:
+                sub_tag = sub.tag.split('}')[-1] if '}' in sub.tag else sub.tag
+                if sub_tag in ('drawing', 'pict'):
+                    has_image = True
+                    break
+            if not has_image:
+                p_element.remove(child)
+        elif tag == 'hyperlink':
+            # 保留超链接（可能包含图片）
+            pass
 
     # 更新段落属性 (w:pPr)
     _update_pPr(p_element, para_model)
