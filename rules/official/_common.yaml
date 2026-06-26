@@ -308,12 +308,6 @@ fix_rules:
     action: convert_markdown
     target: all
 
-  # --- 正文加粗范围修复（整段加粗→仅首句加粗） ---
-  - id: FIX-C031
-    action: fix_bold_range
-    target: body
-    value: true
-
   - id: FIX-C004
     action: remove_extra_spaces
     target: all
@@ -426,6 +420,12 @@ fix_rules:
   - id: FIX-C023
     action: set_bold
     target: heading_3
+    value: true
+
+  # --- 正文加粗范围修复（在 set_bold 之后执行，覆盖整段加粗） ---
+  - id: FIX-C031
+    action: fix_bold_range
+    target: body
     value: true
 
   # --- 落款和日期修复 ---
