@@ -51,7 +51,7 @@
     "appId": "com.officialdoc.ai-assistant",
     "productName": "AI公文智能优化助手",
     "copyright": "Copyright © 2026 Jose AI - www.linhut.cn",
-    "icon": "build/icon.ico",
+    "icon": "build/icon.png",
     "files": [
       "dist/**/*",
       "electron/dist/**/*"

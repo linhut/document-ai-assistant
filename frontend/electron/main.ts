@@ -68,20 +68,10 @@ function log(level: string, msg: string): void {
 // ---------------------------------------------------------------------------
 
 function getIconPath(): string {
-  // Linux 优先 .png，Windows 优先 .ico
-  const preferPng = process.platform !== 'win32';
   if (isDev) {
-    const pngPath = path.join(__dirname, '..', '..', 'build', 'icon.png');
-    const icoPath = path.join(__dirname, '..', '..', 'build', 'icon.ico');
-    if (preferPng) { if (fs.existsSync(pngPath)) return pngPath; if (fs.existsSync(icoPath)) return icoPath; }
-    else { if (fs.existsSync(icoPath)) return icoPath; if (fs.existsSync(pngPath)) return pngPath; }
-    return pngPath;
+    return path.join(__dirname, '..', '..', 'build', 'icon.png');
   }
-  const pngPath = path.join(process.resourcesPath, 'icon.png');
-  const icoPath = path.join(process.resourcesPath, 'icon.ico');
-  if (preferPng) { if (fs.existsSync(pngPath)) return pngPath; if (fs.existsSync(icoPath)) return icoPath; }
-  else { if (fs.existsSync(icoPath)) return icoPath; if (fs.existsSync(pngPath)) return pngPath; }
-  return pngPath;
+  return path.join(process.resourcesPath, 'icon.png');
 }
 
 // ---------------------------------------------------------------------------
