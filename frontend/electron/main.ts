@@ -68,16 +68,20 @@ function log(level: string, msg: string): void {
 // ---------------------------------------------------------------------------
 
 function getIconPath(): string {
+  // Linux 优先 .png，Windows 优先 .ico
+  const preferPng = process.platform !== 'win32';
   if (isDev) {
-    // 开发模式：优先 .ico，回退 .png
+    const pngPath = path.join(__dirname, '..', '..', 'build', 'icon.png');
     const icoPath = path.join(__dirname, '..', '..', 'build', 'icon.ico');
-    if (fs.existsSync(icoPath)) return icoPath;
-    return path.join(__dirname, '..', '..', 'build', 'icon.png');
+    if (preferPng) { if (fs.existsSync(pngPath)) return pngPath; if (fs.existsSync(icoPath)) return icoPath; }
+    else { if (fs.existsSync(icoPath)) return icoPath; if (fs.existsSync(pngPath)) return pngPath; }
+    return pngPath;
   }
-  // 生产模式：resources 目录下
+  const pngPath = path.join(process.resourcesPath, 'icon.png');
   const icoPath = path.join(process.resourcesPath, 'icon.ico');
-  if (fs.existsSync(icoPath)) return icoPath;
-  return path.join(process.resourcesPath, 'icon.png');
+  if (preferPng) { if (fs.existsSync(pngPath)) return pngPath; if (fs.existsSync(icoPath)) return icoPath; }
+  else { if (fs.existsSync(icoPath)) return icoPath; if (fs.existsSync(pngPath)) return pngPath; }
+  return pngPath;
 }
 
 // ---------------------------------------------------------------------------
@@ -90,8 +94,9 @@ function getBackendCommand(): { cmd: string; args: string[] } {
     const script = path.join(__dirname, '..', '..', '..', 'backend', 'main.py');
     return { cmd: pythonCmd, args: [script, '--force'] };
   }
-  // 生产模式：直接启动 PyInstaller 打包的 exe，--force 自动释放残留端口
-  const backendExe = path.join(process.resourcesPath, 'backend_server', 'backend_server.exe');
+  // 生产模式：直接启动 PyInstaller 打包的二进制，--force 自动释放残留端口
+  const ext = process.platform === 'win32' ? '.exe' : '';
+  const backendExe = path.join(process.resourcesPath, 'backend_server', `backend_server${ext}`);
   return { cmd: backendExe, args: ['--force'] };
 }
 

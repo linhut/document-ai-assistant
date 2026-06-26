@@ -51,15 +51,18 @@ def build_exe():
         "--workpath", str(BACKEND_DIR / "build"),
     ], cwd=BACKEND_DIR)
 
-    exe_path = DIST_DIR / "backend_server.exe"
+    exe_suffix = '.exe' if sys.platform == 'win32' else ''
+    exe_path = DIST_DIR / f"backend_server{exe_suffix}"
     if not exe_path.exists():
-        print(f"ERROR: exe 未生成: {exe_path}")
+        print(f"ERROR: 二进制文件未生成: {exe_path}")
         sys.exit(1)
-    print(f"   exe 已生成: {exe_path}")
+    print(f"   二进制已生成: {exe_path}")
 
 
 def sync_installer_version():
-    """从 package.json 读取版本号，同步到 installer.nsh。"""
+    """从 package.json 读取版本号，同步到 installer.nsh（仅 Windows NSIS）。"""
+    if sys.platform != 'win32':
+        return  # NSIS 安装脚本仅 Windows 需要
     import json, re
     pkg_file = PROJECT_ROOT / "frontend" / "package.json"
     nsh_file = PROJECT_ROOT / "frontend" / "build" / "installer.nsh"

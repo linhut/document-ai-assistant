@@ -13,7 +13,9 @@
     "electron:dev": "concurrently \"vite\" \"tsc -p tsconfig.electron.json && electron .\"",
     "electron:compile": "tsc -p tsconfig.electron.json",
     "electron:build": "cd .. && python build_backend.py && cd frontend && vite build && tsc -p tsconfig.electron.json && electron-builder --win --x64",
-    "electron:build:preview": "cd .. && python build_backend.py && cd frontend && vite build && tsc -p tsconfig.electron.json && electron-builder --win --x64 --publish=never"
+    "electron:build:preview": "cd .. && python build_backend.py && cd frontend && vite build && tsc -p tsconfig.electron.json && electron-builder --win --x64 --publish=never",
+    "electron:build:linux": "cd .. && python3 build_backend.py && cd frontend && vite build && tsc -p tsconfig.electron.json && electron-builder --linux --x64 --publish=never",
+    "electron:build:linux:arm64": "cd .. && python3 build_backend.py && cd frontend && vite build && tsc -p tsconfig.electron.json && electron-builder --linux --arm64 --publish=never"
   },
   "dependencies": {
     "@radix-ui/react-select": "^2.3.1",
@@ -73,6 +75,19 @@
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
       "installerHeaderIcon": "build/icon.ico"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "executableName": "ai-document-assistant",
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "category": "Office"
+    },
+    "deb": {
+      "depends": ["libreoffice-common"]
+    },
+    "mac": {
+      "target": ["dmg"],
+      "category": "public.app-category.productivity"
     },
     "extraResources": [
       {

@@ -60,15 +60,25 @@ def convert_to_docx(file_path: Path, output_dir: Path) -> Path:
         logger.info(f"docx 已存在，跳过转换: {output_path}")
         return output_path
 
-    # 优先 Word COM，失败则 WPS COM
-    converted = _try_word_com(file_path, output_path)
-    if not converted:
-        converted = _try_wps_com(file_path, output_path)
+    import sys
+    converted = False
+
+    if sys.platform == 'win32':
+        # Windows: 优先 Word COM → WPS COM → LibreOffice
+        converted = _try_word_com(file_path, output_path)
+        if not converted:
+            converted = _try_wps_com(file_path, output_path)
+        if not converted:
+            converted = _try_libreoffice(file_path, output_path)
+    else:
+        # Linux / macOS: LibreOffice headless（信创系统通常预装）
+        converted = _try_libreoffice(file_path, output_path)
 
     if not converted:
         raise RuntimeError(
-            "文档转换失败：未检测到 Microsoft Word 或 WPS Office。\n"
-            "请安装其中之一后重试。"
+            "文档转换失败：未检测到 Microsoft Word、WPS Office 或 LibreOffice。\n"
+            "Windows: 请安装 Word 或 WPS。\n"
+            "Linux: 请安装 LibreOffice（sudo apt install libreoffice-common）。"
         )
 
     logger.info(f"格式转换成功: {file_path.name} → {output_path.name}")
@@ -171,4 +181,58 @@ def _try_wps_com(file_path: Path, output_path: Path) -> bool:
             pythoncom.CoUninitialize()
     except ImportError:
         logger.debug("pywin32 未安装，跳过 WPS COM")
+        return False
+
+
+def _try_libreoffice(file_path: Path, output_path: Path) -> bool:
+    """
+    使用 LibreOffice headless 模式转换 .doc/.wps → .docx。
+
+    Linux/macOS（含信创 UOS/Kylin）上的主要转换方式。
+    信创系统通常预装 LibreOffice 或 WPS。
+    """
+    import subprocess
+    import shutil
+
+    # 查找 libreoffice 可执行文件
+    lo_cmd = shutil.which('libreoffice') or shutil.which('soffice')
+    if not lo_cmd:
+        # 尝试常见安装路径
+        for candidate in [
+            '/usr/bin/libreoffice',
+            '/usr/bin/soffice',
+            '/opt/libreoffice/program/soffice',
+            '/usr/local/bin/libreoffice',
+        ]:
+            if Path(candidate).exists():
+                lo_cmd = candidate
+                break
+
+    if not lo_cmd:
+        logger.debug("LibreOffice 未安装，跳过 headless 转换")
+        return False
+
+    try:
+        src = str(file_path.resolve())
+        dst_dir = str(output_path.parent.resolve())
+
+        result = subprocess.run(
+            [lo_cmd, '--headless', '--convert-to', 'docx', '--outdir', dst_dir, src],
+            capture_output=True, text=True, timeout=120,
+        )
+
+        if result.returncode == 0 and output_path.exists():
+            logger.info(f"LibreOffice headless 转换成功: {file_path.name}")
+            return True
+        else:
+            logger.debug(f"LibreOffice 转换失败: {result.stderr[:200]}")
+            return False
+    except FileNotFoundError:
+        logger.debug("LibreOffice 可执行文件不存在")
+        return False
+    except subprocess.TimeoutExpired:
+        logger.warning("LibreOffice 转换超时（120s）")
+        return False
+    except Exception as e:
+        logger.debug(f"LibreOffice 转换异常: {e}")
         return False
