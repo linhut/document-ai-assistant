@@ -129,11 +129,19 @@ npm run electron:build:preview
 ```
 Electron Shell
   ├── React 19 + TypeScript + Vite + TailwindCSS + Radix UI
+  │     ├── A4 实时预览（左右分栏：设置面板 + 实时渲染）
+  │     ├── 校审中心（规则检查 + AI 分析 + 分组合并显示）
+  │     └── Markdown 转公文（标题/加粗/列表/表格 → Word 格式）
   └── FastAPI Backend (Python 3.12+)
         ├── Document Pipeline: Parse → Check → Fix → Generate
-        ├── Rule Engine: 190 条检查 + 180 条修复 (YAML 配置)
-        ├── AI Provider: 23+ 服务商 (Strategy 模式)
-        └── SQLite: 文档、检查结果、AI 配置（加密存储）
+        │     ├── Parser: 段落/Run/表格/版头版记/行距(EMU→pt)
+        │     ├── Generator: 段落替换 + 表格定位插入(insert_after_index)
+        │     └── Modifier: 加粗范围裁剪/Markdown转换/标点规范化
+        ├── Rule Engine: 190+ 条检查 + 180+ 条修复 (YAML 配置)
+        │     └── 三级合并: official < custom < user
+        ├── AI Manager: 23+ 服务商 (Strategy 模式)
+        │     └── 模型健康检测: 每 60s 自动探测可用性 + 延迟
+        └── SQLite: 文档、检查结果、AI 配置（Fernet 加密）
 ```
 
 | 类别 | 技术 |
@@ -142,9 +150,11 @@ Electron Shell
 | UI 组件 | Radix UI + TailwindCSS |
 | 桌面壳 | Electron 35 |
 | 后端框架 | FastAPI (Python 3.12+) |
-| 文档处理 | python-docx |
+| 文档处理 | python-docx（解析/生成/修改） |
 | 数据存储 | SQLite + SQLAlchemy |
-| AI 接入 | OpenAI 兼容协议 (Strategy 模式) |
+| AI 接入 | OpenAI 兼容协议 + Anthropic Claude (Strategy 模式) |
+| 预览渲染 | A4 实时预览（版头版记/表格/Run级加粗） |
+| 规则配置 | YAML（三级合并继承：official < custom < user） |
 
 ---
 
@@ -170,19 +180,31 @@ Electron Shell
 ## 📂 项目结构
 
 ```
-├── backend/                 # Python 后端
-│   ├── api/routes/          # FastAPI 路由
-│   ├── core/document/       # 文档处理（解析、生成、修改）
-│   ├── core/rules/          # 规则引擎（加载、检查、修复）
-│   ├── ai/                  # AI Provider 架构
-│   └── db/                  # 数据模型
-├── frontend/                # Electron + React 前端
-│   ├── electron/            # Electron 主进程
-│   └── src/                 # React 应用
-├── rules/official/          # 22 种文种 YAML 规则
-├── templates/               # 公文模板
-├── tests/                   # 39 个自动化测试
-└── docs/                    # 文档
+├── backend/                    # Python 后端
+│   ├── api/routes/             # FastAPI 路由 (9个: documents/check/optimize/ai/settings/templates/rules/template_download/office)
+│   ├── core/document/          # 文档处理
+│   │   ├── parser.py           #   解析器 (段落/Run/表格/版头/行距EMU转换)
+│   │   ├── generator.py        #   生成器 (段落替换 + 表格定位插入)
+│   │   ├── modifier.py         #   修改器 (加粗范围/Markdown转换/标点规范化)
+│   │   ├── models.py           #   数据模型 (DocumentModel/Table/Paragraph/Run)
+│   │   └── format_extractor.py #   格式提取器 (从文档生成规则模板)
+│   ├── core/rules/             # 规则引擎 (加载/检查/修复/管理)
+│   ├── ai/                     # AI Provider 架构 (OpenAI/Claude/DeepSeek/Ollama/Custom)
+│   ├── services/               # 业务服务
+│   │   ├── document_service.py #   文档处理编排
+│   │   └── model_health.py     #   模型可用性定时检测 (60s)
+│   └── db/                     # 数据模型 (Document/AIConfig/CheckResult)
+├── frontend/                   # Electron + React 前端
+│   ├── electron/               # Electron 主进程 (main.ts/preload.ts)
+│   └── src/
+│       ├── pages/              # 页面 (Workspace/CheckCenter/EnhancedA4Preview/AISettings/Templates/...)
+│       ├── components/         # 组件 (A4PreviewModal/Sidebar/PageHeader/ui/*)
+│       ├── hooks/              # 自定义 Hooks (useDocumentConfig)
+│       ├── api/                # API 客户端 (axios + 拦截器)
+│       └── lib/                # 工具库 (cn/utils/ai-status)
+├── rules/official/             # 22 种文种 YAML 规则 (_common.yaml + 类型特定)
+├── templates/                  # 公文模板 (official + user)
+└── tests/                      # 自动化测试
 ```
 
 ---
