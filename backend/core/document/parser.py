@@ -85,10 +85,24 @@ def parse_docx(file_path: Path | str) -> DocumentModel:
     # 4.2 段落角色标注
     _assign_paragraph_roles(paragraphs)
 
-    # 5. 解析表格
+    # 5. 解析表格（含 insert_after_index 定位）
+    # 先遍历 doc body 元素，建立每个表格在段落流中的位置
+    from lxml import etree
+    para_count = 0
+    table_position_map = {}  # {table_element_id: last_para_index_before_it}
+    for child in doc.element.body:
+        tag = etree.QName(child.tag).localname if child.tag else ''
+        if tag == 'p':
+            para_count += 1
+        elif tag == 'tbl':
+            table_position_map[id(child)] = para_count - 1  # 紧跟在哪个段落之后
+
     tables = []
     for idx, table in enumerate(doc.tables):
         parsed_table = _parse_table(table, idx)
+        # 计算 insert_after_index
+        tbl_elem = table._tbl
+        parsed_table.insert_after_index = table_position_map.get(id(tbl_elem), -1)
         tables.append(parsed_table)
 
     model = DocumentModel(

@@ -194,7 +194,11 @@ def fix_bold_range(model: DocumentModel) -> int:
     _CLAUSE_RE = re.compile(r'[:：。、]')
 
     for para in model.paragraphs:
-        if para.is_heading or para.role in _EXCLUDE_ROLES:
+        # 跳过一级/二级标题（黑体/楷体本身不需要改加粗范围）
+        # 但三级标题（仿宋加粗）和正文需要检查
+        if para.is_heading and para.heading_level is not None and para.heading_level <= 2:
+            continue
+        if para.role in _EXCLUDE_ROLES:
             continue
         if not para.text.strip() or len(para.text.strip()) <= 30:
             continue
