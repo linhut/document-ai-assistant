@@ -1,7 +1,6 @@
 template_name: 指示
 document_type: instruction
 
-# --- 指示特有内容检查 ---
 check_rules:
   - id: CHK-I001
     name: 指示依据检查
@@ -9,6 +8,7 @@ check_rules:
     field: content.basis
     expected: 明确指示依据
     message: 指示应明确政策法规依据
+    category: content
 
   - id: CHK-I002
     name: 指示措施检查
@@ -16,4 +16,5 @@ check_rules:
     field: content.measures
     expected: 措施具体可行
     message: 指示应提出具体可行的措施和要求
+    category: content
 fix_rules: []

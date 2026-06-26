@@ -1,23 +1,37 @@
 template_name: 决定
 document_type: decision
 
-# --- 决定特有格式覆盖 ---
 title:
   bold: true
 
-# --- 决定特有内容检查 ---
 check_rules:
   - id: CHK-D001
+    name: 标题加粗检查
+    severity: P1
+    field: title.bold
+    expected: true
+    message: 决定标题应加粗
+    category: format
+
+  - id: CHK-D002
     name: 决定依据检查
     severity: P1
     field: content.legal_basis
     expected: 包含法规依据
     message: 决定应明确法规或事实依据
+    category: content
 
-  - id: CHK-D002
+  - id: CHK-D003
     name: 决定事项检查
     severity: P1
     field: content.decision_items
     expected: 决定事项明确
     message: 决定事项应具体、明确
-fix_rules: []
+    category: content
+
+fix_rules:
+  - id: FIX-D001
+    ref_check: CHK-D001
+    action: set_bold
+    target: doc_title
+    value: true

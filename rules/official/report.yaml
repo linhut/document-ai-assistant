@@ -1,7 +1,6 @@
 template_name: 报告
 document_type: report
 
-# --- 报告特有内容检查 ---
 check_rules:
   - id: CHK-RPT001
     name: 报告结语检查
@@ -9,6 +8,7 @@ check_rules:
     field: ending.check
     expected: 包含规范结语
     message: 报告应以"特此报告"等规范结语结尾
+    category: content
 
   - id: CHK-RPT002
     name: 报告事项检查
@@ -16,4 +16,5 @@ check_rules:
     field: content.report_items
     expected: 报告内容完整
     message: 报告应包含工作情况、存在问题、下步打算
+    category: content
 fix_rules: []

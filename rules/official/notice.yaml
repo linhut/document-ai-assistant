@@ -1,8 +1,6 @@
 template_name: 通知
 document_type: notice
 
-# --- 仅包含通知特有的内容检查 ---
-# 格式规则由 _common.yaml 提供（字体/字号/行距/页边距等）
 check_rules:
   - id: CHK-N001
     name: 通知结语检查
@@ -10,4 +8,5 @@ check_rules:
     field: ending.check
     expected: 包含规范结语
     message: 通知应以"特此通知"等规范结语结尾
+    category: content
 fix_rules: []

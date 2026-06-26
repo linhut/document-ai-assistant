@@ -1,7 +1,6 @@
 template_name: 决议
 document_type: resolution
 
-# --- 决议特有内容检查 ---
 check_rules:
   - id: CHK-RS001
     name: 决议事项检查
@@ -9,6 +8,7 @@ check_rules:
     field: content.resolution_items
     expected: 决议事项明确
     message: 决议事项应明确、具体
+    category: content
 
   - id: CHK-RS002
     name: 决议程序检查
@@ -16,4 +16,5 @@ check_rules:
     field: content.procedure
     expected: 注明会议名称和日期
     message: 决议应注明通过的会议名称和日期
+    category: content
 fix_rules: []

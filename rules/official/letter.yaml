@@ -1,7 +1,6 @@
 template_name: 函
 document_type: letter
 
-# --- 函特有内容检查 ---
 check_rules:
   - id: CHK-L001
     name: 称谓检查
@@ -9,6 +8,7 @@ check_rules:
     field: salutation.check
     expected: 使用规范机关称谓
     message: 称谓应使用全称或规范化简称
+    category: content
 
   - id: CHK-L002
     name: 结束语检查
@@ -16,6 +16,7 @@ check_rules:
     field: ending.check
     expected: 包含规范结束语
     message: 函应以"特此函复"、"请予函复"等结束语结尾
+    category: content
 
   - id: CHK-L003
     name: 语言规范检查
@@ -23,4 +24,5 @@ check_rules:
     field: language.formal
     expected: 语言规范得体
     message: 函的语言应规范、得体、简明
+    category: content
 fix_rules: []

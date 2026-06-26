@@ -1,7 +1,6 @@
 template_name: 通报
 document_type: bulletin
 
-# --- 通报特有内容检查 ---
 check_rules:
   - id: CHK-BT001
     name: 通报事实检查
@@ -9,6 +8,7 @@ check_rules:
     field: content.facts
     expected: 事实清楚
     message: 通报应事实清楚、表述准确
+    category: content
 
   - id: CHK-BT002
     name: 通报目的检查
@@ -16,4 +16,5 @@ check_rules:
     field: content.purpose
     expected: 明确通报目的
     message: 通报应明确表彰、批评或传达的目的
+    category: content
 fix_rules: []

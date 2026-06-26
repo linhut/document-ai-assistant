@@ -1,7 +1,6 @@
 template_name: 意见
 document_type: opinion
 
-# --- 意见特有内容检查 ---
 check_rules:
   - id: CHK-O001
     name: 意见措施检查
@@ -9,6 +8,7 @@ check_rules:
     field: content.suggestions
     expected: 意见措施具体
     message: 意见应提出具体可行的措施和建议
+    category: content
 
   - id: CHK-O002
     name: 意见适用范围检查
@@ -16,4 +16,5 @@ check_rules:
     field: content.scope
     expected: 明确适用范围
     message: 意见应明确适用范围和执行要求
+    category: content
 fix_rules: []

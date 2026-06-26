@@ -73,7 +73,7 @@ date:
   align: right
 
 # ============================================================
-#  通用检查规则（共21条）
+#  通用检查规则（共29条）
 # ============================================================
 check_rules:
   # --- 页面设置检查 (CHK-C001~C003, C011, C018) ---
@@ -150,10 +150,10 @@ check_rules:
     message: "一级标题应使用三号字(16pt)（GB/T 9704标准）"
 
   - id: CHK-C022
-    name: "一级标题左对齐检查"
+    name: "一级标题左空二字检查"
     severity: P1
-    field: heading_1.align
-    expected: "left"
+    field: heading_1.first_line_indent
+    expected: "2em"
     message: "一级标题应左空二字编排（GB/T 9704标准）"
 
   # --- 二级标题检查 (CHK-C010, C015) ---
@@ -224,18 +224,50 @@ check_rules:
 
   # --- 落款和日期检查 (CHK-C016~C017) ---
   - id: CHK-C016
-    name: "落款对齐检查"
+    name: "落款右空四字检查"
     severity: P1
     field: signature.align
     expected: "right"
     message: "落款应右空四字对齐（GB/T 9704标准）"
 
   - id: CHK-C017
-    name: "日期对齐检查"
+    name: "日期右空四字检查"
     severity: P1
     field: date.align
     expected: "right"
     message: "成文日期应右空四字编排（GB/T 9704标准）"
+
+  # --- 标题加粗检查 (CHK-C025) ---
+  - id: CHK-C025
+    name: "公文标题不加粗检查"
+    severity: P1
+    field: title.bold
+    expected: false
+    message: "公文标题使用方正小标宋简体，不应额外加粗（GB/T 9704标准）"
+
+  # --- 主送机关格式检查 (CHK-C026) ---
+  - id: CHK-C026
+    name: "主送机关格式检查"
+    severity: P1
+    field: recipient.font
+    expected: "仿宋_GB2312"
+    message: "主送机关应使用三号仿宋_GB2312顶格编排（GB/T 9704标准）"
+
+  # --- 附件说明格式检查 (CHK-C027) ---
+  - id: CHK-C027
+    name: "附件说明格式检查"
+    severity: P2
+    field: attachment.first_line_indent
+    expected: "2em"
+    message: "附件说明应左空二字编排（GB/T 9704标准）"
+
+  # --- 抄送机关格式检查 (CHK-C028) ---
+  - id: CHK-C028
+    name: "抄送机关格式检查"
+    severity: P2
+    field: cc.font
+    expected: "仿宋_GB2312"
+    message: "抄送机关应使用四号仿宋_GB2312，左空一字（GB/T 9704标准）"
 
   # --- 页码检查 (CHK-C023~C024) ---
   - id: CHK-C023
@@ -243,19 +275,35 @@ check_rules:
     severity: P1
     field: page_number.font
     expected: "宋体"
-    message: "页码应使用4号半角宋体阿拉伯数字（GB/T 9704标准）"
+    message: "页码应使用4号(14pt)半角宋体阿拉伯数字（GB/T 9704标准）"
 
   - id: CHK-C024
     name: "页码位置检查"
     severity: P1
     field: page_number.alignment
     expected: "center"
-    message: "页码应居中标注，格式为"— X —"（GB/T 9704标准）"
+    message: "页码应居中标注，格式为— X —（全角短横线）（GB/T 9704标准）"
+
+  - id: CHK-C029
+    name: "页码字号检查"
+    severity: P1
+    field: page_number.size
+    expected: "14pt"
+    message: "页码应使用四号字(14pt)（GB/T 9704标准）"
 
 # ============================================================
-#  通用修复规则（共16条）
+#  通用修复规则（共23条）
 # ============================================================
 fix_rules:
+  # --- Markdown 格式识别与转换（优先执行，在格式修复之前） ---
+  - id: FIX-C030
+    action: convert_markdown
+    target: all
+
+  - id: FIX-C004
+    action: remove_extra_spaces
+    target: all
+
   # --- 正文修复 ---
   - id: FIX-C001
     ref_check: CHK-C004
@@ -331,9 +379,9 @@ fix_rules:
 
   - id: FIX-C021
     ref_check: CHK-C022
-    action: set_alignment
+    action: set_first_line_indent
     target: heading_1
-    value: "left"
+    value: "2em"
 
   # --- 二级标题修复 ---
   - id: FIX-C007
@@ -372,6 +420,12 @@ fix_rules:
     action: set_alignment
     target: signature
     value: "right"
+
+  - id: FIX-C024
+    ref_check: CHK-C025
+    action: set_bold
+    target: doc_title
+    value: false
 
   # --- 文本清理 ---
   - id: FIX-C004

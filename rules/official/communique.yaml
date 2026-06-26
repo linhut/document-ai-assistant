@@ -1,7 +1,6 @@
 template_name: 公报
 document_type: communique
 
-# --- 公报特有内容检查 ---
 check_rules:
   - id: CHK-CG001
     name: 公报事项检查
@@ -9,4 +8,5 @@ check_rules:
     field: content.items
     expected: 事项完整
     message: 公报应内容完整、表述准确
+    category: content
 fix_rules: []

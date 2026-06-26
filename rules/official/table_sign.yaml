@@ -2,15 +2,16 @@ template_name: 桌签
 document_type: table_sign
 
 # --- 桌签特有格式 ---
+# 桌签非 GB/T 9704 标准公文，使用自定义大号字体
 title:
   size: 50pt
   bold: true
+  align: center
 body:
   size: 50pt
   bold: true
   align: center
 
-# --- 桌签特有内容检查 ---
 check_rules:
   - id: CHK-TS001
     name: 桌签字号检查
@@ -18,6 +19,16 @@ check_rules:
     field: title.size
     expected: 50pt
     message: 桌签应使用大号字体以确保远距离可读
+    category: format
+
+  - id: CHK-TS002
+    name: 桌签加粗检查
+    severity: P0
+    field: title.bold
+    expected: true
+    message: 桌签文字应加粗显示
+    category: format
+
 fix_rules:
   - id: FIX-TS001
     action: set_size

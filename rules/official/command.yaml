@@ -5,19 +5,36 @@ document_type: command
 title:
   bold: true
 
-# --- 命令特有内容检查 ---
 check_rules:
+  # 格式检查
   - id: CHK-CM001
+    name: 标题加粗检查
+    severity: P1
+    field: title.bold
+    expected: true
+    message: 命令（令）标题应加粗
+    category: format
+
+  # 内容检查（AI辅助）
+  - id: CHK-CM002
     name: 令号检查
     severity: P0
     field: header.doc_number
     expected: 包含令号
     message: 命令（令）应标注令号
+    category: content
 
-  - id: CHK-CM002
+  - id: CHK-CM003
     name: 签发人检查
     severity: P1
     field: signature.signer
     expected: 行政首长签署
     message: 命令应由行政首长签署
-fix_rules: []
+    category: content
+
+fix_rules:
+  - id: FIX-CM001
+    ref_check: CHK-CM001
+    action: set_bold
+    target: doc_title
+    value: true

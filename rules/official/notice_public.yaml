@@ -1,23 +1,37 @@
 template_name: 公告
 document_type: notice_public
 
-# --- 公告特有格式覆盖 ---
 title:
   bold: true
 
-# --- 公告特有内容检查 ---
 check_rules:
   - id: CHK-NP001
+    name: 标题加粗检查
+    severity: P1
+    field: title.bold
+    expected: true
+    message: 公告标题应加粗
+    category: format
+
+  - id: CHK-NP002
     name: 公告范围检查
     severity: P1
     field: content.scope
     expected: 明确公告范围
     message: 公告应明确适用范围和对象
+    category: content
 
-  - id: CHK-NP002
+  - id: CHK-NP003
     name: 公告时效检查
     severity: P2
     field: content.validity
     expected: 明确有效期限
     message: 公告应注明有效期限或施行日期
-fix_rules: []
+    category: content
+
+fix_rules:
+  - id: FIX-NP001
+    ref_check: CHK-NP001
+    action: set_bold
+    target: doc_title
+    value: true

@@ -19,6 +19,7 @@ from core.document.modifier import (
     modify_first_line_indent, modify_margins, modify_bold,
     remove_extra_spaces, remove_extra_blank_lines,
     normalize_punctuation, normalize_heading_content,
+    convert_markdown,
     _parse_pt_value, _parse_indent_value,
 )
 from utils.logger import logger
@@ -43,6 +44,8 @@ _ACTION_MAP = {
     "set_page_margins": lambda model, target, value, _rules: modify_margins(model, value),
     "remove_extra_spaces": lambda model, _target, _value, _rules: remove_extra_spaces(model),
     "remove_extra_blank_lines": lambda model, _target, _value, _rules: remove_extra_blank_lines(model),
+    "strip_markdown": lambda model, _target, _value, _rules: convert_markdown(model),
+    "convert_markdown": lambda model, _target, _value, _rules: convert_markdown(model),
     "normalize_punctuation": lambda model, _target, _value, _rules: normalize_punctuation(model),
     "normalize_headings": lambda model, _target, _value, _rules: normalize_heading_content(model),
 }
@@ -94,6 +97,7 @@ def apply_fixes(model: DocumentModel, rules: dict[str, Any], selected_rule_ids: 
         if value is None and action not in (
             "remove_extra_spaces", "remove_extra_blank_lines",
             "normalize_punctuation", "normalize_headings",
+            "strip_markdown", "convert_markdown",
         ):
             logger.warning(f"Fix rule {rule_id} missing required 'value' field, skipping")
             skipped += 1

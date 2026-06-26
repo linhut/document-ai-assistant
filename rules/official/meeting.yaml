@@ -1,7 +1,6 @@
 template_name: 会议纪要
 document_type: meeting
 
-# --- 会议纪要特有内容检查 ---
 check_rules:
   - id: CHK-M001
     name: 会议要素检查
@@ -9,6 +8,7 @@ check_rules:
     field: content.meeting_elements
     expected: 要素齐全
     message: 会议纪要应包含会议名称、时间、地点、主持人、参会人员
+    category: content
 
   - id: CHK-M002
     name: 议定事项检查
@@ -16,4 +16,5 @@ check_rules:
     field: content.decisions
     expected: 议定事项明确
     message: 会议纪要应明确议定事项、责任人和完成时限
+    category: content
 fix_rules: []

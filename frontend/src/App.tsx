@@ -15,6 +15,8 @@ import Rules from './pages/Rules';
 import AISettings from './pages/AISettings';
 import About from './pages/About';
 import A4Preview from './pages/A4Preview';
+import ImportTemplate from './pages/ImportTemplate';
+import EnhancedA4Preview from './pages/EnhancedA4Preview';
 
 export default function App() {
   return (
@@ -27,10 +29,12 @@ export default function App() {
             <Route path="/document/process" element={<DocumentProcess />} />
             <Route path="/document/check" element={<CheckCenter />} />
             <Route path="/templates" element={<Templates />} />
+            <Route path="/templates/import" element={<ImportTemplate />} />
             <Route path="/templates/:templateId/rules" element={<TemplateRules />} />
             <Route path="/rules" element={<Rules />} />
             <Route path="/settings/ai" element={<AISettings />} />
             <Route path="/document/preview" element={<A4Preview />} />
+            <Route path="/document/enhanced-preview" element={<EnhancedA4Preview />} />
             <Route path="/about" element={<About />} />
           </Routes>
         </ErrorBoundary>

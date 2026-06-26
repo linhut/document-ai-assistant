@@ -9,11 +9,11 @@
  * 右侧：AI 分析结果面板（调用已配置的AI进行智能分析）
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Download, Loader2, CheckSquare, Square, FileText,
   AlertCircle, AlertTriangle, Info, Sparkles, Send,
-  ChevronRight, Zap, Cpu,
+  ChevronRight, Zap, Cpu, Settings2,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -108,6 +108,7 @@ const SEV: Record<string, { icon: typeof AlertCircle; label: string; badge: stri
 
 export default function CheckCenter() {
   const { success, error: showError, warning, confirm } = useToast();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [filter, setFilter] = useState<string>('all');
   const [issues, setIssues] = useState<CheckIssue[]>([]);
@@ -350,6 +351,11 @@ export default function CheckCenter() {
           {docId && (
             <Button variant="outline" onClick={() => setShowA4Preview(true)}>
               <FileText className="h-4 w-4 mr-1" />A4 预览
+            </Button>
+          )}
+          {docId && (
+            <Button variant="outline" onClick={() => navigate(`/document/enhanced-preview?docId=${docId}`)}>
+              <Settings2 className="h-4 w-4 mr-1" />实时排版
             </Button>
           )}
         </div>}
