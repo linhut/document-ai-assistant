@@ -237,13 +237,14 @@ function EnhancedA4PreviewInner() {
         }
         if (cancelled) return;
         setParagraphs(resp.paragraphs || []);
+        setTables(resp.tables || []);
         if (resp.page_setup) {
           patch({
             margins: {
-              top: resp.page_setup.margin_top_mm / 10 || DEFAULT_CONFIG.margins.top,
-              bottom: resp.page_setup.margin_bottom_mm / 10 || DEFAULT_CONFIG.margins.bottom,
-              left: resp.page_setup.margin_left_mm / 10 || DEFAULT_CONFIG.margins.left,
-              right: resp.page_setup.margin_right_mm / 10 || DEFAULT_CONFIG.margins.right,
+              top: resp.page_setup.margin_top_mm / 10 ?? DEFAULT_CONFIG.margins.top,
+              bottom: resp.page_setup.margin_bottom_mm / 10 ?? DEFAULT_CONFIG.margins.bottom,
+              left: resp.page_setup.margin_left_mm / 10 ?? DEFAULT_CONFIG.margins.left,
+              right: resp.page_setup.margin_right_mm / 10 ?? DEFAULT_CONFIG.margins.right,
             },
           });
         }
