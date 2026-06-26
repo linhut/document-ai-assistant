@@ -1,3 +1,9 @@
+/*
+ * This file is part of the Official Document AI Assistant.
+ * (c) 2026 Jose AI (https://www.linhut.cn)
+ * Licensed under the MIT License. See the LICENSE file for details.
+ */
+
 /**
  * ImportTemplate - 导入文档自动生成模板规则
  * 上传已排版文档 → 自动提取格式 → 预览 → 保存为自定义规则

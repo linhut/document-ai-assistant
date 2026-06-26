@@ -8,7 +8,7 @@
  * 支持多 Provider、获取模型列表、连接测试、脱敏 API Key
  */
 import { useState, useEffect } from 'react';
-import { Sparkles, Lock, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
+import { Sparkles, Lock, CheckCircle2, Loader2, RefreshCw, Wifi, WifiOff } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -69,6 +69,7 @@ export default function AISettings() {
   const [hasSavedKey, setHasSavedKey] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [modelStatuses, setModelStatuses] = useState<any[]>([]);
 
   const currentProvider = PROVIDERS.find(p => p.label === selectedLabel);
 
@@ -76,6 +77,13 @@ export default function AISettings() {
     loadConfig();
     loadDefaultConfig();
   }, [provider]);
+
+  // 模型可用性状态轮询（每 60 秒）
+  useEffect(() => {
+    loadModelStatus();
+    const timer = setInterval(loadModelStatus, 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   const loadDefaultConfig = async () => {
     try {
@@ -86,6 +94,15 @@ export default function AISettings() {
     } catch {
       // 默认配置加载失败不影响正常使用
       console.warn('加载默认 AI 配置失败');
+    }
+  };
+
+  const loadModelStatus = async () => {
+    try {
+      const resp = await apiClient.get('/api/ai/status');
+      if (resp.statuses) setModelStatuses(resp.statuses);
+    } catch {
+      // 静默失败
     }
   };
 
@@ -253,6 +270,43 @@ export default function AISettings() {
             </div>
           </CardContent>
         </Card>
+
+        {/* 模型可用性状态 */}
+        {modelStatuses.length > 0 && (
+          <Card className="border-primary-200">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm">模型可用性监控</CardTitle>
+                <Button variant="ghost" size="sm" onClick={loadModelStatus} className="h-6 px-2">
+                  <RefreshCw className="h-3 w-3" />
+                </Button>
+              </div>
+              <CardDescription>每 60 秒自动检测，实时反映模型连接状态</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-2">
+                {modelStatuses.map((s, i) => (
+                  <div key={i} className="flex items-center justify-between py-1.5 px-2 bg-primary-50 rounded text-xs">
+                    <div className="flex items-center gap-2">
+                      {s.online
+                        ? <Wifi className="h-3.5 w-3.5 text-status-success" />
+                        : <WifiOff className="h-3.5 w-3.5 text-red-400" />
+                      }
+                      <span className="font-medium text-primary-700">{s.provider}</span>
+                      <span className="text-primary-400">{s.model}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {s.online && <span className="text-primary-400">{s.latency_ms}ms</span>}
+                      <Badge variant={s.online ? 'default' : 'destructive'} className="text-[10px] px-1.5 py-0">
+                        {s.online ? '在线' : s.error || '离线'}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* 配置卡片 */}
         <Card className="border-primary-200">

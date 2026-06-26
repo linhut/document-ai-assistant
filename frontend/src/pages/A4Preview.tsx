@@ -1,3 +1,9 @@
+/*
+ * This file is part of the Official Document AI Assistant.
+ * (c) 2026 Jose AI (https://www.linhut.cn)
+ * Licensed under the MIT License. See the LICENSE file for details.
+ */
+
 /**
  * A4Preview - A4 分页预览页面
  * 从优化后的文档渲染实时 A4 预览

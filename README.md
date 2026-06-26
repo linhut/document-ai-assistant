@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.4.3-blue" alt="version">
+  <img src="https://img.shields.io/badge/version-1.4.4-blue" alt="version">
   <img src="https://img.shields.io/badge/python-3.12+-green" alt="python">
   <img src="https://img.shields.io/badge/node-20+-green" alt="node">
   <img src="https://img.shields.io/badge/electron-35-blue" alt="electron">
@@ -76,6 +76,10 @@
 - **多 AI 服务商** — 支持 DeepSeek、通义千问、智谱、Moonshot、MiniMax、腾讯混元、豆包等 23+ 服务商
 - **AI 建议应用** — AI 发现的问题可勾选后一键应用到文档
 - **模板管理** — 内置官方模板 + 自定义模板，支持三级优先级合并
+- **A4 实时预览** — 左右分栏布局，左侧格式设置 + 右侧 A4 预览，支持版头版记、Markdown 转公文、表格渲染
+- **Markdown 转公文** — 识别 # 标题、**加粗**、列表、表格等 Markdown 语法并自动转为公文格式
+- **AI 模型监控** — 每 60 秒自动检测所有已配置 AI 模型的可用性，实时显示在线状态和延迟
+- **格式提取器** — 从已有文档中提取格式信息，自动生成规则模板
 - **本地运行** — 数据不离开本机，API Key 加密存储
 
 ---
