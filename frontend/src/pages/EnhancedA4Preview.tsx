@@ -203,14 +203,16 @@ function EnhancedA4PreviewInner() {
           heading_level: p.heading_level, format: p.format,
         })),
       }, { timeout: 30000 });
+      console.log('[Markdown转换] 响应:', { success: resp.success, paragraphs: resp.paragraphs?.length, tables: resp.tables?.length, tableRows: resp.tables?.[0]?.rows, tableCols: resp.tables?.[0]?.cols });
       if (resp.success && resp.paragraphs) {
         setParagraphs(resp.paragraphs);
-        if (resp.tables) {
+        if (resp.tables && resp.tables.length > 0) {
+          console.log('[Markdown转换] 设置表格:', resp.tables);
           setTables(resp.tables);
         }
       }
     } catch (err) {
-      console.error('Markdown conversion failed:', err);
+      console.error('[Markdown转换] 失败:', err);
     } finally {
       setConverting(false);
     }
@@ -609,6 +611,11 @@ function EnhancedA4PreviewInner() {
               {recipient && renderP(recipient, -2)}
               {body.map((p, i) => renderP(p, i))}
               {/* 表格（markdown 转换生成） */}
+              {tables.length > 0 && (
+                <div style={{ margin: '0.5em 0', padding: '4px 8px', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '4px', fontSize: '10pt', color: '#0369a1', textAlign: 'center' }}>
+                  已识别 {tables.length} 个表格（共 {tables.reduce((s, t) => s + t.rows, 0)} 行 × {tables[0]?.cols || 0} 列）
+                </div>
+              )}
               {tables.map((t, i) => renderTable(t, i))}
 
               {(signature || date) && (
