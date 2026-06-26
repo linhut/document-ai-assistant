@@ -90,7 +90,7 @@
 
 双击 `启动应用.bat`，自动安装依赖并启动。
 
-### 方式二：手动启动
+### 方式二：手动启动（Windows / Linux / 信创）
 
 ```bash
 # 1. 克隆仓库
@@ -118,10 +118,172 @@ npm run electron:dev
 ### 构建桌面安装包
 
 ```bash
+# Windows
 cd frontend
 npm run electron:build:preview
-# 输出: frontend/release/*.exe
+# 输出: frontend/release/AI公文智能优化助手 Setup X.X.X.exe
+
+# Linux x86_64 (需在 Linux 环境执行)
+npm run electron:build:linux
+# 输出: frontend/release/*.AppImage + *.deb
+
+# Linux ARM64 (鲲鹏/飞腾，需在对应架构执行)
+npm run electron:build:linux:arm64
 ```
+
+### 信创环境部署指南
+
+> 以下指南覆盖 UOS、银河麒麟、OpenEuler 等主流信创系统，提供从环境搭建到应用启动的完整步骤。
+
+#### 一、UOS / Deepin（x86_64）
+
+```bash
+# 1. 安装系统依赖
+sudo apt update
+sudo apt install -y python3 python3-pip python3-venv nodejs npm libreoffice-common fonts-wqy-zenhei
+
+# 如果 Node.js 版本低于 20，需安装 nvm 升级：
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+source ~/.bashrc
+nvm install 20
+nvm use 20
+
+# 2. 安装公文字体（项目自带）
+sudo mkdir -p /usr/share/fonts/custom
+sudo cp TTF/*.TTF /usr/share/fonts/custom/ 2>/dev/null
+sudo cp TTF/*.ttf /usr/share/fonts/custom/ 2>/dev/null
+sudo fc-cache -fv
+
+# 3. 克隆项目
+git clone https://github.com/linhut/document-ai-assistant.git
+cd document-ai-assistant
+
+# 4. 创建 Python 虚拟环境并安装依赖
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# 5. 启动后端（后台运行）
+nohup python main.py > ../backend.log 2>&1 &
+
+# 6. 启动前端
+cd ../frontend
+npm install
+npm run electron:dev
+
+# 7. .doc/.wps 转换依赖 LibreOffice（apt 已安装）
+# 后端会自动调用 libreoffice --headless 进行格式转换
+```
+
+#### 二、银河麒麟 Kylin（ARM64 鲲鹏/飞腾）
+
+```bash
+# 1. 安装系统依赖
+sudo apt update
+sudo apt install -y python3 python3-pip python3-venv nodejs npm libreoffice-common fonts-wqy-zenhei
+
+# Node.js 升级到 20+（Kylin 自带版本可能较低）
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+source ~/.bashrc
+nvm install 20
+nvm use 20
+
+# 2. 安装公文字体
+sudo mkdir -p /usr/share/fonts/custom
+sudo cp TTF/*.TTF /usr/share/fonts/custom/ 2>/dev/null
+sudo cp TTF/*.ttf /usr/share/fonts/custom/ 2>/dev/null
+sudo fc-cache -fv
+
+# 3. 克隆项目
+git clone https://github.com/linhut/document-ai-assistant.git
+cd document-ai-assistant
+
+# 4. Python 环境
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# 5. 启动后端
+nohup python main.py > ../backend.log 2>&1 &
+
+# 6. 启动前端
+cd ../frontend
+npm install
+npm run electron:dev
+```
+
+#### 三、OpenEuler / Anolis（x86_64 / ARM64）
+
+```bash
+# 1. 安装系统依赖（OpenEuler 使用 dnf）
+sudo dnf install -y python3 python3-pip nodejs npm libreoffice-core libreoffice-writer wqy-zenhei-fonts
+
+# Node.js 升级
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+source ~/.bashrc
+nvm install 20
+
+# 2. 安装公文字体
+sudo mkdir -p /usr/share/fonts/custom
+sudo cp TTF/*.TTF TTF/*.ttf /usr/share/fonts/custom/ 2>/dev/null
+sudo fc-cache -fv
+
+# 3. 克隆项目
+git clone https://github.com/linhut/document-ai-assistant.git
+cd document-ai-assistant
+
+# 4. Python 环境
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# 5. 启动后端
+nohup python main.py > ../backend.log 2>&1 &
+
+# 6. 启动前端
+cd ../frontend
+npm install
+npm run electron:dev
+```
+
+#### 四、龙芯 MIPS64 / 申威 SW64（纯 Web 模式）
+
+> 龙芯/申威架构上 Electron 不可用，使用纯 Web 模式：后端本地运行 + 浏览器访问。
+
+```bash
+# 1. 安装 Python（龙芯 loongnix 自带，申威需编译安装）
+sudo apt install -y python3 python3-pip python3-venv libreoffice-common
+
+# 2. 克隆项目
+git clone https://github.com/linhut/document-ai-assistant.git
+cd document-ai-assistant
+
+# 3. Python 环境
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# 4. 启动后端（监听 0.0.0.0 支持局域网访问）
+python main.py
+
+# 5. 打开系统自带浏览器（Firefox / 360 安全浏览器）
+# 访问 http://127.0.0.1:8765 即可使用
+```
+
+#### 信创环境注意事项
+
+| 事项 | 说明 |
+|------|------|
+| **公文字体** | 项目 `TTF/` 目录包含 3 个核心字体（仿宋_GB2312、方正小标宋简、楷体_GB2312），安装后执行 `fc-cache -fv` |
+| **格式转换** | `.doc`/`.wps` 转 `.docx` 依赖 LibreOffice headless，信创系统通常预装 WPS 或 LibreOffice |
+| **AI 功能** | 需联网访问 AI 服务商 API（DeepSeek/通义千问等），信创内网环境需配置代理或使用 Ollama 本地模型 |
+| **Node.js 版本** | Electron 35 需要 Node.js >= 20，信创系统自带版本可能较低，用 nvm 升级 |
+| **Pydantic 兼容性** | 龙芯/申威上如遇 Pydantic v2 编译失败，可降级：`pip install 'pydantic<2'` |
+| **防火墙** | 局域网访问需开放 8765 端口：`sudo firewall-cmd --add-port=8765/tcp --permanent` |
 
 ---
 
