@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { apiClient, downloadFile } from '@/api/client';
+import { apiClient } from '@/api/client';
 import {
   DocumentConfigProvider, useDocumentConfig, DEFAULT_CONFIG,
   type DocumentConfig,
@@ -505,11 +505,27 @@ function EnhancedA4PreviewInner() {
           <Button variant="ghost" size="sm" onClick={() => setZoom(z => Math.max(50, z - 10))}><ZoomOut className="h-4 w-4" /></Button>
           <span className="text-xs text-muted-foreground w-10 text-center">{zoom}%</span>
           <Button variant="ghost" size="sm" onClick={() => setZoom(z => Math.min(150, z + 10))}><ZoomIn className="h-4 w-4" /></Button>
-          {docId && (
-            <Button variant="ghost" size="sm" onClick={() => downloadFile(`/api/optimize/${docId}/download`, `doc_${docId}.docx`)}>
-              <Download className="h-4 w-4" />
-            </Button>
-          )}
+          <Button variant="ghost" size="sm" onClick={async () => {
+            try {
+              const resp = await fetch(`${apiClient.defaults.baseURL || ''}/api/optimize/preview-download`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  paragraphs: paragraphs.map(p => ({ text: p.text, role: p.role, is_heading: p.is_heading, heading_level: p.heading_level, format: p.format })),
+                  tables: tables.length > 0 ? tables : undefined,
+                  page_setup: { margin_top_mm: config.margins.top * 10, margin_bottom_mm: config.margins.bottom * 10, margin_left_mm: config.margins.left * 10, margin_right_mm: config.margins.right * 10 },
+                }),
+              });
+              if (!resp.ok) throw new Error('下载失败');
+              const blob = await resp.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a'); a.href = url; a.download = '公文预览.docx';
+              document.body.appendChild(a); a.click(); document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            } catch (e) { console.error('Preview download failed:', e); }
+          }} title="下载预览文档">
+            <Download className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 

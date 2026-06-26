@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.4.4-blue" alt="version">
+  <img src="https://img.shields.io/badge/version-1.4.5-blue" alt="version">
   <img src="https://img.shields.io/badge/python-3.12+-green" alt="python">
   <img src="https://img.shields.io/badge/node-20+-green" alt="node">
   <img src="https://img.shields.io/badge/electron-35-blue" alt="electron">
