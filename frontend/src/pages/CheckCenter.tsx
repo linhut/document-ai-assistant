@@ -163,11 +163,26 @@ export default function CheckCenter() {
     }
   };
 
-  /* ---- 筛选 ---- */
+  /* ---- 筛选 + 分组 ---- */
   const filteredIssues = filter === 'all' ? issues : issues.filter(i => i.severity === filter);
   const p0 = issues.filter(i => i.severity === 'P0').length;
   const p1 = issues.filter(i => i.severity === 'P1').length;
   const p2 = issues.filter(i => i.severity === 'P2').length;
+
+  // 按 rule_id + check_type 分组，同类型问题合并显示
+  const groupedIssues = (() => {
+    const map = new Map<string, { key: string; severity: string; check_type: string; rule_id: string; reason: string; suggested_fix: string; issues: CheckIssue[] }>();
+    for (const issue of filteredIssues) {
+      const gKey = issue.rule_id || `${issue.check_type}__${issue.reason}`;
+      if (!map.has(gKey)) {
+        map.set(gKey, { key: gKey, severity: issue.severity, check_type: issue.check_type, rule_id: issue.rule_id, reason: issue.reason, suggested_fix: issue.suggested_fix, issues: [] });
+      }
+      map.get(gKey)!.issues.push(issue);
+    }
+    return Array.from(map.values());
+  })();
+
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   /* ---- 选择操作 ---- */
   const toggleSelect = (id: number) => {
@@ -394,35 +409,92 @@ export default function CheckCenter() {
             </div>
           ) : (
             <div>
-              {filteredIssues.map(issue => {
-                const cfg = SEV[issue.severity] || SEV.P2;
+              {groupedIssues.map(group => {
+                const cfg = SEV[group.severity] || SEV.P2;
                 const Icon = cfg.icon;
-                const isSelected = selectedIds.has(issue.id);
+                const count = group.issues.length;
+                const allSelected = group.issues.every(i => selectedIds.has(i.id));
+                const someSelected = group.issues.some(i => selectedIds.has(i.id));
+                const isExpanded = expandedGroups.has(group.key);
+
                 return (
-                  <div key={issue.id}
-                    className={`px-4 py-3 border-b border-primary-50 cursor-pointer transition-colors select-none
-                      ${isSelected ? 'bg-accent-light/40' : 'hover:bg-primary-50'}`}
-                    onClick={() => toggleSelect(issue.id)}>
-                    <div className="flex items-start gap-3">
-                      {/* 点击行 = 选中/取消，复选框同步显示状态 */}
-                      <div className="pt-0.5" onClick={e => e.stopPropagation()}>
-                        <Checkbox checked={isSelected} onCheckedChange={() => toggleSelect(issue.id)} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge className={`${cfg.badge} text-[10px] px-1.5 py-0`}>{issue.severity}</Badge>
-                          <span className="text-sm font-medium truncate">{issue.check_type}</span>
-                          {issue.rule_id && <span className="text-[10px] text-primary-400 ml-auto">{issue.rule_id}</span>}
+                  <div key={group.key} className="border-b border-primary-50">
+                    {/* 分组标题行 */}
+                    <div className={`px-4 py-3 cursor-pointer transition-colors select-none ${someSelected ? 'bg-accent-light/40' : 'hover:bg-primary-50'}`}
+                      onClick={() => {
+                        // 点击行：切换选中该组所有问题
+                        setSelectedIds(prev => {
+                          const n = new Set(prev);
+                          if (allSelected) { group.issues.forEach(i => n.delete(i.id)); }
+                          else { group.issues.forEach(i => n.add(i.id)); }
+                          return n;
+                        });
+                      }}>
+                      <div className="flex items-start gap-3">
+                        <div className="pt-0.5" onClick={e => e.stopPropagation()}>
+                          <Checkbox checked={allSelected} onCheckedChange={() => {
+                            setSelectedIds(prev => {
+                              const n = new Set(prev);
+                              if (allSelected) { group.issues.forEach(i => n.delete(i.id)); }
+                              else { group.issues.forEach(i => n.add(i.id)); }
+                              return n;
+                            });
+                          }} />
                         </div>
-                        {issue.original_text && (
-                          <p className="text-xs text-foreground bg-primary-50 px-2 py-1 rounded mb-1.5 line-clamp-2">"{issue.original_text}"</p>
-                        )}
-                        {issue.suggested_fix && (
-                          <p className="text-xs text-status-success mb-1">→ {issue.suggested_fix}</p>
-                        )}
-                        <p className="text-xs text-muted-foreground">{issue.reason}</p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge className={`${cfg.badge} text-[10px] px-1.5 py-0`}>{group.severity}</Badge>
+                            <span className="text-sm font-medium">{group.check_type}</span>
+                            {count > 1 && <span className="text-xs text-primary-500 bg-primary-100 px-1.5 py-0.5 rounded-full">{count} 处</span>}
+                            {group.rule_id && <span className="text-[10px] text-primary-400 ml-auto">{group.rule_id}</span>}
+                          </div>
+                          {group.suggested_fix && (
+                            <p className="text-xs text-status-success mb-1">→ {group.suggested_fix}</p>
+                          )}
+                          <p className="text-xs text-muted-foreground">{group.reason}</p>
+                          {/* 多处时显示第一条原文 + 展开按钮 */}
+                          {count > 1 && (
+                            <button className="text-[10px] text-accent mt-1 hover:underline" onClick={e => {
+                              e.stopPropagation();
+                              setExpandedGroups(prev => {
+                                const n = new Set(prev);
+                                n.has(group.key) ? n.delete(group.key) : n.add(group.key);
+                                return n;
+                              });
+                            }}>
+                              {isExpanded ? '收起详情' : `展开 ${count} 处详情`}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
+
+                    {/* 展开的详情（多处问题时显示每一条） */}
+                    {isExpanded && count > 1 && (
+                      <div className="bg-primary-50/50">
+                        {group.issues.map(issue => (
+                          <div key={issue.id}
+                            className={`px-4 pl-12 py-2 border-t border-primary-100 cursor-pointer transition-colors select-none
+                              ${selectedIds.has(issue.id) ? 'bg-accent-light/30' : 'hover:bg-primary-100/50'}`}
+                            onClick={() => toggleSelect(issue.id)}>
+                            <div className="flex items-center gap-2">
+                              <Checkbox checked={selectedIds.has(issue.id)} onCheckedChange={() => toggleSelect(issue.id)} onClick={e => e.stopPropagation()} />
+                              <span className="text-xs text-muted-foreground">{issue.location}</span>
+                              {issue.original_text && (
+                                <span className="text-xs text-foreground truncate">"{issue.original_text}"</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* 单处问题时显示原文详情（不需要展开） */}
+                    {count === 1 && group.issues[0].original_text && (
+                      <div className="px-4 pl-12 pb-2">
+                        <p className="text-xs text-foreground bg-primary-50 px-2 py-1 rounded line-clamp-2">"{group.issues[0].original_text}"</p>
+                      </div>
+                    )}
                   </div>
                 );
               })}
