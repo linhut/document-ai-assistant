@@ -119,7 +119,7 @@ def _setup_signal_handlers() -> None:
 app = FastAPI(
     title="Official Document AI Assistant",
     description="AI 公文智能优化助手核心引擎 API",
-    version="1.4.4",
+    version="1.4.5",
 )
 
 app.add_middleware(
@@ -237,7 +237,7 @@ def _init_default_ai_config():
 async def root():
     return {
         "app": "Official Document AI Assistant",
-        "version": "1.4.4",
+        "version": "1.4.5",
         "docs": "/docs",
         "health": "/api/health"
     }

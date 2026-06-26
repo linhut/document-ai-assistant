@@ -90,6 +90,71 @@ async def convert_markdown_text(body: MarkdownConvertRequest):
 
 
 # ---------------------------------------------------------------------------
+#  从预览数据生成 docx 并下载
+# ---------------------------------------------------------------------------
+
+class PreviewDownloadRequest(BaseModel):
+    paragraphs: list[ParagraphData]
+    tables: list[dict] | None = None
+    page_setup: dict | None = None
+
+
+@router.post("/preview-download")
+async def download_from_preview(body: PreviewDownloadRequest):
+    """从前端预览数据（段落+表格）生成 docx 并返回下载。"""
+    from core.document.models import (
+        DocumentModel, DocumentMetadata, PageSetup,
+        Paragraph, ParagraphFormat, Run, RunFormat,
+        Table, TableCell,
+    )
+    from core.document.generator import generate_docx
+    import tempfile
+
+    # 构建 DocumentModel
+    ps = PageSetup()
+    if body.page_setup:
+        ps.margin_top_mm = body.page_setup.get('margin_top_mm', 37)
+        ps.margin_bottom_mm = body.page_setup.get('margin_bottom_mm', 35)
+        ps.margin_left_mm = body.page_setup.get('margin_left_mm', 28)
+        ps.margin_right_mm = body.page_setup.get('margin_right_mm', 26)
+
+    model = DocumentModel(
+        metadata=DocumentMetadata(), page_setup=ps,
+        paragraphs=[], tables=[], headers=[], footers=[],
+    )
+
+    for i, p in enumerate(body.paragraphs):
+        rf = RunFormat(font_name=p.format.get('font_name'), font_size_pt=p.format.get('font_size_pt'), bold=p.format.get('bold'))
+        pf = ParagraphFormat(alignment=p.format.get('alignment'), first_line_indent_pt=p.format.get('first_line_indent_pt'), line_spacing_pt=p.format.get('line_spacing_pt'))
+        model.paragraphs.append(Paragraph(index=i, text=p.text, is_heading=p.is_heading, heading_level=p.heading_level, role=p.role, runs=[Run(index=0, text=p.text, format=rf)], format=pf))
+
+    # 还原表格
+    if body.tables:
+        for t_data in body.tables:
+            table = Table(index=len(model.tables), rows=t_data.get('rows', 0), cols=t_data.get('cols', 0), cells=[])
+            for c_data in t_data.get('cells', []):
+                cell_paras = []
+                for cp_data in c_data.get('paragraphs', []):
+                    fmt = cp_data.get('format', {})
+                    cp_rf = RunFormat(font_name=fmt.get('font_name'), font_size_pt=fmt.get('font_size_pt'), bold=fmt.get('bold'))
+                    cp_pf = ParagraphFormat(alignment=fmt.get('alignment'))
+                    cell_paras.append(Paragraph(index=0, text=cp_data.get('text', ''), runs=[Run(index=0, text=cp_data.get('text', ''), format=cp_rf)], format=cp_pf))
+                table.cells.append(TableCell(row=c_data['row'], col=c_data['col'], text=c_data.get('text', ''), paragraphs=cell_paras))
+            model.tables.append(table)
+
+    # 生成 docx
+    tmp = tempfile.NamedTemporaryFile(suffix='.docx', delete=False)
+    tmp.close()
+    output_path = generate_docx(model, tmp.name)
+
+    return FileResponse(
+        path=str(output_path),
+        filename="公文预览.docx",
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
+
+
+# ---------------------------------------------------------------------------
 #  文档优化
 # ---------------------------------------------------------------------------
 
