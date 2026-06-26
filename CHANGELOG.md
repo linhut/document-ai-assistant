@@ -4,6 +4,48 @@
 
 ---
 
+## [1.4.6] - 2026-06-26
+
+### 表格定位修复（端到端验证通过）
+
+- **generator 表格定位** — `_add_table` 按 `insert_after_index` 用 XML 操作将表格插入到正确段落之后，不再追加到文档末尾
+- **parser 表格位置检测** — 遍历 `doc.element.body` 计算每个表格在段落流中的精确位置
+- **Table Grid 样式容错** — 文档无此预定义样式时手动添加 XML 边框
+
+### 加粗范围修复（端到端验证通过）
+
+- **fix_bold_range 执行顺序修复** — 移到 `FIX-C023 (set_bold heading3=true)` 之后执行，避免被覆盖
+- **无冒号整段加粗** → 全部取消加粗
+- **有冒号首句加粗** → 仅冒号前加粗，后续取消
+- 效果：全加粗段落 17 → 0，预览与下载完全一致
+
+### 预览 run 级别加粗渲染
+
+- **后端 preview API** — 返回 `runs[]` 数组，每段每个 run 有独立 `bold` 状态
+- **前端 A4PreviewModal** — 按 run 渲染 `<span>` 加粗，移除 heading_level=3 的整段强制加粗
+- **预览与下载一致** — 首句加粗+后续不加粗在预览和下载中表现相同
+
+### Parser 行距解析修复
+
+- **EMU→pt 转换** — `EXACTLY` 模式下 `pf.line_spacing` 是 EMU 值（如 367665），需通过 `Length(x,0).pt` 转换为 pt（28.95）
+- 数值 >100 时自动判定为 EMU 并转换
+
+### 校审中心优化
+
+- **同类型问题合并显示** — 按 `rule_id` 分组，如"正文应两端对齐 · 5 处"，可展开查看每一条
+
+### 全面代码审查修复（20+ 项）
+
+- templates.py: `save_extracted_template` 补充缺失的 `@router.post` 装饰器
+- main.py: health 接口版本号改为动态读取 `app.version`
+- ai.py: `save_ai_config` 不再吞掉 HTTPException
+- settings.py: 172.16-31 网段判断 `len(parts)==2` → `==4`
+- optimize.py: `preview-download` 添加 `BackgroundTask` 清理临时文件
+- checker.py: 字体 None 漏检修复（3 处）
+- modifier.py: `remove_extra_blank_lines` 后重新编号段落索引
+
+---
+
 ## [1.4.5] - 2026-06-26
 
 ### 预览下载修复 + Markdown 表格端到端修复
