@@ -76,7 +76,7 @@ export default function AISettings() {
   useEffect(() => {
     loadConfig();
     loadDefaultConfig();
-  }, [provider]);
+  }, [selectedLabel]);
 
   // 模型可用性状态轮询（每 60 秒）
   useEffect(() => {

@@ -105,7 +105,7 @@ def _check_and_free_port(port: int, force: bool) -> None:
 def _setup_signal_handlers() -> None:
     """注册信号处理，确保 Ctrl+C 时优雅退出。"""
     def _shutdown(signum, frame):
-        print("\n[sutdown] 收到终止信号，正在关闭...")
+        print("\n[shutdown] 收到终止信号，正在关闭...")
         sys.exit(0)
 
     signal.signal(signal.SIGINT, _shutdown)
@@ -245,7 +245,7 @@ async def root():
 
 @app.get("/api/health")
 async def health_check():
-    return {"status": "ok", "version": "1.4.0"}
+    return {"status": "ok", "version": app.version}
 
 
 if __name__ == "__main__":

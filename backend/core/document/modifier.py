@@ -177,6 +177,10 @@ def remove_extra_blank_lines(model: DocumentModel) -> None:
     for idx in sorted(to_remove, reverse=True):
         model.paragraphs.pop(idx)
 
+    # 重新编号段落索引，保证连续性
+    for i, p in enumerate(model.paragraphs):
+        p.index = i
+
 
 # ---------------------------------------------------------------------------
 #  标点规范化（参考 GB/T 15834 标点符号用法）
@@ -373,7 +377,7 @@ _MD_UL_RE = re.compile(r'^[-*+]\s+')
 _MD_OL_RE = re.compile(r'^\d+[.、]\s*')
 
 # markdown 表格行
-_MD_TABLE_RE = re.compile(r'^\|.*\|$')
+_MD_TABLE_RE = re.compile(r'^\|.+\|.+\|$')
 
 # markdown 表格分隔行：|----|----|
 _MD_TABLE_SEP_RE = re.compile(r'^\|[\s\-:|]+\|$')
@@ -587,9 +591,13 @@ def convert_markdown(model: DocumentModel) -> int:
             changes += 1
 
     # 删除标记为移除的段落（倒序）
-    for idx in sorted(to_remove, reverse=True):
-        model.paragraphs.pop(idx)
-        changes += 1
+    if to_remove:
+        for idx in sorted(to_remove, reverse=True):
+            model.paragraphs.pop(idx)
+        # 重新编号段落索引
+        for i, p in enumerate(model.paragraphs):
+            p.index = i
+        changes += 1  # 统一计为 1 次批量删除
 
     return changes
 

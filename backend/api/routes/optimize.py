@@ -6,8 +6,10 @@ Optimize API routes: auto-fix and document generation.
 """
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
+from starlette.background import BackgroundTask
 from sqlalchemy.orm import Session
 from pathlib import Path
+import os
 
 from db.database import get_db
 from api.schemas.api_models import OptimizeRequest, OptimizeResponse
@@ -151,6 +153,7 @@ async def download_from_preview(body: PreviewDownloadRequest):
         path=str(output_path),
         filename="公文预览.docx",
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        background=BackgroundTask(os.unlink, str(output_path)),
     )
 
 

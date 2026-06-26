@@ -124,7 +124,7 @@ def _check_title(model, rule_id, severity, name, field_path, expected, message) 
 
     if sub_field == "font":
         for run in title_para.runs:
-            if run.format.font_name and run.format.font_name != expected:
+            if run.format.font_name is None or run.format.font_name != expected:
                 issues.append(CheckIssue(
                     rule_id=rule_id, check_type="format", severity=severity,
                     name=name, location=f"paragraph:{title_para.index}",
@@ -199,7 +199,7 @@ def _check_heading_level(model, rule_id, severity, name, field_path, expected, m
 
         if sub_field == "font":
             for run in title_para.runs:
-                if run.format.font_name and run.format.font_name != expected:
+                if run.format.font_name is None or run.format.font_name != expected:
                     issues.append(CheckIssue(
                         rule_id=rule_id, check_type="format", severity=severity,
                         name=name, location=f"paragraph:{title_para.index}",
@@ -280,7 +280,7 @@ def _check_body(model, rule_id, severity, name, field_path, expected, message) -
     for para in body_paras:  # Check ALL body paragraphs
         if sub_field == "font":
             for run in para.runs:
-                if run.format.font_name and run.format.font_name != expected:
+                if run.format.font_name is None or run.format.font_name != expected:
                     issues.append(CheckIssue(
                         rule_id=rule_id, check_type="format", severity=severity,
                         name=name, location=f"paragraph:{para.index}",

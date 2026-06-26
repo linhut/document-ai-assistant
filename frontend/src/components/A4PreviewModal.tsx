@@ -128,7 +128,6 @@ export default function A4PreviewModal({ docId, templateId, templateName, refres
     const lh = p.format.line_spacing_pt ? `${p.format.line_spacing_pt}pt` : '29pt';
     const indent = p.format.first_line_indent_pt ? `${p.format.first_line_indent_pt}pt` : undefined;
     let align: string = p.format.alignment || 'left';
-    if (align === 'justify') align = 'justify';
 
     const style: React.CSSProperties = {
       fontSize: `${fs}pt`, fontFamily: ff, lineHeight: lh,
