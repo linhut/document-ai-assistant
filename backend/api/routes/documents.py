@@ -14,6 +14,7 @@ from services import document_service as svc
 from config import TEMP_DIR
 from utils.logger import logger
 from core.document.converter import is_convertible, convert_to_docx
+from core.document.models import RunFormat
 
 router = APIRouter()
 
