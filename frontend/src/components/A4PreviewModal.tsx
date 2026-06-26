@@ -29,6 +29,7 @@ interface DocParagraph {
     bold?: boolean;
     color?: string;
   };
+  runs?: { text: string; bold?: boolean; font_name?: string }[];
 }
 
 interface DocTableCellPara {
@@ -164,14 +165,26 @@ export default function A4PreviewModal({ docId, templateId, templateName, refres
     } else if (p.is_heading && p.heading_level === 2) {
       Object.assign(style, { fontFamily: '"楷体_GB2312", "KaiTi", serif', textIndent: '0' });
     } else if (p.is_heading && p.heading_level === 3) {
-      Object.assign(style, { fontFamily: '"仿宋_GB2312", "FangSong", serif', fontWeight: 'bold' });
+      Object.assign(style, { fontFamily: '"仿宋_GB2312", "FangSong", serif' });
+      // 不再整段加粗，由 run 级别控制
     }
 
-    // 空行处理：无文字时紧凑渲染，避免多余空白
+    // 空行处理
     const isEmpty = !p.text || p.text.trim() === '';
     if (isEmpty) {
       style.lineHeight = '0.6';
       style.minHeight = `${(p.format.line_spacing_pt || 29) * 0.5}pt`;
+    }
+
+    // 按 run 渲染：每个 run 有独立的加粗状态
+    if (p.runs && p.runs.length > 1) {
+      return (
+        <p key={key} style={style}>
+          {p.runs.map((r, ri) => (
+            <span key={ri} style={{ fontWeight: r.bold ? 'bold' : undefined }}>{r.text}</span>
+          ))}
+        </p>
+      );
     }
     return <p key={key} style={style}>{p.text || ' '}</p>;
   };

@@ -192,6 +192,16 @@ async def get_document_preview(doc_id: int, db: Session = Depends(get_db)):
             except Exception:
                 pass
 
+            # 每个 run 的独立格式（用于前端按 run 渲染加粗等）
+            runs_data = []
+            for r in p.runs:
+                rf = r.format
+                runs_data.append({
+                    "text": r.text or "",
+                    "bold": getattr(rf, 'bold', None),
+                    "font_name": getattr(rf, 'font_name', None),
+                })
+
             paragraphs.append({
                 "text": p.text or "",
                 "role": getattr(p, 'role', None),
@@ -206,6 +216,7 @@ async def get_document_preview(doc_id: int, db: Session = Depends(get_db)):
                     "bold": bold,
                     "color": color,
                 },
+                "runs": runs_data,
             })
         # 序列化表格
         tables = []
