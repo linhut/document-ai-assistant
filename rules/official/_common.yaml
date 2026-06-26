@@ -312,6 +312,7 @@ fix_rules:
   - id: FIX-C031
     action: fix_bold_range
     target: body
+    value: true
 
   - id: FIX-C004
     action: remove_extra_spaces

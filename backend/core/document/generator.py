@@ -469,14 +469,49 @@ def _update_table_content(table, table_model: TableModel):
 
 
 def _add_table(doc: Document, table_model: TableModel):
-    """在文档末尾添加一个新表格。"""
+    """在文档中添加一个新表格，按 insert_after_index 定位到正确位置。"""
     try:
         rows = max(1, table_model.rows)
         cols = max(1, table_model.cols)
         table = doc.add_table(rows=rows, cols=cols)
 
+        # 按 insert_after_index 移动表格到正确位置
+        insert_idx = getattr(table_model, 'insert_after_index', -1)
+        if insert_idx >= 0:
+            from lxml import etree
+            body = doc.element.body
+            para_count = 0
+            target_elem = None
+            for child in body:
+                tag = etree.QName(child.tag).localname if child.tag else ''
+                if tag == 'p':
+                    if para_count == insert_idx:
+                        target_elem = child
+                        break
+                    para_count += 1
+            if target_elem is not None:
+                tbl_elem = table._tbl
+                body.remove(tbl_elem)
+                target_elem.addnext(tbl_elem)
+
         # 设置表格样式（带边框）
-        table.style = 'Table Grid'
+        try:
+            table.style = 'Table Grid'
+        except KeyError:
+            # 文档中没有 'Table Grid' 样式时，手动添加边框
+            from docx.oxml.ns import qn
+            tbl = table._tbl
+            tblPr = tbl.tblPr if tbl.tblPr is not None else tbl._add_tblPr()
+            borders = tblPr.makeelement(qn('w:tblBorders'), {})
+            for edge in ('top', 'left', 'bottom', 'right', 'insideH', 'insideV'):
+                border = borders.makeelement(qn(f'w:{edge}'), {
+                    qn('w:val'): 'single',
+                    qn('w:sz'): '4',
+                    qn('w:space'): '0',
+                    qn('w:color'): '000000',
+                })
+                borders.append(border)
+            tblPr.append(borders)
 
         for cell_model in table_model.cells:
             try:
