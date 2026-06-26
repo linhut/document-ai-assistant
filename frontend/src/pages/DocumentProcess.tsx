@@ -7,24 +7,14 @@
  * DocumentProcess - 文档处理页面
  * 选择文档、选择类型、开始检查
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileText, Loader2, CheckCircle2 } from 'lucide-react';
+import { Upload, FileText, Loader2, CheckCircle2, ChevronDown } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  SelectGroup,
-  SelectLabel,
-  SelectSeparator,
-} from '@/components/ui/select';
 import { apiClient } from '@/api/client';
 import { useToast } from '@/components/ui/toast';
 
@@ -46,8 +36,27 @@ export default function DocumentProcess() {
   const [docId, setDocId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
+  const [typeSearch, setTypeSearch] = useState('');
+  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
+  const typeInputRef = useRef<HTMLInputElement>(null);
 
-  // 从后端API动态获取文档类型列表
+  // 根据搜索词过滤类型（支持中文名和英文标识双向匹配）
+  const filteredDocTypes = typeSearch.trim()
+    ? documentTypes.filter(t =>
+        t.value.toLowerCase().includes(typeSearch.toLowerCase()) ||
+        t.label.includes(typeSearch)
+      )
+    : documentTypes;
+
+  // 按分类分组过滤后的类型
+  const filteredGovernment = filteredDocTypes.filter(t => t.category === 'government');
+  const filteredCommon = filteredDocTypes.filter(t => t.category === 'common');
+  const filteredCustom = filteredDocTypes.filter(t => t.category === 'custom');
+
+  // 获取当前选中类型的显示名
+  const selectedTypeLabel = documentTypes.find(t => t.value === documentType)?.label;
+
+  // 从后端API动态获取文档类型列表（包含官方+自定义）
   useEffect(() => {
     const loadDocumentTypes = async () => {
       try {
@@ -56,7 +65,7 @@ export default function DocumentProcess() {
         const types: DocumentType[] = templates.map((t: any) => ({
           value: t.id,
           label: t.name,
-          category: t.category || 'government',
+          category: t.category || (t.source === 'custom' || t.source === 'user' ? 'custom' : 'government'),
           description: t.description || '',
         }));
         setDocumentTypes(types);
@@ -73,9 +82,6 @@ export default function DocumentProcess() {
     };
     loadDocumentTypes();
   }, []);
-
-  const governmentTypes = documentTypes.filter(t => t.category === 'government');
-  const commonTypes = documentTypes.filter(t => t.category === 'common');
 
   const isSupportedFormat = (name: string) => {
     const ext = name.toLowerCase().split('.').pop();
@@ -227,42 +233,98 @@ export default function DocumentProcess() {
               </CardContent>
             </Card>
 
-            {/* 文档类型选择 */}
+            {/* 文档类型选择 — 带搜索的动态下拉 */}
             <Card>
               <CardContent className="py-6">
                 <label className="block text-sm font-medium text-primary-700 mb-2">
                   文档类型
                 </label>
-                <Select value={documentType} onValueChange={setDocumentType} disabled={isProcessing}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="请选择文档类型" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {governmentTypes.length > 0 && (
-                      <SelectGroup>
-                        <SelectLabel>政府机关</SelectLabel>
-                        {governmentTypes.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    )}
-                    {commonTypes.length > 0 && (
-                      <>
-                        <SelectSeparator />
-                        <SelectGroup>
-                          <SelectLabel>其他常用</SelectLabel>
-                          {commonTypes.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.label}
-                            </SelectItem>
+                <div className="relative">
+                  <div className="relative">
+                    <input
+                      ref={typeInputRef}
+                      type="text"
+                      value={showTypeDropdown ? typeSearch : (documentType ? `${selectedTypeLabel || ''}（${documentType}）` : '')}
+                      onChange={(e) => {
+                        setTypeSearch(e.target.value);
+                        setShowTypeDropdown(true);
+                        // 如果清空了搜索词，也清空选中
+                        if (!e.target.value) setDocumentType('');
+                      }}
+                      onFocus={() => {
+                        setTypeSearch('');
+                        setShowTypeDropdown(true);
+                      }}
+                      onBlur={() => setTimeout(() => setShowTypeDropdown(false), 200)}
+                      placeholder="输入搜索或点击选择文档类型"
+                      disabled={isProcessing}
+                      className="w-full border border-primary-200 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
+                    />
+                    <ChevronDown
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-primary-400 cursor-pointer"
+                      onClick={() => {
+                        if (!isProcessing) {
+                          setShowTypeDropdown(!showTypeDropdown);
+                          typeInputRef.current?.focus();
+                        }
+                      }}
+                    />
+                  </div>
+                  {showTypeDropdown && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-primary-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                      {filteredGovernment.length > 0 && (
+                        <>
+                          <div className="px-3 py-1.5 text-xs font-medium text-primary-400 bg-primary-50 sticky top-0">政府机关</div>
+                          {filteredGovernment.map(t => (
+                            <div
+                              key={t.value}
+                              className={`px-3 py-2 text-sm cursor-pointer hover:bg-primary-50 flex items-center justify-between ${documentType === t.value ? 'bg-accent/10 text-accent' : ''}`}
+                              onMouseDown={(e) => { e.preventDefault(); setDocumentType(t.value); setTypeSearch(''); setShowTypeDropdown(false); }}
+                            >
+                              <span className="font-medium">{t.label}</span>
+                              <span className="text-xs text-muted-foreground">{t.value}</span>
+                            </div>
                           ))}
-                        </SelectGroup>
-                      </>
-                    )}
-                  </SelectContent>
-                </Select>
+                        </>
+                      )}
+                      {filteredCommon.length > 0 && (
+                        <>
+                          <div className="px-3 py-1.5 text-xs font-medium text-primary-400 bg-primary-50 sticky top-0">其他常用</div>
+                          {filteredCommon.map(t => (
+                            <div
+                              key={t.value}
+                              className={`px-3 py-2 text-sm cursor-pointer hover:bg-primary-50 flex items-center justify-between ${documentType === t.value ? 'bg-accent/10 text-accent' : ''}`}
+                              onMouseDown={(e) => { e.preventDefault(); setDocumentType(t.value); setTypeSearch(''); setShowTypeDropdown(false); }}
+                            >
+                              <span className="font-medium">{t.label}</span>
+                              <span className="text-xs text-muted-foreground">{t.value}</span>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                      {filteredCustom.length > 0 && (
+                        <>
+                          <div className="px-3 py-1.5 text-xs font-medium text-primary-400 bg-primary-50 sticky top-0">📋 自定义</div>
+                          {filteredCustom.map(t => (
+                            <div
+                              key={t.value}
+                              className={`px-3 py-2 text-sm cursor-pointer hover:bg-primary-50 flex items-center justify-between ${documentType === t.value ? 'bg-accent/10 text-accent' : ''}`}
+                              onMouseDown={(e) => { e.preventDefault(); setDocumentType(t.value); setTypeSearch(''); setShowTypeDropdown(false); }}
+                            >
+                              <span className="font-medium">{t.label}</span>
+                              <span className="text-xs text-muted-foreground">{t.value}</span>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                      {filteredDocTypes.length === 0 && (
+                        <div className="px-3 py-4 text-sm text-muted-foreground text-center">
+                          未找到匹配的文档类型
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
 

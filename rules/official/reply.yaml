@@ -1,7 +1,6 @@
 template_name: 批复
 document_type: reply
 
-# --- 批复特有内容检查 ---
 check_rules:
   - id: CHK-RP001
     name: 批复对象检查
@@ -9,6 +8,7 @@ check_rules:
     field: content.reply_to
     expected: 引述请示标题
     message: 批复开头应引述下级机关请示的标题和文号
+    category: content
 
   - id: CHK-RP002
     name: 批复结语检查
@@ -16,4 +16,5 @@ check_rules:
     field: ending.check
     expected: 包含规范结语
     message: 批复应以"此复"、"特此批复"等结语结尾
+    category: content
 fix_rules: []

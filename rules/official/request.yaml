@@ -1,7 +1,6 @@
 template_name: 请示
 document_type: request
 
-# --- 请示特有内容检查 ---
 check_rules:
   - id: CHK-R001
     name: 请示结语检查
@@ -9,6 +8,7 @@ check_rules:
     field: ending.check
     expected: 使用"妥否，请批示"等
     message: 请示应以"妥否，请批示"、"以上请示，请予批复"等结语结尾
+    category: content
 
   - id: CHK-R002
     name: 一文一事检查
@@ -16,6 +16,7 @@ check_rules:
     field: content.single_topic
     expected: 一文一事
     message: 请示应遵循一文一事原则
+    category: content
 
   - id: CHK-R003
     name: 主送机关检查
@@ -23,4 +24,5 @@ check_rules:
     field: header.recipient
     expected: 主送一个上级机关
     message: 请示一般只写一个主送机关
+    category: content
 fix_rules: []

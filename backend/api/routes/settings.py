@@ -6,6 +6,7 @@ Settings API routes: rule types, general config, font download.
 """
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 from pathlib import Path
 
 from api.schemas.api_models import RuleTypeResponse
@@ -88,3 +89,107 @@ def _get_font_description(filename: str) -> str:
         "楷体_GB2312.TTF": "公文小标题/引用字体",
     }
     return desc_map.get(filename, "公文字体")
+
+
+# ---------------------------------------------------------------------------
+#  网络访问设置（局域网共享）
+# ---------------------------------------------------------------------------
+
+import json
+import socket
+
+_NETWORK_CONFIG_FILE = Path(__file__).resolve().parent.parent.parent / "data" / "network_config.json"
+
+
+def _load_network_config() -> dict:
+    """加载网络配置。"""
+    if _NETWORK_CONFIG_FILE.exists():
+        try:
+            return json.loads(_NETWORK_CONFIG_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return {"web_access_enabled": True, "port": 8765}
+
+
+def _save_network_config(config: dict) -> None:
+    """保存网络配置。"""
+    _NETWORK_CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
+    _NETWORK_CONFIG_FILE.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _get_lan_ip() -> str:
+    """获取本机局域网 IP（优先 192.168/10/172.16-31 段）。"""
+    candidates = []
+    try:
+        for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
+            ip = info[4][0]
+            if ip.startswith("127."):
+                continue
+            candidates.append(ip)
+    except Exception:
+        pass
+
+    # 优先返回局域网地址
+    for ip in candidates:
+        if ip.startswith("192.168.") or ip.startswith("10."):
+            return ip
+    for ip in candidates:
+        parts = ip.split(".")
+        if len(parts) == 2 and 16 <= int(parts[1]) <= 31:
+            return ip
+
+    # 回退：通过 UDP 连接获取
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
+
+@router.get("/network")
+async def get_network_status():
+    """获取当前网络访问状态。"""
+    config = _load_network_config()
+    lan_ip = _get_lan_ip()
+    port = config.get("port", 8765)
+    enabled = config.get("web_access_enabled", False)
+
+    return {
+        "web_access_enabled": enabled,
+        "host": "0.0.0.0" if enabled else "127.0.0.1",
+        "port": port,
+        "lan_ip": lan_ip,
+        "lan_url": f"http://{lan_ip}:{port}" if enabled else None,
+        "localhost_url": f"http://127.0.0.1:{port}",
+        "message": f"局域网用户可通过 {lan_ip}:{port} 访问" if enabled else "当前仅本机可访问",
+    }
+
+
+class NetworkToggleRequest(BaseModel):
+    enabled: bool
+
+
+@router.post("/network")
+async def toggle_network_access(body: NetworkToggleRequest):
+    """开启/关闭局域网网页访问。需要重启后端生效。"""
+    from pydantic import BaseModel as _BM  # noqa
+
+    config = _load_network_config()
+    config["web_access_enabled"] = body.enabled
+    _save_network_config(config)
+
+    lan_ip = _get_lan_ip()
+    port = config.get("port", 8765)
+
+    return {
+        "success": True,
+        "web_access_enabled": body.enabled,
+        "lan_ip": lan_ip,
+        "port": port,
+        "lan_url": f"http://{lan_ip}:{port}" if body.enabled else None,
+        "need_restart": True,
+        "message": f"已{'开启' if body.enabled else '关闭'}局域网访问，重启后端后生效",
+    }

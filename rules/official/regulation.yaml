@@ -1,7 +1,6 @@
 template_name: 制度
 document_type: regulation
 
-# --- 制度特有内容检查 ---
 check_rules:
   - id: CHK-REG001
     name: 制度条款检查
@@ -9,6 +8,7 @@ check_rules:
     field: content.clauses
     expected: 条款明确
     message: 制度应条文清晰、逻辑严密
+    category: content
 
   - id: CHK-REG002
     name: 制度施行日期检查
@@ -16,4 +16,5 @@ check_rules:
     field: content.effective_date
     expected: 包含施行日期
     message: 制度应注明施行日期
+    category: content
 fix_rules: []

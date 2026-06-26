@@ -23,7 +23,7 @@ import copy
 import re
 from typing import Any
 
-from core.document.models import DocumentModel, Paragraph, Run, ParagraphFormat
+from core.document.models import DocumentModel, Paragraph, Run, ParagraphFormat, RunFormat, Table, TableCell
 from utils.logger import logger
 
 
@@ -353,6 +353,311 @@ def replace_paragraph_text(model: DocumentModel, para_index: int, new_text: str)
             para.runs[0].text = new_text
             for r in para.runs[1:]:
                 r.text = ""
+
+
+# ---------------------------------------------------------------------------
+#  Markdown 语法识别与转换（AI 生成内容直接粘贴到 Word 的场景）
+# ---------------------------------------------------------------------------
+
+# markdown 标题标记：行首的 # ## ### #### 等，捕获 # 数量和正文
+_MD_HEADING_RE = re.compile(r'^(#{1,6})\s+(.*)')
+
+# markdown 加粗标记 **text** 和 __text__（不含斜体 *text* 避免误伤）
+_MD_BOLD_RE = re.compile(r'\*{2}(.+?)\*{2}')
+_MD_BOLD_UNDER_RE = re.compile(r'__(.+?)__')
+
+# markdown 行首无序列表标记：- * +
+_MD_UL_RE = re.compile(r'^[-*+]\s+')
+
+# markdown 有序列表前缀：1. 2. 3. 或 1、2、3、
+_MD_OL_RE = re.compile(r'^\d+[.、]\s*')
+
+# markdown 表格行
+_MD_TABLE_RE = re.compile(r'^\|.*\|$')
+
+# markdown 表格分隔行：|----|----|
+_MD_TABLE_SEP_RE = re.compile(r'^\|[\s\-:|]+\|$')
+
+# markdown 水平分隔线：--- *** ___
+_MD_HR_RE = re.compile(r'^[-*_]{3,}$')
+
+# HTML 标签
+_HTML_TAG_RE = re.compile(r'<[^>]+>')
+
+# markdown 链接：[text](url)
+_MD_LINK_RE = re.compile(r'\[([^\]]+)\]\([^)]+\)')
+
+# 代码块标记 ```
+_MD_CODE_BLOCK_RE = re.compile(r'^`{3,}')
+
+# 行内代码 `code`
+_MD_INLINE_CODE_RE = re.compile(r'`([^`]+)`')
+
+
+def convert_markdown(model: DocumentModel) -> int:
+    """
+    识别 Markdown 格式标记并转换为对应的 Word 格式属性。
+
+    转换规则：
+    - # 标题     → heading_level=0, 方正小标宋 22pt 居中（公文标题）
+    - ## 一、    → heading_level=1, 黑体 16pt（一级标题）
+    - ### （一）  → heading_level=2, 楷体 16pt（二级标题）
+    - #### 1.    → heading_level=3, 仿宋 16pt 加粗（三级标题）
+    - **文字**   → bold=True（加粗）
+    - - 列表     → 保留，添加左缩进
+    - | 表格 |   → 转为真正的 Word Table 对象
+    - ---        → 删除（分隔线）
+    - <br>       → 删除（HTML标签）
+    - [text](url) → 保留 text
+
+    返回修改次数。
+    """
+    changes = 0
+
+    # === 第一步：识别并提取 markdown 表格 ===
+    # 连续的 |...| 行构成一个表格，|----| 为分隔行（跳过）
+    table_regions = _detect_md_table_regions(model.paragraphs)
+    table_para_indices = set()
+
+    for region in table_regions:
+        header_cells = region['header']
+        data_rows = region['rows']
+        insert_idx = region['insert_after']  # 在这个段落索引之后插入表格
+
+        if not header_cells:
+            continue
+
+        # 构建 Table 对象
+        num_rows = 1 + len(data_rows)  # header + data
+        num_cols = len(header_cells)
+        table = Table(
+            index=len(model.tables),
+            rows=num_rows,
+            cols=num_cols,
+            cells=[],
+        )
+
+        # 填充表头单元格
+        for col_idx, cell_text in enumerate(header_cells):
+            cell_para = Paragraph(
+                index=0, text=cell_text, is_heading=False,
+                runs=[Run(index=0, text=cell_text, format=RunFormat(
+                    font_name='黑体', font_size_pt=12, bold=True,
+                ))],
+                format=ParagraphFormat(alignment='center'),
+            )
+            table.cells.append(TableCell(row=0, col=col_idx, text=cell_text, paragraphs=[cell_para]))
+
+        # 填充数据行单元格
+        for row_idx, row_cells in enumerate(data_rows):
+            for col_idx in range(num_cols):
+                cell_text = row_cells[col_idx] if col_idx < len(row_cells) else ''
+                # 清理加粗标记
+                clean_bold = False
+                if '**' in cell_text:
+                    cell_text = _MD_BOLD_RE.sub(r'\1', cell_text)
+                    cell_text = _MD_BOLD_UNDER_RE.sub(r'\1', cell_text)
+                    clean_bold = True
+                cell_text = _HTML_TAG_RE.sub('', cell_text).strip()
+
+                cell_para = Paragraph(
+                    index=0, text=cell_text, is_heading=False,
+                    runs=[Run(index=0, text=cell_text, format=RunFormat(
+                        font_name='仿宋_GB2312', font_size_pt=12,
+                        bold=True if clean_bold else None,
+                    ))],
+                    format=ParagraphFormat(alignment='left'),
+                )
+                table.cells.append(TableCell(row=row_idx + 1, col=col_idx, text=cell_text, paragraphs=[cell_para]))
+
+        model.tables.append(table)
+
+        # 标记所有表格段落为待删除
+        for idx in region['all_indices']:
+            table_para_indices.add(idx)
+
+        changes += 1
+
+    # === 第二步：处理非表格段落的 markdown 语法 ===
+    to_remove: list[int] = []
+
+    for i, para in enumerate(model.paragraphs):
+        # 跳过已标记为表格的段落
+        if i in table_para_indices:
+            to_remove.append(i)
+            continue
+
+        original_text = para.text
+        if not original_text or not original_text.strip():
+            continue
+
+        text = para.text.strip()
+
+        # --- 删除无用行 ---
+
+        # 水平分隔线 --- *** ___
+        if _MD_HR_RE.match(text):
+            to_remove.append(i)
+            continue
+
+        # 代码块标记 ```
+        if _MD_CODE_BLOCK_RE.match(text):
+            to_remove.append(i)
+            continue
+
+        # --- 识别标题级别并设置格式 ---
+
+        heading_match = _MD_HEADING_RE.match(text)
+        if heading_match:
+            level = len(heading_match.group(1))
+            content = heading_match.group(2).strip()
+            text = content
+
+            if level == 1:
+                para.is_heading = True
+                para.heading_level = 0
+                para.role = 'title'
+                _apply_heading_format(para, content,
+                    font='方正小标宋简体', size=22, align='center', bold=False)
+            elif level == 2:
+                para.is_heading = True
+                para.heading_level = 1
+                _apply_heading_format(para, content,
+                    font='黑体', size=16, align='left', bold=False)
+            elif level == 3:
+                para.is_heading = True
+                para.heading_level = 2
+                _apply_heading_format(para, content,
+                    font='楷体_GB2312', size=16, align='left', bold=False)
+            elif level >= 4:
+                para.is_heading = True
+                para.heading_level = 3
+                _apply_heading_format(para, content,
+                    font='仿宋_GB2312', size=16, align='left', bold=True)
+
+            changes += 1
+
+        # --- 识别加粗标记 **text** ---
+
+        has_bold = False
+        if _MD_BOLD_RE.search(text) or _MD_BOLD_UNDER_RE.search(text):
+            has_bold = True
+            text = _MD_BOLD_RE.sub(r'\1', text)
+            text = _MD_BOLD_UNDER_RE.sub(r'\1', text)
+
+        # --- 清理其他 markdown 语法 ---
+
+        text = _MD_LINK_RE.sub(r'\1', text)
+        text = _MD_INLINE_CODE_RE.sub(r'\1', text)
+        text = _HTML_TAG_RE.sub('', text)
+
+        # --- 处理列表标记 ---
+
+        is_list = False
+        list_indent_pt = 0
+
+        ul_match = _MD_UL_RE.match(text)
+        if ul_match:
+            is_list = True
+            text = _MD_UL_RE.sub('', text)
+            list_indent_pt = 32  # 2字符缩进
+
+        ol_match = _MD_OL_RE.match(text)
+        if ol_match and not para.is_heading:
+            is_list = True
+
+        # --- 应用格式修改到 run ---
+
+        text = re.sub(r' {2,}', ' ', text).strip()
+
+        if text != original_text or has_bold or is_list:
+            para.text = text
+            if para.runs:
+                para.runs[0].text = text
+                for r in para.runs[1:]:
+                    r.text = ""
+
+                if has_bold and not para.is_heading:
+                    for r in para.runs:
+                        r.format.bold = True
+
+                if is_list and list_indent_pt > 0 and not para.is_heading:
+                    para.format.left_indent_pt = list_indent_pt
+
+            changes += 1
+
+    # 删除标记为移除的段落（倒序）
+    for idx in sorted(to_remove, reverse=True):
+        model.paragraphs.pop(idx)
+        changes += 1
+
+    return changes
+
+
+def _detect_md_table_regions(paragraphs: list) -> list[dict]:
+    """
+    检测段落列表中的 markdown 表格区域。
+    返回每个表格的 header cells、data rows 和段落索引。
+    """
+    regions = []
+    i = 0
+    while i < len(paragraphs):
+        text = paragraphs[i].text.strip() if paragraphs[i].text else ''
+        # 检测表格起始：以 | 开头和结尾的行
+        if _MD_TABLE_RE.match(text) and not _MD_TABLE_SEP_RE.match(text):
+            # 找到表格区域的起点
+            all_indices = [i]
+            header_cells = [c.strip() for c in text.strip('|').split('|')]
+
+            j = i + 1
+            # 检查下一行是否是分隔行 |----|----|
+            if j < len(paragraphs):
+                next_text = paragraphs[j].text.strip() if paragraphs[j].text else ''
+                if _MD_TABLE_SEP_RE.match(next_text):
+                    all_indices.append(j)
+                    j += 1
+
+            # 收集数据行
+            data_rows = []
+            while j < len(paragraphs):
+                row_text = paragraphs[j].text.strip() if paragraphs[j].text else ''
+                if _MD_TABLE_RE.match(row_text) and not _MD_TABLE_SEP_RE.match(row_text):
+                    all_indices.append(j)
+                    cells = [c.strip() for c in row_text.strip('|').split('|')]
+                    data_rows.append(cells)
+                    j += 1
+                else:
+                    break
+
+            if header_cells:
+                regions.append({
+                    'header': header_cells,
+                    'rows': data_rows,
+                    'all_indices': all_indices,
+                    'insert_after': i - 1,  # 在表格前一个段落之后插入
+                })
+
+            i = j
+        else:
+            i += 1
+
+    return regions
+
+
+def _apply_heading_format(para, text: str, font: str, size: int,
+                           align: str, bold: bool) -> None:
+    """给段落应用标题格式。"""
+    para.text = text
+    para.format.alignment = align
+    para.format.first_line_indent_pt = 0
+    if para.runs:
+        para.runs[0].text = text
+        for r in para.runs[1:]:
+            r.text = ""
+        for r in para.runs:
+            r.format.font_name = font
+            r.format.font_size_pt = float(size)
+            r.format.bold = bold if bold else None
 
 
 def set_paragraph_format_attr(model: DocumentModel, para_index: int,

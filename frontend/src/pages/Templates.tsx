@@ -7,7 +7,7 @@
  * Templates - 模板中心（优化版 - 改进用户体验）
  */
 import { useState, useEffect } from 'react';
-import { FileText, Eye, Loader2, Plus, Edit, Settings, ChevronRight, Download, FileDown, Sparkles } from 'lucide-react';
+import { FileText, Eye, Loader2, Plus, Edit, Settings, ChevronRight, Download, FileDown, Sparkles, Upload, Settings2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { apiClient, downloadFile } from '@/api/client';
 import { useToast } from '@/components/ui/toast';
+import A4PreviewModal from '@/components/A4PreviewModal';
 
 interface Template {
   id: string;
@@ -27,6 +28,7 @@ interface Template {
   description: string;
   icon: string;
   category?: string;
+  source?: string;
   rule_file: string;
   enabled: boolean;
   has_rules: boolean;
@@ -46,8 +48,7 @@ export default function Templates() {
   const { success, error: showError, warning } = useToast();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
-  const [viewingDetails, setViewingDetails] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState<{ id: string; name: string } | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showRulesDialog, setShowRulesDialog] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -89,16 +90,8 @@ export default function Templates() {
     }
   };
 
-  const handleViewDetails = async (template: Template) => {
-    try {
-      setViewingDetails(true);
-      const response = await apiClient.get(`/api/templates/${template.id}`);
-      setSelectedTemplate(response);
-    } catch (error) {
-      console.error('Load template details error:', error);
-    } finally {
-      setViewingDetails(false);
-    }
+  const handleViewDetails = (template: Template) => {
+    setPreviewTemplate({ id: template.id, name: template.name });
   };
 
   const handleEditRules = (template: Template) => {
@@ -187,10 +180,13 @@ export default function Templates() {
 
   const filteredTemplates = categoryFilter === 'all'
     ? templates
-    : templates.filter(t => t.category === categoryFilter);
+    : categoryFilter === 'custom'
+      ? templates.filter(t => t.source === 'custom' || t.source === 'user' || t.category === 'custom')
+      : templates.filter(t => t.category === categoryFilter);
 
   const governmentCount = templates.filter(t => t.category === 'government').length;
   const commonCount = templates.filter(t => t.category === 'common').length;
+  const customCount = templates.filter(t => t.source === 'custom' || t.source === 'user' || t.category === 'custom').length;
 
   if (loading) {
     return (
@@ -204,14 +200,23 @@ export default function Templates() {
     <div className="w-full bg-primary-50">
       <PageHeader
         title="模板中心"
-        description={`支持 ${templates.length} 种公文模板 · 政府机关 ${governmentCount} 个 · 其他常用 ${commonCount} 个`}
+        description={`支持 ${templates.length} 种公文模板 · 政府机关 ${governmentCount} 个 · 其他常用 ${commonCount} 个${customCount > 0 ? ` · 自定义 ${customCount} 个` : ''}`}
         actions={
-          <Button
-            onClick={() => setShowCreateDialog(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            新增模板
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => navigate('/templates/import')}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              导入模板
+            </Button>
+            <Button
+              onClick={() => setShowCreateDialog(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              新增模板
+            </Button>
+          </div>
         }
       />
 
@@ -236,6 +241,14 @@ export default function Templates() {
           >
             其他常用 ({commonCount})
           </Button>
+          {customCount > 0 && (
+            <Button
+              variant={categoryFilter === 'custom' ? 'default' : 'outline'}
+              onClick={() => setCategoryFilter('custom')}
+            >
+              📋 自定义 ({customCount})
+            </Button>
+          )}
         </div>
 
         <div className="grid-auto-fill">
@@ -265,6 +278,15 @@ export default function Templates() {
                 >
                   <Eye className="h-4 w-4 mr-2" />
                   查看详情
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => navigate(`/document/enhanced-preview?templateId=${template.id}`)}
+                >
+                  <Settings2 className="h-4 w-4 mr-2" />
+                  实时排版
                 </Button>
                 <Button
                   variant="outline"
@@ -555,84 +577,14 @@ export default function Templates() {
           </DialogContent>
         </Dialog>
 
-        {/* 模板详情对话框 */}
-        <Dialog open={!!selectedTemplate} onOpenChange={(open) => { if (!open) setSelectedTemplate(null); }}>
-          <DialogContent className="max-w-3xl w-full max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>模板详情：{selectedTemplate?.template_id}</DialogTitle>
-            </DialogHeader>
-              {selectedTemplate?.exists ? (
-                <div className="space-y-4">
-                    <div>
-                      <h3 className="font-medium mb-2">基本信息</h3>
-                      <div className="text-sm space-y-1 text-primary-700">
-                        <p>模板名称: {selectedTemplate.rules?.template_name || selectedTemplate.template_id}</p>
-                        <p>文档类型: {selectedTemplate.rules?.document_type}</p>
-                        <p>规则文件: {selectedTemplate.template_id}.yaml</p>
-                      </div>
-                    </div>
-
-                    {selectedTemplate.rules?.check_rules && (
-                      <div>
-                        <h3 className="font-medium mb-2">检查规则</h3>
-                        <p className="text-sm text-primary-500 mb-2">
-                          共 {selectedTemplate.rules.check_rules.length} 条检查规则
-                        </p>
-                        <div className="space-y-2 max-h-60 overflow-y-auto">
-                          {selectedTemplate.rules.check_rules.slice(0, 10).map((rule: any, i: number) => (
-                            <div key={i} className="text-sm p-3 bg-primary-50 rounded">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Badge variant={rule.severity === 'P0' ? 'destructive' : 'secondary'}>
-                                  {rule.severity}
-                                </Badge>
-                                <strong>{rule.name}</strong>
-                              </div>
-                              <p className="text-muted-foreground">{rule.message}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedTemplate.rules?.fix_rules && (
-                      <div>
-                        <h3 className="font-medium mb-2">修复规则</h3>
-                        <p className="text-sm text-primary-500">
-                          共 {selectedTemplate.rules.fix_rules.length} 条修复规则
-                        </p>
-                      </div>
-                    )}
-                </div>
-              ) : (
-                <p className="text-status-error">模板规则文件不存在</p>
-              )}
-
-                <div className="flex gap-3 mt-6 border-t pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => handleEditRules({
-                      id: selectedTemplate!.template_id,
-                      name: selectedTemplate!.rules?.template_name || selectedTemplate!.template_id,
-                      description: '',
-                      icon: '',
-                      rule_file: '',
-                      enabled: true,
-                      has_rules: true
-                    })}
-                    className="flex-1"
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    编辑规则
-                  </Button>
-                  <Button
-                    onClick={() => setSelectedTemplate(null)}
-                    className="flex-1"
-                  >
-                    关闭
-                  </Button>
-                </div>
-          </DialogContent>
-        </Dialog>
+        {/* 模板 A4 预览弹窗 */}
+        {previewTemplate && (
+          <A4PreviewModal
+            templateId={previewTemplate.id}
+            templateName={previewTemplate.name}
+            onClose={() => setPreviewTemplate(null)}
+          />
+        )}
       </div>
     </div>
   );

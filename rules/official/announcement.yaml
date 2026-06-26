@@ -1,23 +1,37 @@
 template_name: 通告
 document_type: announcement
 
-# --- 通告特有格式覆盖 ---
 title:
   bold: true
 
-# --- 通告特有内容检查 ---
 check_rules:
   - id: CHK-A001
+    name: 标题加粗检查
+    severity: P1
+    field: title.bold
+    expected: true
+    message: 通告标题应加粗
+    category: format
+
+  - id: CHK-A002
     name: 通告范围检查
     severity: P1
     field: content.scope
     expected: 明确适用范围
     message: 通告应明确适用范围和对象
+    category: content
 
-  - id: CHK-A002
+  - id: CHK-A003
     name: 通告生效日期检查
     severity: P1
     field: content.effective_date
     expected: 包含施行日期
     message: 通告应注明施行日期
-fix_rules: []
+    category: content
+
+fix_rules:
+  - id: FIX-A001
+    ref_check: CHK-A001
+    action: set_bold
+    target: doc_title
+    value: true

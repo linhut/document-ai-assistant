@@ -1,7 +1,6 @@
 template_name: 工作方案
 document_type: work_plan
 
-# --- 工作方案特有内容检查 ---
 check_rules:
   - id: CHK-WP001
     name: 目标任务检查
@@ -9,6 +8,7 @@ check_rules:
     field: content.objectives
     expected: 目标明确
     message: 工作方案应有明确的目标和任务分解
+    category: content
 
   - id: CHK-WP002
     name: 时间节点检查
@@ -16,4 +16,5 @@ check_rules:
     field: content.timeline
     expected: 有时间节点
     message: 工作方案应明确时间节点和进度安排
+    category: content
 fix_rules: []

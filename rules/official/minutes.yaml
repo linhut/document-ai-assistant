@@ -1,7 +1,6 @@
 template_name: 纪要
 document_type: minutes
 
-# --- 纪要特有内容检查 ---
 check_rules:
   - id: CHK-MN001
     name: 会议信息检查
@@ -9,6 +8,7 @@ check_rules:
     field: content.meeting_info
     expected: 包含时间地点参会人
     message: 纪要应注明会议时间、地点、主持人和参会人员
+    category: content
 
   - id: CHK-MN002
     name: 议定事项检查
@@ -16,4 +16,5 @@ check_rules:
     field: content.decisions
     expected: 议定事项明确
     message: 纪要应明确议定事项和责任分工
+    category: content
 fix_rules: []

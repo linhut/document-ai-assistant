@@ -115,7 +115,7 @@ def _setup_signal_handlers() -> None:
 app = FastAPI(
     title="Official Document AI Assistant",
     description="AI 公文智能优化助手核心引擎 API",
-    version="1.4.1",
+    version="1.4.3",
 )
 
 app.add_middleware(
@@ -230,7 +230,7 @@ def _init_default_ai_config():
 async def root():
     return {
         "app": "Official Document AI Assistant",
-        "version": "1.4.1",
+        "version": "1.4.3",
         "docs": "/docs",
         "health": "/api/health"
     }
@@ -245,8 +245,26 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="AI 公文智能优化助手后端")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT, help="监听端口")
     parser.add_argument("--force", action="store_true", help="端口被占用时自动杀死旧进程")
+    parser.add_argument("--host", type=str, default=None, help="绑定地址（覆盖配置文件）")
     args = parser.parse_args()
+
+    # 确定绑定地址：命令行参数 > 配置文件 > 默认值
+    bind_host = args.host
+    if not bind_host:
+        try:
+            cfg_path = Path(__file__).resolve().parent.parent / "data" / "network_config.json"
+            if cfg_path.exists():
+                import json as _json
+                cfg = _json.loads(cfg_path.read_text(encoding="utf-8"))
+                bind_host = "0.0.0.0" if cfg.get("web_access_enabled", True) else HOST
+            else:
+                bind_host = "0.0.0.0"  # 默认开启网页访问
+        except Exception:
+            bind_host = HOST
 
     _setup_signal_handlers()
     _check_and_free_port(args.port, force=args.force)
-    uvicorn.run(app, host=HOST, port=args.port)
+
+    if bind_host == "0.0.0.0":
+        logger.info(f"Web access enabled: binding to 0.0.0.0:{args.port}")
+    uvicorn.run(app, host=bind_host, port=args.port)

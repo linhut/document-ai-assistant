@@ -8,7 +8,7 @@ Templates management API: create, read, update templates.
   2. 样式模板 (templates/official/) — 用于生成 Word 模板文件
   3. 预置 .dotx 模板 (公文模板/) — 可直接使用的 Word 模板文件
 """
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from pathlib import Path
@@ -267,33 +267,49 @@ async def list_templates():
     ]
 
     # Check which rule files exist
+    existing_ids = set()
     for template in templates:
         rule_path = RULES_DIR / template["rule_file"]
         template["has_rules"] = rule_path.exists()
+        template["source"] = "official"
+        existing_ids.add(template["id"])
+
+    # 扫描 custom_rules 和 user_rules 目录，追加自定义模板
+    from config import CUSTOM_RULES_DIR, USER_RULES_DIR
+    for source, src_label in [(CUSTOM_RULES_DIR, "custom"), (USER_RULES_DIR, "user")]:
+        if not source.exists():
+            continue
+        for f in sorted(source.glob("*.yaml")):
+            if f.stem.startswith("_"):
+                continue
+            if f.stem in existing_ids:
+                continue
+            existing_ids.add(f.stem)
+            # 尝试读取 template_name
+            try:
+                import yaml
+                with open(f, "r", encoding="utf-8") as fh:
+                    data = yaml.safe_load(fh) or {}
+                name = data.get("template_name", f.stem)
+            except Exception:
+                name = f.stem
+            templates.append({
+                "id": f.stem,
+                "name": name,
+                "description": f"自定义规则（{src_label}）",
+                "icon": "📋",
+                "category": "custom",
+                "rule_file": f.name,
+                "has_rules": True,
+                "source": src_label,
+                "enabled": True,
+            })
 
     logger.info(f"Listed {len(templates)} templates")
     return {"templates": templates}
 
 
-@router.get("/{template_id}")
-async def get_template(template_id: str):
-    """Get template details."""
-    from core.rules.manager import load_rules_merged
-
-    try:
-        rules = load_rules_merged(template_id)
-        return {
-            "template_id": template_id,
-            "rules": rules,
-            "exists": True
-        }
-    except Exception as e:
-        logger.error(f"Get template {template_id} failed: {e}")
-        return {
-            "template_id": template_id,
-            "exists": False,
-            "error": str(e)
-        }
+# NOTE: /{template_id} 必须放在所有 /xxx 固定路由之后，否则会拦截 /create、/extract 等路径
 
 
 @router.post("/create")
@@ -370,6 +386,306 @@ async def create_template(data: TemplateCreate):
         "success": True,
         "template_id": data.document_type,
         "message": f"模板 {data.name} 创建成功"
+    }
+
+
+# ---------------------------------------------------------------------------
+#  导入文档自动生成模板规则
+# ---------------------------------------------------------------------------
+
+class SaveExtractedRequest(BaseModel):
+    template_name: str
+    document_type: str
+    yaml_content: dict
+
+
+@router.post("/extract")
+async def extract_template_from_doc(file: UploadFile = File(...)):
+    """从上传的 .docx 文档中提取格式信息，生成规则模板预览。"""
+    import re
+
+    # 校验文件类型
+    filename = file.filename or "document.docx"
+    ext = Path(filename).suffix.lower()
+    if ext not in ('.docx', '.doc', '.wps'):
+        raise HTTPException(status_code=400, detail="仅支持 .docx/.doc/.wps 格式")
+
+    # 保存到临时目录
+    tmp_dir = Path(tempfile.mkdtemp())
+    safe_name = re.sub(r'[^\w一-鿿._-]', '_', Path(filename).name)
+    tmp_path = tmp_dir / safe_name
+
+    try:
+        content = await file.read()
+        with open(tmp_path, 'wb') as f:
+            f.write(content)
+
+        # .doc/.wps 转 .docx
+        if ext in ('.doc', '.wps'):
+            from core.document.converter import convert_to_docx
+            tmp_path = convert_to_docx(tmp_path, tmp_dir)
+
+        # 提取格式
+        from core.document.format_extractor import (
+            FormatExtractor, extract_format_from_docx, generate_template_from_docx
+        )
+        from core.document.parser import parse_docx
+
+        model = parse_docx(str(tmp_path))
+        extractor = FormatExtractor(model)
+        extracted = extractor.extract_all()
+
+        # 生成默认模板名和类型标识
+        stem = Path(filename).stem
+        # 尝试从文件名推断类型
+        from services.document_service import _detect_doc_type
+        doc_type = _detect_doc_type(filename)
+        template_name = stem
+
+        # 生成 YAML 预览
+        yaml_data = extractor.generate_yaml(template_name, doc_type)
+        yaml_preview = yaml.dump(yaml_data, allow_unicode=True, default_flow_style=False)
+
+        return {
+            "success": True,
+            "template_name": template_name,
+            "document_type": doc_type,
+            "format_info": extracted['summary'],
+            "sections": extracted['sections'],
+            "page_setup": extracted['page_setup'],
+            "check_rules_count": len(yaml_data.get('check_rules', [])),
+            "fix_rules_count": len(yaml_data.get('fix_rules', [])),
+            "yaml_preview": yaml_preview,
+            "yaml_content": yaml_data,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Format extraction failed: {e}")
+        raise HTTPException(status_code=500, detail=f"格式提取失败: {str(e)}")
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+@router.post("/{template_id}/preview")
+async def preview_template(template_id: str):
+    """根据模板规则生成示例文档，返回 A4 预览数据。"""
+    from core.rules.manager import load_rules_merged
+    from core.document.models import (
+        DocumentModel, DocumentMetadata, PageSetup,
+        Paragraph, ParagraphFormat, Run, RunFormat,
+    )
+
+    try:
+        rules = load_rules_merged(template_id)
+    except Exception:
+        raise HTTPException(status_code=404, detail=f"模板 {template_id} 不存在")
+
+    # 从规则中提取格式定义
+    title_fmt = rules.get('doc_title') or rules.get('title') or {}
+    h1_fmt = rules.get('heading_1') or {}
+    h2_fmt = rules.get('heading_2') or {}
+    h3_fmt = rules.get('heading_3') or {}
+    body_fmt = rules.get('body') or {}
+    sig_fmt = rules.get('signature') or {}
+    date_fmt = rules.get('date') or {}
+    ps = rules.get('page_setup', {})
+    margins = ps.get('margins', {})
+
+    def _parse_pt(val, default=16):
+        if val is None: return default
+        s = str(val).replace('pt', '').strip()
+        try: return float(s)
+        except: return default
+
+    def _parse_cm(val, default_mm=37):
+        if val is None: return default_mm
+        s = str(val).replace('cm', '').replace('mm', '').strip()
+        try:
+            v = float(s)
+            return v * 10 if 'cm' in str(val) else v
+        except: return default_mm
+
+    def _parse_indent(val, base_pt=16):
+        if val is None: return None
+        s = str(val)
+        if 'em' in s:
+            try: return float(s.replace('em', '').strip()) * base_pt
+            except: return None
+        return _parse_pt(val, None)
+
+    def _mk_para(text, font=None, size=None, align=None, bold=False, indent=None,
+                 line_spacing=None, is_heading=False, heading_level=None, role=None):
+        rf = RunFormat(font_name=font, font_size_pt=size, bold=bold or None)
+        pf = ParagraphFormat(
+            alignment=align,
+            first_line_indent_pt=indent,
+            line_spacing_pt=line_spacing,
+            line_spacing_rule='exact' if line_spacing else None,
+        )
+        return Paragraph(
+            index=0, text=text, is_heading=is_heading,
+            heading_level=heading_level, role=role,
+            runs=[Run(index=0, text=text, format=rf)],
+            format=pf,
+        )
+
+    body_size = _parse_pt(body_fmt.get('size'), 16)
+    body_indent = _parse_indent(body_fmt.get('first_line_indent'), body_size)
+
+    paras = []
+    idx = 0
+
+    # 标题
+    template_name = rules.get('template_name', template_id)
+    paras.append(_mk_para(
+        f"关于印发《{template_name}》的通知",
+        font=title_fmt.get('font', '方正小标宋简体'),
+        size=_parse_pt(title_fmt.get('size'), 22),
+        align=title_fmt.get('align', 'center'),
+        is_heading=True, heading_level=0, role='title',
+    ))
+    paras[-1].index = idx; idx += 1
+
+    # 一级标题
+    if h1_fmt:
+        paras.append(_mk_para(
+            "一、总体要求",
+            font=h1_fmt.get('font', '黑体'),
+            size=_parse_pt(h1_fmt.get('size'), 16),
+            align=h1_fmt.get('align', 'left'),
+            is_heading=True, heading_level=1,
+        ))
+        paras[-1].index = idx; idx += 1
+
+    # 正文段落
+    sample_body = [
+        "为深入贯彻落实上级文件精神，进一步规范工作流程，提高工作效率，确保各项工作任务有序推进，结合实际情况，特制定本方案。",
+        "各单位要高度重视，认真组织实施，确保各项工作要求落到实处。要加强沟通协调，及时反馈工作中遇到的问题和困难。",
+    ]
+    for text in sample_body:
+        paras.append(_mk_para(
+            text,
+            font=body_fmt.get('font', '仿宋_GB2312'),
+            size=body_size,
+            align=body_fmt.get('align', 'justify'),
+            indent=body_indent,
+            line_spacing=_parse_pt(body_fmt.get('line_spacing'), 28.95),
+            role='body',
+        ))
+        paras[-1].index = idx; idx += 1
+
+    # 二级标题
+    if h2_fmt:
+        paras.append(_mk_para(
+            "（一）加强组织领导",
+            font=h2_fmt.get('font', '楷体_GB2312'),
+            size=_parse_pt(h2_fmt.get('size'), 16),
+            align=h2_fmt.get('align'),
+            is_heading=True, heading_level=2,
+        ))
+        paras[-1].index = idx; idx += 1
+        paras.append(_mk_para(
+            "各责任部门要明确专人负责，建立工作台账，定期检查工作进展情况，确保各项措施有效落实。",
+            font=body_fmt.get('font', '仿宋_GB2312'), size=body_size,
+            align=body_fmt.get('align', 'justify'), indent=body_indent,
+            line_spacing=_parse_pt(body_fmt.get('line_spacing'), 28.95), role='body',
+        ))
+        paras[-1].index = idx; idx += 1
+
+    # 三级标题
+    if h3_fmt:
+        paras.append(_mk_para(
+            "1. 明确责任分工",
+            font=h3_fmt.get('font', '仿宋_GB2312'),
+            size=_parse_pt(h3_fmt.get('size'), 16),
+            bold=h3_fmt.get('bold', True),
+            is_heading=True, heading_level=3,
+        ))
+        paras[-1].index = idx; idx += 1
+
+    # 落款 + 日期
+    paras.append(_mk_para(
+        rules.get('template_name', 'XX单位'),
+        font=sig_fmt.get('font', '仿宋_GB2312'), size=_parse_pt(sig_fmt.get('size'), 16),
+        align=sig_fmt.get('align', 'right'), role='signature',
+    ))
+    paras[-1].index = idx; idx += 1
+    paras.append(_mk_para(
+        "2026年06月25日",
+        font=date_fmt.get('font', '仿宋_GB2312'), size=_parse_pt(date_fmt.get('size'), 16),
+        align=date_fmt.get('align', 'right'), role='date',
+    ))
+    paras[-1].index = idx; idx += 1
+
+    # 组装预览数据
+    paragraphs_data = []
+    for p in paras:
+        rf = p.runs[0].format if p.runs else RunFormat()
+        paragraphs_data.append({
+            "text": p.text,
+            "role": p.role,
+            "is_heading": p.is_heading,
+            "heading_level": p.heading_level,
+            "format": {
+                "alignment": p.format.alignment,
+                "first_line_indent_pt": p.format.first_line_indent_pt,
+                "font_name": rf.font_name,
+                "font_size_pt": rf.font_size_pt,
+                "line_spacing_pt": p.format.line_spacing_pt,
+            },
+        })
+
+    return {
+        "paragraphs": paragraphs_data,
+        "page_setup": {
+            "margin_top_mm": _parse_cm(margins.get('top'), 37),
+            "margin_bottom_mm": _parse_cm(margins.get('bottom'), 35),
+            "margin_left_mm": _parse_cm(margins.get('left'), 28),
+            "margin_right_mm": _parse_cm(margins.get('right'), 26),
+        },
+    }
+async def save_extracted_template(body: SaveExtractedRequest):
+    """保存从文档提取的规则模板。"""
+    from config import CUSTOM_RULES_DIR, USER_RULES_DIR
+    from core.rules.manager import validate_rule, save_rule
+
+    # 校验文档类型标识
+    doc_type = body.document_type.strip()
+    if not doc_type or not doc_type.replace('_', '').replace('-', '').isalnum():
+        raise HTTPException(status_code=400, detail="文档类型标识只能包含字母、数字、下划线和连字符")
+
+    # 校验规则结构
+    try:
+        validate_rule(body.yaml_content)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"规则格式无效: {str(e)}")
+
+    # 确保 template_name 同步
+    body.yaml_content['template_name'] = body.template_name
+    body.yaml_content['document_type'] = doc_type
+
+    # 保存到 USER_RULES_DIR（用户规则目录）
+    USER_RULES_DIR.mkdir(parents=True, exist_ok=True)
+    file_path = USER_RULES_DIR / f"{doc_type}.yaml"
+
+    try:
+        with open(file_path, 'w', encoding='utf-8') as f:
+            yaml.dump(body.yaml_content, f, allow_unicode=True, default_flow_style=False)
+        logger.info(f"Extracted template saved: {file_path}")
+    except Exception as e:
+        logger.error(f"Failed to save extracted template: {e}")
+        raise HTTPException(status_code=500, detail=f"保存失败: {str(e)}")
+
+    # 清除规则缓存
+    import services.document_service as svc
+    svc.clear_rule_cache()
+
+    return {
+        "success": True,
+        "document_type": doc_type,
+        "file_path": str(file_path),
+        "message": f"模板 '{body.template_name}' 已保存为自定义规则",
     }
 
 
@@ -554,3 +870,28 @@ async def download_official_dotx(template_id: str):
     except Exception as e:
         logger.error(f"Official .dotx template download failed: {e}")
         raise HTTPException(status_code=404, detail=f"模板 {template_id} 不存在")
+
+
+# ---------------------------------------------------------------------------
+#  通用模板详情（放在最后，避免拦截 /create、/extract 等固定路径）
+# ---------------------------------------------------------------------------
+
+@router.get("/{template_id}")
+async def get_template(template_id: str):
+    """Get template details."""
+    from core.rules.manager import load_rules_merged
+
+    try:
+        rules = load_rules_merged(template_id)
+        return {
+            "template_id": template_id,
+            "rules": rules,
+            "exists": True
+        }
+    except Exception as e:
+        logger.error(f"Get template {template_id} failed: {e}")
+        return {
+            "template_id": template_id,
+            "exists": False,
+            "error": str(e)
+        }

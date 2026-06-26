@@ -180,10 +180,14 @@ async def get_document_preview(doc_id: int, db: Session = Depends(get_db)):
         for p in model.paragraphs:
             font_name = None
             font_size_pt = None
+            bold = None
+            color = None
             try:
                 if p.runs and p.runs[0].format:
                     font_name = getattr(p.runs[0].format, 'font_name', None)
                     font_size_pt = getattr(p.runs[0].format, 'font_size_pt', None)
+                    bold = getattr(p.runs[0].format, 'bold', None)
+                    color = getattr(p.runs[0].format, 'color', None)
             except Exception:
                 pass
 
@@ -198,6 +202,8 @@ async def get_document_preview(doc_id: int, db: Session = Depends(get_db)):
                     "font_name": font_name,
                     "font_size_pt": font_size_pt,
                     "line_spacing_pt": p.format.line_spacing_pt,
+                    "bold": bold,
+                    "color": color,
                 },
             })
         return {

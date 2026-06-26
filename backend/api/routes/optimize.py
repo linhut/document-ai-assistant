@@ -17,6 +17,63 @@ from services.document_service import _OPTIMIZED_SUFFIX
 router = APIRouter()
 
 
+# ---------------------------------------------------------------------------
+#  Markdown 格式转换（前端实时预览用）— 必须在 /{doc_id} 之前定义
+# ---------------------------------------------------------------------------
+
+from pydantic import BaseModel
+from typing import Any
+
+
+class ParagraphData(BaseModel):
+    text: str
+    role: str | None = None
+    is_heading: bool = False
+    heading_level: int | None = None
+    format: dict[str, Any] = {}
+
+
+class MarkdownConvertRequest(BaseModel):
+    paragraphs: list[ParagraphData]
+
+
+@router.post("/convert-markdown")
+async def convert_markdown_text(body: MarkdownConvertRequest):
+    """对段落文本执行 Markdown 格式识别与转换，返回转换后的段落。"""
+    from core.document.models import (
+        DocumentModel, DocumentMetadata, PageSetup,
+        Paragraph, ParagraphFormat, Run, RunFormat,
+    )
+    from core.document.modifier import convert_markdown
+
+    model = DocumentModel(
+        metadata=DocumentMetadata(), page_setup=PageSetup(),
+        paragraphs=[], tables=[], headers=[], footers=[],
+    )
+
+    for i, p in enumerate(body.paragraphs):
+        rf = RunFormat(font_name=p.format.get('font_name'), font_size_pt=p.format.get('font_size_pt'), bold=p.format.get('bold'))
+        pf = ParagraphFormat(alignment=p.format.get('alignment'), first_line_indent_pt=p.format.get('first_line_indent_pt'), line_spacing_pt=p.format.get('line_spacing_pt'))
+        model.paragraphs.append(Paragraph(index=i, text=p.text, is_heading=p.is_heading, heading_level=p.heading_level, role=p.role, runs=[Run(index=0, text=p.text, format=rf)], format=pf))
+
+    changes = convert_markdown(model)
+
+    result = []
+    for p in model.paragraphs:
+        rf = p.runs[0].format if p.runs else RunFormat()
+        result.append({
+            "text": p.text, "role": p.role, "is_heading": p.is_heading, "heading_level": p.heading_level,
+            "format": {"alignment": p.format.alignment, "first_line_indent_pt": p.format.first_line_indent_pt, "font_name": rf.font_name, "font_size_pt": rf.font_size_pt, "line_spacing_pt": p.format.line_spacing_pt, "bold": rf.bold},
+        })
+
+    return {"success": True, "changes": changes, "paragraphs": result}
+
+
+# ---------------------------------------------------------------------------
+#  文档优化
+# ---------------------------------------------------------------------------
+
+
 @router.post("/{doc_id}", response_model=OptimizeResponse)
 async def run_optimize(doc_id: int, req: OptimizeRequest | None = None, db: Session = Depends(get_db)):
     """Run auto-optimization on a document."""

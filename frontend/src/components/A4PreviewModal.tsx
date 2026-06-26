@@ -1,7 +1,8 @@
 /**
  * A4PreviewModal - A4 预览弹窗
- * 在校审中心内以弹窗形式展示 A4 排版预览
- * 随文档优化状态动态刷新
+ * 支持两种模式：
+ *   1. 文档预览：传入 docId，从 /api/documents/{id}/preview 加载
+ *   2. 模板预览：传入 templateId，从 /api/templates/{id}/preview 加载
  */
 import { useState, useEffect } from 'react';
 import { X, ZoomIn, ZoomOut, RefreshCw, Download } from 'lucide-react';
@@ -19,12 +20,16 @@ interface DocParagraph {
     font_name?: string;
     font_size_pt?: number;
     line_spacing_pt?: number;
+    bold?: boolean;
+    color?: string;
   };
 }
 
 interface A4PreviewModalProps {
-  docId: number;
-  refreshKey?: number;    // 每次优化后 +1 触发刷新
+  docId?: number;
+  templateId?: string;
+  templateName?: string;
+  refreshKey?: number;
   onClose: () => void;
 }
 
@@ -37,6 +42,7 @@ const FONT_MAP: Record<string, string> = {
   '仿宋_GB2312': '"仿宋_GB2312", "FangSong", serif',
   '仿宋': '"仿宋", "FangSong", serif',
   '宋体': '"宋体", "SimSun", serif',
+  'Times New Roman': '"Times New Roman", serif',
 };
 
 function getFontFamily(name?: string): string {
@@ -44,22 +50,36 @@ function getFontFamily(name?: string): string {
   return FONT_MAP[name] || `"${name}", serif`;
 }
 
-export default function A4PreviewModal({ docId, refreshKey, onClose }: A4PreviewModalProps) {
+export default function A4PreviewModal({ docId, templateId, templateName, refreshKey, onClose }: A4PreviewModalProps) {
   const [paragraphs, setParagraphs] = useState<DocParagraph[]>([]);
   const [pageSetup, setPageSetup] = useState({ margin_top_mm: 37, margin_bottom_mm: 35, margin_left_mm: 28, margin_right_mm: 26 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [zoom, setZoom] = useState(80);
 
+  const isTemplateMode = !!templateId;
+  const titleText = isTemplateMode ? `模板预览 — ${templateName || templateId}` : 'A4 预览';
+  const subtitleText = isTemplateMode ? '模板排版效果预览' : 'GB/T 9704 标准排版';
+
   useEffect(() => {
     loadData();
-  }, [docId, refreshKey]);
+  }, [docId, templateId, refreshKey]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       setError('');
-      const resp = await apiClient.get(`/api/documents/${docId}/preview`);
+
+      let resp: any;
+      if (isTemplateMode) {
+        resp = await apiClient.post(`/api/templates/${templateId}/preview`, {}, { timeout: 30000 });
+      } else if (docId) {
+        resp = await apiClient.get(`/api/documents/${docId}/preview`);
+      } else {
+        setError('未指定预览目标');
+        return;
+      }
+
       setParagraphs(resp.paragraphs || []);
       setPageSetup(resp.page_setup || pageSetup);
     } catch (err: any) {
@@ -80,6 +100,21 @@ export default function A4PreviewModal({ docId, refreshKey, onClose }: A4Preview
   const signature = paragraphs.find(p => p.role === 'signature');
   const date = paragraphs.find(p => p.role === 'date');
 
+  /* 版头智能检测：通过红色文本识别发文机关标志，通过正则识别发文字号 */
+  const DOC_NUMBER_RE = /[一-龥]+发(?:〔\d{4}〕|[（(]\d{4}[）)])\d+号/;
+  const headerOrg = paragraphs.find(p => {
+    const c = p.format.color?.toUpperCase();
+    return c && (c === 'CC0000' || c === 'FF0000' || c === 'C00000' || c === 'E00000');
+  });
+  // 发文字号：排除已识别为标题/版头的段落，匹配标准格式
+  const headerDocNum = paragraphs.find(p =>
+    p !== headerOrg && p !== title && DOC_NUMBER_RE.test(p.text.trim())
+  );
+  const hasHeader = !!(headerOrg || headerDocNum);
+  // 版记检测
+  const ccPara = paragraphs.find(p => p.role === 'cc');
+  const hasFooter = !!ccPara;
+
   /* 渲染单个段落 */
   const renderP = (p: DocParagraph, key: number) => {
     const fs = p.format.font_size_pt || 16;
@@ -95,7 +130,6 @@ export default function A4PreviewModal({ docId, refreshKey, onClose }: A4Preview
       margin: 0, padding: 0,
     };
 
-    // 标题级别覆盖
     if (p.is_heading && p.heading_level === 0) {
       Object.assign(style, { fontSize: '22pt', fontFamily: '"方正小标宋简体", serif', textAlign: 'center', textIndent: '0' });
     } else if (p.is_heading && p.heading_level === 1) {
@@ -106,6 +140,12 @@ export default function A4PreviewModal({ docId, refreshKey, onClose }: A4Preview
       Object.assign(style, { fontFamily: '"仿宋_GB2312", "FangSong", serif', fontWeight: 'bold' });
     }
 
+    // 空行处理：无文字时紧凑渲染，避免多余空白
+    const isEmpty = !p.text || p.text.trim() === '';
+    if (isEmpty) {
+      style.lineHeight = '0.6';
+      style.minHeight = `${(p.format.line_spacing_pt || 29) * 0.5}pt`;
+    }
     return <p key={key} style={style}>{p.text || ' '}</p>;
   };
 
@@ -119,8 +159,8 @@ export default function A4PreviewModal({ docId, refreshKey, onClose }: A4Preview
         {/* 标题栏 */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-primary-100 bg-primary-50">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-primary-900">A4 预览</span>
-            <span className="text-xs text-primary-500">GB/T 9704 标准排版</span>
+            <span className="font-medium text-primary-900">{titleText}</span>
+            <span className="text-xs text-primary-500">{subtitleText}</span>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => loadData()} title="刷新">
@@ -133,9 +173,11 @@ export default function A4PreviewModal({ docId, refreshKey, onClose }: A4Preview
             <Button variant="ghost" size="sm" onClick={() => setZoom(z => Math.min(150, z + 10))}>
               <ZoomIn className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => downloadFile(`/api/optimize/${docId}/download`, `optimized_${docId}.docx`)} title="下载">
-              <Download className="h-4 w-4" />
-            </Button>
+            {!isTemplateMode && docId && (
+              <Button variant="ghost" size="sm" onClick={() => downloadFile(`/api/optimize/${docId}/download`, `optimized_${docId}.docx`)} title="下载">
+                <Download className="h-4 w-4" />
+              </Button>
+            )}
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
@@ -154,7 +196,6 @@ export default function A4PreviewModal({ docId, refreshKey, onClose }: A4Preview
           ) : paragraphs.length === 0 ? (
             <div className="text-center py-20 text-muted-foreground">
               <p>暂无预览内容</p>
-              <p className="text-xs mt-1">请先上传并优化文档</p>
             </div>
           ) : (
             <div
@@ -176,9 +217,41 @@ export default function A4PreviewModal({ docId, refreshKey, onClose }: A4Preview
                 lineHeight: '29pt',
                 color: '#000',
               }}>
+                {/* === 版头区域（自动检测 + gongwen 项目数值对齐） === */}
+                {hasHeader && (
+                  <div style={{ marginBottom: '58pt' }}>
+                    {headerOrg && (
+                      <p style={{
+                        fontSize: '30pt',
+                        fontFamily: '"方正小标宋简体", "FZXiaoBiaoSong-B05S", serif',
+                        color: '#E00000',
+                        textAlign: 'center',
+                        margin: '0',
+                        padding: '0',
+                        lineHeight: '1.4',
+                        letterSpacing: '0',
+                      }}>
+                        {headerOrg.text}
+                      </p>
+                    )}
+                    {headerDocNum && (
+                      <p style={{
+                        fontSize: `${headerDocNum.format.font_size_pt || 16}pt`,
+                        fontFamily: getFontFamily(headerDocNum.format.font_name),
+                        textAlign: 'center',
+                        margin: `${29 * 2}pt 0 4pt 0`,
+                        lineHeight: `${headerDocNum.format.line_spacing_pt || 29}pt`,
+                      }}>
+                        {headerDocNum.text}
+                      </p>
+                    )}
+                    <hr style={{ border: 'none', borderTop: '2px solid #E00000', margin: '0' }} />
+                  </div>
+                )}
+
                 {title && renderP(title, -1)}
                 {recipient && renderP(recipient, -2)}
-                {body.map((p, i) => renderP(p, i))}
+                {body.filter(p => p !== headerOrg && p !== headerDocNum).map((p, i) => renderP(p, i))}
 
                 {(signature || date) && (
                   <div style={{ marginTop: '3em' }}>
@@ -187,15 +260,34 @@ export default function A4PreviewModal({ docId, refreshKey, onClose }: A4Preview
                   </div>
                 )}
 
-                {/* 页码 */}
+                {/* === 版记区域（自动检测：role=cc） === */}
+                {hasFooter && (
+                  <div style={{ marginTop: '1em' }}>
+                    <hr style={{ border: 'none', borderTop: '2px solid #000', margin: '0 0 0.5em 0' }} />
+                    {ccPara && (
+                      <p style={{
+                        fontSize: '14pt',
+                        fontFamily: getFontFamily(ccPara.format.font_name),
+                        paddingLeft: '1em', margin: 0,
+                        lineHeight: `${ccPara.format.line_spacing_pt || 29}pt`,
+                      }}>
+                        {ccPara.text}
+                      </p>
+                    )}
+                    <hr style={{ border: 'none', borderTop: '1px solid #000', margin: '0.5em 0 0 0' }} />
+                  </div>
+                )}
+
+                {/* 页码 — GB/T 9704: 四号宋体/Times New Roman */}
                 <div style={{
                   position: 'absolute',
-                  bottom: `${pageSetup.margin_bottom_mm - 8}mm`,
+                  bottom: `${pageSetup.margin_bottom_mm - 7}mm`,
                   left: 0, right: 0,
                   textAlign: 'center',
-                  fontSize: '10pt',
-                  fontFamily: '"Times New Roman", serif',
+                  fontSize: '14pt',
+                  fontFamily: '"宋体", "SimSun", "Times New Roman", serif',
                   color: '#000',
+                  letterSpacing: '0.5pt',
                 }}>
                   — 1 —
                 </div>

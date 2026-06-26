@@ -1,7 +1,6 @@
 template_name: 议案
 document_type: bill
 
-# --- 议案特有内容检查 ---
 check_rules:
   - id: CHK-BL001
     name: 议案案由检查
@@ -9,6 +8,7 @@ check_rules:
     field: content.reason
     expected: 案由明确
     message: 议案应有明确的案由、案据和方案
+    category: content
 
   - id: CHK-BL002
     name: 提案人检查
@@ -16,4 +16,5 @@ check_rules:
     field: content.proposer
     expected: 注明提案人
     message: 议案应注明提案人或提案单位
+    category: content
 fix_rules: []

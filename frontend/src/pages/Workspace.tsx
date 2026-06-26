@@ -26,6 +26,8 @@ import {
   BookOpen,
   WifiOff,
   TrendingUp,
+  Globe,
+  GlobeLock,
 } from 'lucide-react';
 import apiClient from '@/api/client';
 import { detectActiveAI } from '@/lib/ai-status';
@@ -153,6 +155,11 @@ export default function Workspace() {
   const [aiModel, setAiModel] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
+  // Network access state
+  const [webAccess, setWebAccess] = useState(true);
+  const [lanUrl, setLanUrl] = useState<string>('');
+  const [togglingWeb, setTogglingWeb] = useState(false);
+
   // Stable refs so the fetch function doesn't change identity on every render
   const stateRef = useRef({ setDocuments, setHealthOk, setBackendVersion, setRuleCount, setAiModel, setLoading });
 
@@ -161,11 +168,12 @@ export default function Workspace() {
 
     async function loadDashboard() {
       try {
-        const [docRes, healthRes, ruleRes, aiRes] = await Promise.allSettled([
+        const [docRes, healthRes, ruleRes, aiRes, netRes] = await Promise.allSettled([
           apiClient.get('/api/documents/?skip=0&limit=50'),
           apiClient.get('/api/health'),
           apiClient.get('/api/rules/?source=all'),
           detectActiveAI(),
+          apiClient.get('/api/settings/network'),
         ]);
 
         if (cancelled) return;
@@ -202,6 +210,13 @@ export default function Workspace() {
           );
         }
 
+        // Network access status
+        if (netRes.status === 'fulfilled') {
+          const n = netRes.value as any;
+          setWebAccess(n?.web_access_enabled ?? false);
+          setLanUrl(n?.lan_url ?? '');
+        }
+
         stateRef.current.setLoading(false);
       } catch {
         if (!cancelled) {
@@ -213,6 +228,20 @@ export default function Workspace() {
     void loadDashboard();
     return () => { cancelled = true; };
   }, []);
+
+  /* ---- Toggle web access ---- */
+  const handleToggleWebAccess = async () => {
+    setTogglingWeb(true);
+    try {
+      const resp = await apiClient.post('/api/settings/network', { enabled: !webAccess });
+      setWebAccess(resp.web_access_enabled);
+      setLanUrl(resp.lan_url || '');
+    } catch (err) {
+      console.error('Toggle web access failed:', err);
+    } finally {
+      setTogglingWeb(false);
+    }
+  };
 
   /* ---- Derived stats ---- */
   const totalDocs = documents.length;
@@ -314,7 +343,7 @@ export default function Workspace() {
           <h2 className="text-lg font-semibold text-primary-900 mb-4">
             快速操作
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Upload */}
             <Link to="/document/process">
               <Card className="hover:shadow-md transition-all cursor-pointer border-primary-200 h-full">
@@ -359,6 +388,37 @@ export default function Workspace() {
                 </CardContent>
               </Card>
             </Link>
+
+            {/* Web Access Toggle */}
+            <Card
+              className={`hover:shadow-md transition-all cursor-pointer border-primary-200 h-full ${webAccess ? 'ring-2 ring-status-success/30' : ''}`}
+              onClick={handleToggleWebAccess}
+            >
+              <CardContent className="pt-6">
+                <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 ${webAccess ? 'bg-status-success/15 text-status-success' : 'bg-primary-200 text-primary-600'}`}>
+                  {webAccess ? <Globe className="h-6 w-6" /> : <GlobeLock className="h-6 w-6" />}
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-primary-900">网页访问</h3>
+                    <p className="text-sm text-primary-600 mt-1">
+                      {webAccess ? '其他用户可访问' : '仅本机可访问'}
+                    </p>
+                  </div>
+                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${webAccess ? 'bg-status-success/15 text-status-success' : 'bg-primary-100 text-primary-500'}`}>
+                    {togglingWeb ? '...' : webAccess ? '已开启' : '已关闭'}
+                  </div>
+                </div>
+                {webAccess && (
+                  <p className="text-xs text-status-success mt-2 font-mono">
+                    http://localhost:8765
+                  </p>
+                )}
+                <p className="text-xs text-primary-400 mt-2">
+                  {webAccess ? '点击关闭网页访问' : '点击开启，其他用户可通过浏览器访问'}
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </section>
 

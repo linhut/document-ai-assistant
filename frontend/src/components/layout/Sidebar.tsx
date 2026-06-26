@@ -113,6 +113,7 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
           expandable: true,
           children: [
             { label: '查看所有模板', path: '/templates' },
+            { label: '导入模板', path: '/templates/import' },
             { label: '规则管理', path: '/rules' },
           ],
         },
