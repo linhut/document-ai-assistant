@@ -84,6 +84,7 @@ interface DocTable {
   rows: number;
   cols: number;
   cells: DocTableCell[];
+  insert_after_index?: number;
 }
 
 /* ------------------------------------------------------------------ */
@@ -606,17 +607,50 @@ function EnhancedA4PreviewInner() {
                 </div>
               )}
 
-              {/* 正文 */}
+              {/* 正文 + 表格（按 insert_after_index 交错渲染） */}
               {title && renderP(title, -1)}
               {recipient && renderP(recipient, -2)}
-              {body.map((p, i) => renderP(p, i))}
-              {/* 表格（markdown 转换生成） */}
+              {(() => {
+                // 构建 insert_after_index → tables 映射
+                const tableMap: Record<number, DocTable[]> = {};
+                for (const t of tables) {
+                  const idx = t.insert_after_index ?? -1;
+                  if (!tableMap[idx]) tableMap[idx] = [];
+                  tableMap[idx].push(t);
+                }
+                const elements: React.ReactNode[] = [];
+                body.forEach((p, i) => {
+                  elements.push(renderP(p, i));
+                  // 在该段落之后插入对应的表格
+                  if (tableMap[i]) {
+                    for (const t of tableMap[i]) {
+                      elements.push(renderTable(t, i));
+                    }
+                  }
+                });
+                // 插入在文档开头的表格（insert_after_index = -1）
+                if (tableMap[-1]) {
+                  for (const t of tableMap[-1]) {
+                    elements.push(renderTable(t, -1));
+                  }
+                }
+                // 插入在文档末尾的表格（insert_after_index 超出 body 范围）
+                const maxIdx = body.length - 1;
+                for (const [key, tList] of Object.entries(tableMap)) {
+                  if (Number(key) > maxIdx && Number(key) !== -1) {
+                    for (const t of tList) {
+                      elements.push(renderTable(t, Number(key)));
+                    }
+                  }
+                }
+                return elements;
+              })()}
+              {/* 表格提示信息 */}
               {tables.length > 0 && (
                 <div style={{ margin: '0.5em 0', padding: '4px 8px', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '4px', fontSize: '10pt', color: '#0369a1', textAlign: 'center' }}>
                   已识别 {tables.length} 个表格（共 {tables.reduce((s, t) => s + t.rows, 0)} 行 × {tables[0]?.cols || 0} 列）
                 </div>
               )}
-              {tables.map((t, i) => renderTable(t, i))}
 
               {(signature || date) && (
                 <div style={{ marginTop: '3em' }}>

@@ -86,7 +86,7 @@ async def convert_markdown_text(body: MarkdownConvertRequest):
                     },
                 })
             cells.append({"row": c.row, "col": c.col, "text": c.text, "paragraphs": cell_paras})
-        tables.append({"index": t.index, "rows": t.rows, "cols": t.cols, "cells": cells})
+        tables.append({"index": t.index, "rows": t.rows, "cols": t.cols, "cells": cells, "insert_after_index": t.insert_after_index})
 
     return {"success": True, "changes": changes, "paragraphs": result, "tables": tables}
 

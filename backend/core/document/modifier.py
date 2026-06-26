@@ -422,6 +422,8 @@ def convert_markdown(model: DocumentModel) -> int:
     # 连续的 |...| 行构成一个表格，|----| 为分隔行（跳过）
     table_regions = _detect_md_table_regions(model.paragraphs)
     table_para_indices = set()
+    # 记录每个表格在原文档中的位置（原始段落索引），删除后需要调整
+    table_insert_positions = []  # [(original_insert_after, Table对象)]
 
     for region in table_regions:
         header_cells = region['header']
@@ -475,6 +477,7 @@ def convert_markdown(model: DocumentModel) -> int:
                 table.cells.append(TableCell(row=row_idx + 1, col=col_idx, text=cell_text, paragraphs=[cell_para]))
 
         model.tables.append(table)
+        table_insert_positions.append((insert_idx, table))
 
         # 标记所有表格段落为待删除
         for idx in region['all_indices']:
@@ -592,11 +595,23 @@ def convert_markdown(model: DocumentModel) -> int:
 
     # 删除标记为移除的段落（倒序）
     if to_remove:
-        for idx in sorted(to_remove, reverse=True):
+        sorted_remove = sorted(to_remove, reverse=True)
+        for idx in sorted_remove:
             model.paragraphs.pop(idx)
         # 重新编号段落索引
         for i, p in enumerate(model.paragraphs):
             p.index = i
+        # 调整表格的 insert_after_index（扣除被删除的段落数）
+        removed_sorted = sorted(to_remove)  # 升序
+        for orig_idx, tbl in table_insert_positions:
+            if orig_idx < 0:
+                tbl.insert_after_index = -1
+            else:
+                # 计算 orig_idx 之前被删除了多少个段落
+                removed_before = sum(1 for r in removed_sorted if r <= orig_idx)
+                adjusted = orig_idx - removed_before
+                # 确保不超过当前段落列表范围
+                tbl.insert_after_index = min(adjusted, len(model.paragraphs) - 1)
         changes += 1  # 统一计为 1 次批量删除
 
     return changes

@@ -69,6 +69,7 @@ class Table(BaseModel):
     rows: int
     cols: int
     cells: list[TableCell] = Field(default_factory=list)
+    insert_after_index: int = -1  # 表格紧跟在哪个段落索引之后（-1 表示文档开头）
 
 
 class HeaderFooter(BaseModel):
