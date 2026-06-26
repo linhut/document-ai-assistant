@@ -55,6 +55,14 @@ async def list_ai_providers():
     }
 
 
+@router.get("/status")
+async def get_ai_model_status():
+    """获取所有已配置 AI 模型的可用性状态（每 60 秒自动检测）。"""
+    from services.model_health import get_all_statuses
+    statuses = get_all_statuses()
+    return {"statuses": statuses, "total": len(statuses)}
+
+
 @router.post("/config")
 async def save_ai_config(req: AIConfigRequest, db: Session = Depends(get_db)):
     """Save AI provider configuration. API key is encrypted before storage."""

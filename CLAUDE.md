@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 AI 公文智能优化助手 (AI Official Document Optimization Assistant) — a desktop application for Chinese government document formatting based on **GB/T 9704** standards. Users upload `.docx` files, the system checks formatting against YAML-defined rules, and auto-fixes issues.
 
 **Stack**: Electron 35 + React 19 (frontend) ↔ FastAPI + python-docx (backend) ↔ SQLite
-**Version**: 1.4.3 | **Port**: 8765 | **Language**: Python 3.12+, Node 20+
+**Version**: 1.4.4 | **Port**: 8765 | **Language**: Python 3.12+, Node 20+
 
 ## Commands
 

@@ -1,3 +1,9 @@
+/*
+ * This file is part of the Official Document AI Assistant.
+ * (c) 2026 Jose AI (https://www.linhut.cn)
+ * Licensed under the MIT License. See the LICENSE file for details.
+ */
+
 /**
  * EnhancedA4Preview — 增强版 A4 预览页面
  *
@@ -59,6 +65,25 @@ interface DocParagraph {
     font_size_pt?: number;
     line_spacing_pt?: number;
   };
+}
+
+interface DocTableCellPara {
+  text: string;
+  format: { alignment?: string; font_name?: string; font_size_pt?: number; bold?: boolean };
+}
+
+interface DocTableCell {
+  row: number;
+  col: number;
+  text: string;
+  paragraphs: DocTableCellPara[];
+}
+
+interface DocTable {
+  index: number;
+  rows: number;
+  cols: number;
+  cells: DocTableCell[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -157,6 +182,7 @@ function EnhancedA4PreviewInner() {
   const { config, patch, reset } = useDocumentConfig();
 
   const [paragraphs, setParagraphs] = useState<DocParagraph[]>([]);
+  const [tables, setTables] = useState<DocTable[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [panelOpen, setPanelOpen] = useState(true);
@@ -179,6 +205,9 @@ function EnhancedA4PreviewInner() {
       }, { timeout: 30000 });
       if (resp.success && resp.paragraphs) {
         setParagraphs(resp.paragraphs);
+        if (resp.tables) {
+          setTables(resp.tables);
+        }
       }
     } catch (err) {
       console.error('Markdown conversion failed:', err);
@@ -269,6 +298,48 @@ function EnhancedA4PreviewInner() {
       style.minHeight = `${config.body.lineSpacing * 0.5}pt`;
     }
     return <p key={key} style={style}>{p.text || ' '}</p>;
+  };
+
+  /* ---- 渲染表格（markdown 转换生成的 Table 对象） ---- */
+
+  const renderTable = (table: DocTable, key: number) => {
+    const cellMap: Record<string, DocTableCell> = {};
+    for (const c of table.cells) {
+      cellMap[`${c.row}-${c.col}`] = c;
+    }
+    return (
+      <table key={`table-${key}`} style={{
+        width: '100%', borderCollapse: 'collapse',
+        fontSize: `${Math.max(config.body.fontSize - 2, 12)}pt`,
+        fontFamily: ff(config.body.fontFamily),
+        lineHeight: `${config.body.lineSpacing}pt`,
+        margin: '0.5em 0',
+      }}>
+        <tbody>
+          {Array.from({ length: table.rows }, (_, r) => (
+            <tr key={r}>
+              {Array.from({ length: table.cols }, (_, c) => {
+                const cell = cellMap[`${r}-${c}`];
+                const cellText = cell?.paragraphs?.map(cp => cp.text).join('') || cell?.text || '';
+                const isHeader = r === 0;
+                return (
+                  <td key={c} style={{
+                    border: '1px solid #000',
+                    padding: '4pt 6pt',
+                    textAlign: isHeader ? 'center' : 'left',
+                    fontWeight: isHeader ? 'bold' : undefined,
+                    fontFamily: ff(isHeader ? '黑体' : config.body.fontFamily),
+                    verticalAlign: 'top',
+                  }}>
+                    {cellText}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
   };
 
   // 用 ref 绑定 config/patch，让 SettingsPanel 函数引用完全稳定
@@ -527,6 +598,8 @@ function EnhancedA4PreviewInner() {
               {title && renderP(title, -1)}
               {recipient && renderP(recipient, -2)}
               {body.map((p, i) => renderP(p, i))}
+              {/* 表格（markdown 转换生成） */}
+              {tables.map((t, i) => renderTable(t, i))}
 
               {(signature || date) && (
                 <div style={{ marginTop: '3em' }}>

@@ -1,3 +1,7 @@
+# This file is part of the Official Document AI Assistant.
+# (c) 2026 Jose AI (https://www.linhut.cn)
+# Licensed under the MIT License. See the LICENSE file for details.
+
 """
 AI 公文智能优化助手 - FastAPI 后端入口
 
@@ -115,7 +119,7 @@ def _setup_signal_handlers() -> None:
 app = FastAPI(
     title="Official Document AI Assistant",
     description="AI 公文智能优化助手核心引擎 API",
-    version="1.4.3",
+    version="1.4.4",
 )
 
 app.add_middleware(
@@ -148,6 +152,9 @@ async def startup():
     init_db()
     _init_default_ai_config()
     _log_directory_status()
+    # 启动 AI 模型可用性定时检测（每 60 秒）
+    from services.model_health import start_health_checker
+    await start_health_checker()
 
 
 def _log_directory_status():
@@ -230,7 +237,7 @@ def _init_default_ai_config():
 async def root():
     return {
         "app": "Official Document AI Assistant",
-        "version": "1.4.3",
+        "version": "1.4.4",
         "docs": "/docs",
         "health": "/api/health"
     }

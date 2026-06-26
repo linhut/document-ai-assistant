@@ -66,7 +66,27 @@ async def convert_markdown_text(body: MarkdownConvertRequest):
             "format": {"alignment": p.format.alignment, "first_line_indent_pt": p.format.first_line_indent_pt, "font_name": rf.font_name, "font_size_pt": rf.font_size_pt, "line_spacing_pt": p.format.line_spacing_pt, "bold": rf.bold},
         })
 
-    return {"success": True, "changes": changes, "paragraphs": result}
+    # 序列化表格（markdown 表格转换后生成的 Table 对象）
+    tables = []
+    for t in model.tables:
+        cells = []
+        for c in t.cells:
+            cell_paras = []
+            for cp in c.paragraphs:
+                rf = cp.runs[0].format if cp.runs else RunFormat()
+                cell_paras.append({
+                    "text": cp.text,
+                    "format": {
+                        "alignment": cp.format.alignment,
+                        "font_name": rf.font_name,
+                        "font_size_pt": rf.font_size_pt,
+                        "bold": rf.bold,
+                    },
+                })
+            cells.append({"row": c.row, "col": c.col, "text": c.text, "paragraphs": cell_paras})
+        tables.append({"index": t.index, "rows": t.rows, "cols": t.cols, "cells": cells})
+
+    return {"success": True, "changes": changes, "paragraphs": result, "tables": tables}
 
 
 # ---------------------------------------------------------------------------

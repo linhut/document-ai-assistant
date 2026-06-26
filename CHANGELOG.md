@@ -4,6 +4,33 @@
 
 ---
 
+## [1.4.4] - 2026-06-26
+
+### AI 模型可用性定时检测
+
+- **后台健康检测** — 每 60 秒自动检测所有已配置 AI provider 的可用性
+- **状态 API** — `GET /api/ai/status` 返回所有模型的在线状态和延迟
+- **前端状态卡片** — AI 配置页面实时显示模型在线/离线状态和响应延迟
+- **多 Provider 支持** — OpenAI 兼容接口 + Anthropic Claude 专用检测
+
+### Markdown 表格转换修复
+
+- **表格数据丢失修复** — `/convert-markdown` API 现在正确返回 `tables` 字段（之前只返回 `paragraphs`，表格数据丢失）
+- **A4 预览表格渲染** — EnhancedA4Preview 支持渲染 markdown 转换生成的表格（带边框、表头加粗、单元格 padding）
+- **后端表格序列化** — 完整序列化 Table/TableCell/Paragraph 到 API 响应
+
+### 全量版权注释
+
+- **所有代码文件** — Python (.py) 和 TypeScript (.tsx/.ts) 文件统一添加 MIT 版权注释头
+- **标准化格式** — `(c) 2026 Jose AI (https://www.linhut.cn)`
+
+### 构建流程规范化
+
+- **完整发版流程** — 记录 6 步标准流程：版本号→README→提交→Release→打包→上传
+- **README 功能描述** — 流程中明确包含新增功能的文档更新
+
+---
+
 ## [1.4.3] - 2026-06-26
 
 ### A4 预览版头格式与国标对齐（参考 gongwen 项目数值）
