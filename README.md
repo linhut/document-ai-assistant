@@ -28,6 +28,7 @@
   <a href="#-技术架构">技术架构</a> ·
   <a href="#-ai-配置">AI 配置</a> ·
   <a href="#-项目结构">项目结构</a> ·
+  <a href="#-社区与友链">社区与友链</a> ·
   <a href="#-开发日志">开发日志</a>
 </p>
  
@@ -246,6 +247,62 @@ A: 支持 `.docx`、`.doc`、`.wps` 三种格式。`.doc` 和 `.wps` 文件会�
 ## 📝 开发日志
 
 详见 [CHANGELOG.md](./CHANGELOG.md)
+
+---
+
+## 🤝 社区与友链
+
+<p align="center">
+  <em>感谢以下开源项目和社区对本项目的支持与启发</em>
+</p>
+
+<p align="center">
+  <a href="https://python-docx.readthedocs.io/">
+    <img src="https://img.shields.io/badge/python--docx-文档处理引擎-blue?style=for-the-badge&logo=python&logoColor=white" alt="python-docx" />
+  </a>
+  <a href="https://fastapi.tiangolo.com/">
+    <img src="https://img.shields.io/badge/FastAPI-后端框架-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+  </a>
+  <a href="https://www.electronjs.org/">
+    <img src="https://img.shields.io/badge/Electron-桌面壳-47848F?style=for-the-badge&logo=electron&logoColor=white" alt="Electron" />
+  </a>
+  <a href="https://react.dev/">
+    <img src="https://img.shields.io/badge/React-前端框架-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" />
+  </a>
+  <a href="https://tailwindcss.com/">
+    <img src="https://img.shields.io/badge/TailwindCSS-样式系统-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="TailwindCSS" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/deepseek-ai/DeepSeek-V3">
+    <img src="https://img.shields.io/badge/DeepSeek-国产大模型-4D6BFE?style=for-the-badge&logo=deepseek&logoColor=white" alt="DeepSeek" />
+  </a>
+  <a href="https://platform.openai.com/">
+    <img src="https://img.shields.io/badge/OpenAI-AI接口-412991?style=for-the-badge&logo=openai&logoColor=white" alt="OpenAI" />
+  </a>
+  <a href="https://docs.anthropic.com/">
+    <img src="https://img.shields.io/badge/Claude-Anthropic-D4A574?style=for-the-badge&logo=anthropic&logoColor=white" alt="Claude" />
+  </a>
+  <a href="https://ollama.com/">
+    <img src="https://img.shields.io/badge/Ollama-本地模型-000000?style=for-the-badge&logo=ollama&logoColor=white" alt="Ollama" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://linux.do/">
+    <img src="https://img.shields.io/badge/LinuxDo-开发者社区-orange?style=for-the-badge&logo=linux&logoColor=white" alt="LinuxDo" />
+  </a>
+  <a href="https://github.com/binli5021-gif/gongwen">
+    <img src="https://img.shields.io/badge/gongwen-公文排版参考-green?style=for-the-badge&logo=github&logoColor=white" alt="gongwen" />
+  </a>
+  <a href="https://www.mohurd.gov.cn/">
+    <img src="https://img.shields.io/badge/GB%2FT%209704-党政机关公文格式-red?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEyIDJMMyA3djEwbDkgNSA5LTVIN0wxMiAyeiIgZmlsbD0iI2ZmZiIvPjwvc3ZnPg==" alt="GB/T 9704" />
+  </a>
+  <a href="https://github.com/linhut/document-ai-assistant/stargazers">
+    <img src="https://img.shields.io/badge/Star-支持本项目-yellow?style=for-the-badge&logo=github&logoColor=white" alt="Star" />
+  </a>
+</p>
 
 ---
 
