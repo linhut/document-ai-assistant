@@ -606,7 +606,10 @@ def _apply_style_fallback(para, runs: list[Run], para_format: ParagraphFormat) -
             if style.paragraph_format and style.paragraph_format.line_spacing:
                 from docx.shared import Length
                 sp = style.paragraph_format.line_spacing
-                if isinstance(sp, (int, float)) and sp > 3:
+                if isinstance(sp, (int, float)) and sp > 100:
+                    # 很可能是 EMU 值
+                    style_line_spacing = round(Length(int(sp), 0).pt, 2)
+                elif isinstance(sp, (int, float)) and sp > 3:
                     style_line_spacing = round(float(sp), 2)
                 elif isinstance(sp, (int, float)):
                     style_line_spacing = round(float(sp) * 16, 2)
@@ -686,13 +689,22 @@ def _parse_paragraph_format(para) -> ParagraphFormat:
                 # 转换为 pt：倍数 × 16pt（公文正文标准字号）
                 line_spacing_pt = float(pf.line_spacing) * 16
                 line_spacing_rule = "multiple"
+            elif rule == WD_LINE_SPACING.EXACTLY:
+                # 固定值模式：pf.line_spacing 是 EMU 整数值
+                # 必须通过 Length 转换为 pt（1pt = 12700 EMU）
+                line_spacing_pt = round(Length(pf.line_spacing, 0).pt, 2)
+                line_spacing_rule = "exact"
             elif rule == WD_LINE_SPACING.AT_LEAST:
                 # 最小值模式：pf.line_spacing 是 Length 对象
                 line_spacing_pt = round(Length(pf.line_spacing, 0).pt, 2)
                 line_spacing_rule = "atLeast"
             elif isinstance(pf.line_spacing, (int, float)):
-                if pf.line_spacing > 3:
-                    # 值大于3，视为固定行距（pt值）
+                if pf.line_spacing > 100:
+                    # 值 >100，很可能是 EMU（如 367665 EMU ≈ 28.95pt）
+                    line_spacing_pt = round(Length(int(pf.line_spacing), 0).pt, 2)
+                    line_spacing_rule = "exact"
+                elif pf.line_spacing > 3:
+                    # 值 3-100，视为 pt 值
                     line_spacing_pt = float(pf.line_spacing)
                     line_spacing_rule = "exact"
                 else:
@@ -700,7 +712,7 @@ def _parse_paragraph_format(para) -> ParagraphFormat:
                     line_spacing_pt = float(pf.line_spacing) * 16
                     line_spacing_rule = "multiple"
             else:
-                # Length 对象（EXACTLY 模式或其他）
+                # Length 对象
                 line_spacing_pt = round(Length(pf.line_spacing, 0).pt, 2)
                 line_spacing_rule = "exact"
         except Exception:
