@@ -4,6 +4,18 @@
 
 ---
 
+## [1.4.7] - 2026-06-27
+
+### 信创跨平台支持（Phase 1）
+
+- **converter.py** — 新增 `_try_libreoffice()` 函数，Linux/macOS 用 `libreoffice --headless` 转换 .doc/.wps
+- **convert_to_docx 平台分发** — Windows: COM→LO / Linux: LibreOffice
+- **Electron main.ts** — `.exe` 硬编码改为 `process.platform` 条件，icon 统一用 `icon.png`
+- **package.json** — 新增 `linux` 构建 target (AppImage + deb)、`mac` 构建 target (dmg)
+- **构建脚本** — `electron:build:linux` / `electron:build:linux:arm64` / `build_backend.py` 跨平台适配
+
+---
+
 ## [1.4.6] - 2026-06-26
 
 ### 表格定位修复（端到端验证通过）
