@@ -182,6 +182,70 @@ def remove_extra_blank_lines(model: DocumentModel) -> None:
         p.index = i
 
 
+def fix_bold_range(model: DocumentModel) -> int:
+    """
+    正文段落加粗范围修复：
+    整段加粗时，仅保留首句/点题词加粗，后续内容取消加粗。
+
+    首句边界：冒号（：/:）、句号（。/.）、顿号（、）
+    """
+    changes = 0
+    _EXCLUDE_ROLES = {'signature', 'date'}
+    _CLAUSE_RE = re.compile(r'[:：。、]')
+
+    for para in model.paragraphs:
+        if para.is_heading or para.role in _EXCLUDE_ROLES:
+            continue
+        if not para.text.strip() or len(para.text.strip()) <= 30:
+            continue
+        if not para.runs or not all(r.format.bold for r in para.runs if r.text.strip()):
+            continue
+
+        # 找到首句边界
+        full_text = para.text
+        m = _CLAUSE_RE.search(full_text)
+        if not m:
+            continue
+        split_pos = m.end()  # 在标点之后分割
+
+        # 将 runs 按 split_pos 分割：前半保持加粗，后半取消
+        char_count = 0
+        for run in para.runs:
+            run_end = char_count + len(run.text)
+            if run_end <= split_pos:
+                # 完全在首句内，保持加粗
+                pass
+            elif char_count >= split_pos:
+                # 完全在首句之后，取消加粗
+                run.format.bold = False
+            else:
+                # 跨越边界：拆分 run
+                split_in_run = split_pos - char_count
+                first_part = run.text[:split_in_run]
+                second_part = run.text[split_in_run:]
+                # 原 run 只保留首句部分
+                run.text = first_part
+                # 创建新 run 放在后面（非加粗）
+                from core.document.models import Run as _Run, RunFormat as _RF
+                new_run = _Run(
+                    index=run.index + 1,
+                    text=second_part,
+                    format=_RF(
+                        font_name=run.format.font_name,
+                        font_size_pt=run.format.font_size_pt,
+                        bold=False,
+                    ),
+                )
+                # 在当前 run 后面插入新 run
+                idx = para.runs.index(run)
+                para.runs.insert(idx + 1, new_run)
+            char_count = run_end
+
+        changes += 1
+
+    return changes
+
+
 # ---------------------------------------------------------------------------
 #  标点规范化（参考 GB/T 15834 标点符号用法）
 # ---------------------------------------------------------------------------

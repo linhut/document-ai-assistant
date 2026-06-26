@@ -337,6 +337,18 @@ def _check_body(model, rule_id, severity, name, field_path, expected, message) -
                     original_text=actual, suggested_fix=str(expected),
                     reason=message,
                 ))
+        elif sub_field == "bold_range":
+            # 检查正文段落是否整段加粗（通常只有首句/点题词应加粗）
+            if len(para.text.strip()) > 30 and para.runs:
+                all_bold = all(r.format.bold for r in para.runs if r.text.strip())
+                if all_bold:
+                    issues.append(CheckIssue(
+                        rule_id=rule_id, check_type="content", severity=severity,
+                        name=name, location=f"paragraph:{para.index}",
+                        original_text=para.text[:60],
+                        suggested_fix="仅首句/点题词加粗",
+                        reason=message or "整段加粗不符合公文规范，通常仅首句或点题词需要加粗",
+                    ))
 
     return issues
 

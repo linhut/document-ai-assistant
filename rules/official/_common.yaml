@@ -245,6 +245,14 @@ check_rules:
     expected: false
     message: "公文标题使用方正小标宋简体，不应额外加粗（GB/T 9704标准）"
 
+  # --- 正文加粗范围检查 (CHK-C030) ---
+  - id: CHK-C030
+    name: "正文加粗范围检查"
+    severity: P2
+    field: body.bold_range
+    expected: true
+    message: "整段加粗不符合公文规范，通常仅首句或点题词需要加粗"
+
   # --- 主送机关格式检查 (CHK-C026) ---
   - id: CHK-C026
     name: "主送机关格式检查"
@@ -299,6 +307,11 @@ fix_rules:
   - id: FIX-C030
     action: convert_markdown
     target: all
+
+  # --- 正文加粗范围修复（整段加粗→仅首句加粗） ---
+  - id: FIX-C031
+    action: fix_bold_range
+    target: body
 
   - id: FIX-C004
     action: remove_extra_spaces

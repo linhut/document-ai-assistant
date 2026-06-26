@@ -19,7 +19,7 @@ from core.document.modifier import (
     modify_first_line_indent, modify_margins, modify_bold,
     remove_extra_spaces, remove_extra_blank_lines,
     normalize_punctuation, normalize_heading_content,
-    convert_markdown,
+    convert_markdown, fix_bold_range,
     _parse_pt_value, _parse_indent_value,
 )
 from utils.logger import logger
@@ -46,6 +46,7 @@ _ACTION_MAP = {
     "remove_extra_blank_lines": lambda model, _target, _value, _rules: remove_extra_blank_lines(model),
     "strip_markdown": lambda model, _target, _value, _rules: convert_markdown(model),
     "convert_markdown": lambda model, _target, _value, _rules: convert_markdown(model),
+    "fix_bold_range": lambda model, _target, _value, _rules: fix_bold_range(model),
     "normalize_punctuation": lambda model, _target, _value, _rules: normalize_punctuation(model),
     "normalize_headings": lambda model, _target, _value, _rules: normalize_heading_content(model),
 }
