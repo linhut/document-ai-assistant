@@ -72,11 +72,6 @@
 - **A4 预览表格渲染** — EnhancedA4Preview 支持渲染 markdown 转换生成的表格（带边框、表头加粗、单元格 padding）
 - **后端表格序列化** — 完整序列化 Table/TableCell/Paragraph 到 API 响应
 
-### 全量版权注释
-
-- **所有代码文件** — Python (.py) 和 TypeScript (.tsx/.ts) 文件统一添加 MIT 版权注释头
-- **标准化格式** — `(c) 2026 Jose AI (https://www.linhut.cn)`
-
 ### 构建流程规范化
 
 - **完整发版流程** — 记录 6 步标准流程：版本号→README→提交→Release→打包→上传
