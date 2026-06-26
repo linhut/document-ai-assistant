@@ -31,6 +31,26 @@ interface DocParagraph {
   };
 }
 
+interface DocTableCellPara {
+  text: string;
+  format: { alignment?: string; font_name?: string; font_size_pt?: number; bold?: boolean };
+}
+
+interface DocTableCell {
+  row: number;
+  col: number;
+  text: string;
+  paragraphs: DocTableCellPara[];
+}
+
+interface DocTable {
+  index: number;
+  rows: number;
+  cols: number;
+  cells: DocTableCell[];
+  insert_after_index?: number;
+}
+
 interface A4PreviewModalProps {
   docId?: number;
   templateId?: string;
@@ -58,6 +78,7 @@ function getFontFamily(name?: string): string {
 
 export default function A4PreviewModal({ docId, templateId, templateName, refreshKey, onClose }: A4PreviewModalProps) {
   const [paragraphs, setParagraphs] = useState<DocParagraph[]>([]);
+  const [tables, setTables] = useState<DocTable[]>([]);
   const [pageSetup, setPageSetup] = useState({ margin_top_mm: 37, margin_bottom_mm: 35, margin_left_mm: 28, margin_right_mm: 26 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -87,6 +108,7 @@ export default function A4PreviewModal({ docId, templateId, templateName, refres
       }
 
       setParagraphs(resp.paragraphs || []);
+      setTables(resp.tables || []);
       setPageSetup(resp.page_setup || pageSetup);
     } catch (err: any) {
       const msg = err?.response?.data?.detail || err?.message || '预览加载失败';
@@ -152,6 +174,51 @@ export default function A4PreviewModal({ docId, templateId, templateName, refres
       style.minHeight = `${(p.format.line_spacing_pt || 29) * 0.5}pt`;
     }
     return <p key={key} style={style}>{p.text || ' '}</p>;
+  };
+
+  /* 渲染表格 */
+  const renderTable = (table: DocTable, key: number) => {
+    const cellMap: Record<string, DocTableCell> = {};
+    for (const c of table.cells) { cellMap[`${c.row}-${c.col}`] = c; }
+    return (
+      <table key={`table-${key}`} style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12pt', fontFamily: '"仿宋_GB2312", "FangSong", serif', lineHeight: '20pt', margin: '0.5em 0' }}>
+        <tbody>
+          {Array.from({ length: table.rows }, (_, r) => (
+            <tr key={r}>
+              {Array.from({ length: table.cols }, (_, c) => {
+                const cell = cellMap[`${r}-${c}`];
+                const cellText = cell?.paragraphs?.map(cp => cp.text).join('') || cell?.text || '';
+                const isHeader = r === 0;
+                return (
+                  <td key={c} style={{ border: '1px solid #000', padding: '3pt 5pt', textAlign: isHeader ? 'center' : 'left', fontWeight: isHeader ? 'bold' : undefined, fontFamily: isHeader ? '"黑体", "SimHei", sans-serif' : undefined, verticalAlign: 'top' }}>
+                    {cellText}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  };
+
+  /* 按 insert_after_index 交错渲染 body + tables */
+  const renderBodyWithTables = () => {
+    const filtered = body.filter(p => p !== headerOrg && p !== headerDocNum);
+    if (tables.length === 0) return filtered.map((p, i) => renderP(p, i));
+
+    const tableMap: Record<number, DocTable[]> = {};
+    for (const t of tables) {
+      const idx = t.insert_after_index ?? -1;
+      if (!tableMap[idx]) tableMap[idx] = [];
+      tableMap[idx].push(t);
+    }
+    const elements: React.ReactNode[] = [];
+    filtered.forEach((p, i) => {
+      elements.push(renderP(p, i));
+      if (tableMap[i]) { for (const t of tableMap[i]) elements.push(renderTable(t, i)); }
+    });
+    return elements;
   };
 
   return (
@@ -256,7 +323,7 @@ export default function A4PreviewModal({ docId, templateId, templateName, refres
 
                 {title && renderP(title, -1)}
                 {recipient && renderP(recipient, -2)}
-                {body.filter(p => p !== headerOrg && p !== headerDocNum).map((p, i) => renderP(p, i))}
+                {renderBodyWithTables()}
 
                 {(signature || date) && (
                   <div style={{ marginTop: '3em' }}>

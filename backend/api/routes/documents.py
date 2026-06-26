@@ -206,8 +206,29 @@ async def get_document_preview(doc_id: int, db: Session = Depends(get_db)):
                     "color": color,
                 },
             })
+        # 序列化表格
+        tables = []
+        for t in model.tables:
+            cells = []
+            for c in t.cells:
+                cell_paras = []
+                for cp in c.paragraphs:
+                    rf = cp.runs[0].format if cp.runs else RunFormat()
+                    cell_paras.append({
+                        "text": cp.text,
+                        "format": {
+                            "alignment": cp.format.alignment,
+                            "font_name": getattr(rf, 'font_name', None),
+                            "font_size_pt": getattr(rf, 'font_size_pt', None),
+                            "bold": getattr(rf, 'bold', None),
+                        },
+                    })
+                cells.append({"row": c.row, "col": c.col, "text": c.text, "paragraphs": cell_paras})
+            tables.append({"index": t.index, "rows": t.rows, "cols": t.cols, "cells": cells, "insert_after_index": t.insert_after_index})
+
         return {
             "paragraphs": paragraphs,
+            "tables": tables,
             "page_setup": {
                 "margin_top_mm": model.page_setup.margin_top_mm or 37,
                 "margin_bottom_mm": model.page_setup.margin_bottom_mm or 35,
