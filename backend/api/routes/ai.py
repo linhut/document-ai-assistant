@@ -96,6 +96,8 @@ async def save_ai_config(req: AIConfigRequest, db: Session = Depends(get_db)):
         logger.info(f"AI config saved: {req.provider}")
 
         return {"success": True, "message": "配置保存成功"}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Save AI config failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))

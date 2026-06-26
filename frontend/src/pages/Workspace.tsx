@@ -411,7 +411,7 @@ export default function Workspace() {
                 </div>
                 {webAccess && (
                   <p className="text-xs text-status-success mt-2 font-mono">
-                    http://localhost:5173
+                    {lanUrl || 'http://localhost:5173'}
                   </p>
                 )}
                 <p className="text-xs text-primary-400 mt-2">

@@ -135,7 +135,7 @@ def _get_lan_ip() -> str:
             return ip
     for ip in candidates:
         parts = ip.split(".")
-        if len(parts) == 2 and 16 <= int(parts[1]) <= 31:
+        if len(parts) == 4 and parts[0] == "172" and 16 <= int(parts[1]) <= 31:
             return ip
 
     # 回退：通过 UDP 连接获取
@@ -175,8 +175,6 @@ class NetworkToggleRequest(BaseModel):
 @router.post("/network")
 async def toggle_network_access(body: NetworkToggleRequest):
     """开启/关闭局域网网页访问。需要重启后端生效。"""
-    from pydantic import BaseModel as _BM  # noqa
-
     config = _load_network_config()
     config["web_access_enabled"] = body.enabled
     _save_network_config(config)

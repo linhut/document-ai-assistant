@@ -287,7 +287,6 @@ async def list_templates():
             existing_ids.add(f.stem)
             # 尝试读取 template_name
             try:
-                import yaml
                 with open(f, "r", encoding="utf-8") as fh:
                     data = yaml.safe_load(fh) or {}
                 name = data.get("template_name", f.stem)
@@ -645,6 +644,9 @@ async def preview_template(template_id: str):
             "margin_right_mm": _parse_cm(margins.get('right'), 26),
         },
     }
+
+
+@router.post("/save-extracted")
 async def save_extracted_template(body: SaveExtractedRequest):
     """保存从文档提取的规则模板。"""
     from config import CUSTOM_RULES_DIR, USER_RULES_DIR
@@ -753,7 +755,7 @@ async def download_style_template_dotx(template_id: str):
         return FileResponse(
             path=str(output_path),
             filename=f"{name}_样式模板.dotx",
-            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document.template",
         )
     except Exception as e:
         logger.error(f"Dotx template download failed: {e}")
