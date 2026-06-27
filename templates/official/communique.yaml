@@ -1,0 +1,73 @@
+# ============================================================
+# 公报 - 样式模板
+# 公开发布重大决定或重要事项
+# 基于 GB/T 9704-2012 党政机关公文格式
+# ============================================================
+
+name: "公报"
+type: "communique"
+version: "1.0"
+author: "公文智能优化助手"
+standard: "GB/T 9704-2012"
+
+page:
+  size: "A4"
+  margins:
+    top: "3.7cm"
+    bottom: "3.5cm"
+    left: "2.8cm"
+    right: "2.6cm"
+
+styles:
+  title:
+    style_name: "公文标题"
+    font_east_asia: "方正小标宋简体"
+    font_latin: "Times New Roman"
+    size: "22pt"
+    bold: false
+    alignment: "center"
+    space_after: "20pt"
+
+  body:
+    style_name: "公文正文"
+    font_east_asia: "仿宋_GB2312"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    alignment: "justify"
+    line_spacing: "28.95pt"
+    first_line_indent: "2em"
+
+  subtitle:
+    style_name: "公文小标题"
+    font_east_asia: "黑体"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    bold: true
+    alignment: "left"
+    line_spacing: "28.95pt"
+    first_line_indent: "2em"
+
+  signature:
+    style_name: "公文落款"
+    font_east_asia: "仿宋_GB2312"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    alignment: "right"
+
+sample:
+  title: "第X届X中全会公报"
+  paragraphs:
+    - ""
+    - "（XXXX年XX月XX日，第X届X中全会通过）"
+    - ""
+    - "第X届X中全会于XXXX年XX月XX日至XX日在XXX举行。"
+    - ""
+    - "出席这次全会的有，中央委员XXX人，候补中央委员XXX人。"
+    - ""
+    - "全会听取和讨论了XXX受中央政治局委托所作的工作报告，审议通过了《关于XXX的决定》。"
+    - ""
+    - "全会认为，（公报内容）。"
+    - ""
+    - "全会强调，（公报内容）。"
+    - ""
+    - "全会号召，（公报内容）。"

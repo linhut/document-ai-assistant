@@ -1,0 +1,56 @@
+# ============================================================
+# 命令（令） - 样式模板
+# 最具权威性和强制性的文种
+# 标题需加粗，必须包含令号和行政首长签署
+# ============================================================
+
+name: "命令（令）"
+type: "command"
+version: "1.0"
+author: "公文智能优化助手"
+standard: "GB/T 9704-2012"
+
+page:
+  size: "A4"
+  margins:
+    top: "3.7cm"
+    bottom: "3.5cm"
+    left: "2.8cm"
+    right: "2.6cm"
+
+styles:
+  title:
+    style_name: "公文标题"
+    font_east_asia: "方正小标宋简体"
+    font_latin: "Times New Roman"
+    size: "22pt"
+    bold: true
+    alignment: "center"
+    space_after: "20pt"
+
+  body:
+    style_name: "公文正文"
+    font_east_asia: "仿宋_GB2312"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    alignment: "justify"
+    line_spacing: "28.95pt"
+    first_line_indent: "2em"
+
+  signature:
+    style_name: "公文落款"
+    font_east_asia: "仿宋_GB2312"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    alignment: "right"
+
+sample:
+  title: "XXX令"
+  paragraphs:
+    - "第X号"
+    - ""
+    - "《XXX》已经XXX会议审议通过，现予公布，自XXXX年XX月XX日起施行。"
+    - ""
+    - ""
+    - "XXX（行政首长职务）：XXX（签名）"
+    - "XXXX年XX月XX日"

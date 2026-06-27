@@ -1,0 +1,76 @@
+# ============================================================
+# 通报 - 样式模板
+# 表彰先进、批评错误、传达重要情况
+# 基于 GB/T 9704-2012 党政机关公文格式
+# ============================================================
+
+name: "通报"
+type: "bulletin"
+version: "1.0"
+author: "公文智能优化助手"
+standard: "GB/T 9704-2012"
+
+page:
+  size: "A4"
+  margins:
+    top: "3.7cm"
+    bottom: "3.5cm"
+    left: "2.8cm"
+    right: "2.6cm"
+
+styles:
+  title:
+    style_name: "公文标题"
+    font_east_asia: "方正小标宋简体"
+    font_latin: "Times New Roman"
+    size: "22pt"
+    bold: false
+    alignment: "center"
+    space_after: "20pt"
+
+  body:
+    style_name: "公文正文"
+    font_east_asia: "仿宋_GB2312"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    alignment: "justify"
+    line_spacing: "28.95pt"
+    first_line_indent: "2em"
+
+  subtitle:
+    style_name: "公文小标题"
+    font_east_asia: "黑体"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    bold: true
+    alignment: "left"
+    line_spacing: "28.95pt"
+    first_line_indent: "2em"
+
+  signature:
+    style_name: "公文落款"
+    font_east_asia: "仿宋_GB2312"
+    font_latin: "Times New Roman"
+    size: "16pt"
+    alignment: "right"
+
+sample:
+  title: "关于XXX的通报"
+  paragraphs:
+    - "各部门、各单位："
+    - ""
+    - "（通报缘由概述）"
+    - ""
+    - "一、基本情况"
+    - "（事实经过）"
+    - ""
+    - "二、原因分析"
+    - "（具体内容）"
+    - ""
+    - "三、工作要求"
+    - "（具体要求和希望）"
+    - "特此通报。"
+    - ""
+    - ""
+    - "（单位名称）"
+    - "XXXX年XX月XX日"

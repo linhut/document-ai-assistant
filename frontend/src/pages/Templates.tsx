@@ -99,16 +99,33 @@ export default function Templates() {
     navigate(`/templates/${template.id}/rules`);
   };
 
-  const handleDownloadTemplate = (template: Template) => {
-    downloadFile(`/api/templates/official/${template.id}/download/dotx`, `${template.name}_公文模板.dotx`);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const handleDownloadTemplate = async (template: Template) => {
+    setDownloadingId(`dotx-${template.id}`);
+    try {
+      await downloadFile(`/api/templates/official/${template.id}/download/dotx`, `${template.name}_公文模板.dotx`);
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
-  const handleDownloadStyleDocx = (template: Template) => {
-    downloadFile(`/api/templates/styles/${template.id}/download/docx`, `${template.name}_样式预览.docx`);
+  const handleDownloadStyleDocx = async (template: Template) => {
+    setDownloadingId(`docx-${template.id}`);
+    try {
+      await downloadFile(`/api/templates/styles/${template.id}/download/docx`, `${template.name}_样式预览.docx`);
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
-  const handleDownloadStyleDotx = (template: Template) => {
-    downloadFile(`/api/templates/styles/${template.id}/download/dotx`, `${template.name}_安装模板.dotx`);
+  const handleDownloadStyleDotx = async (template: Template) => {
+    setDownloadingId(`inst-${template.id}`);
+    try {
+      await downloadFile(`/api/templates/styles/${template.id}/download/dotx`, `${template.name}_安装模板.dotx`);
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   const addCustomRule = () => {
@@ -293,9 +310,12 @@ export default function Templates() {
                   size="sm"
                   className="w-full"
                   onClick={() => handleDownloadTemplate(template)}
+                  disabled={downloadingId === `dotx-${template.id}`}
                 >
-                  <Download className="h-4 w-4 mr-2" />
-                  下载模板
+                  {downloadingId === `dotx-${template.id}`
+                    ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    : <Download className="h-4 w-4 mr-2" />}
+                  {downloadingId === `dotx-${template.id}` ? '下载中...' : '下载模板'}
                 </Button>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
@@ -304,9 +324,12 @@ export default function Templates() {
                     className="text-xs"
                     onClick={() => handleDownloadStyleDocx(template)}
                     title="下载展示所有样式效果的预览文档"
+                    disabled={downloadingId === `docx-${template.id}`}
                   >
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    样式预览
+                    {downloadingId === `docx-${template.id}`
+                      ? <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      : <Sparkles className="h-3 w-3 mr-1" />}
+                    {downloadingId === `docx-${template.id}` ? '...' : '样式预览'}
                   </Button>
                   <Button
                     variant="outline"
@@ -314,9 +337,12 @@ export default function Templates() {
                     className="text-xs"
                     onClick={() => handleDownloadStyleDotx(template)}
                     title="下载可安装到Word/WPS模板库的.dotx文件"
+                    disabled={downloadingId === `inst-${template.id}`}
                   >
-                    <FileDown className="h-3 w-3 mr-1" />
-                    安装模板
+                    {downloadingId === `inst-${template.id}`
+                      ? <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      : <FileDown className="h-3 w-3 mr-1" />}
+                    {downloadingId === `inst-${template.id}` ? '...' : '安装模板'}
                   </Button>
                 </div>
                 <Button
