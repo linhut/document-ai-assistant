@@ -78,9 +78,33 @@ function getIconPath(): string {
 //  Backend lifecycle
 // ---------------------------------------------------------------------------
 
+function findPython(): string {
+  // 1. 尝试常见路径
+  const candidates = process.platform === 'win32'
+    ? ['python', 'py', 'C:\\Python314\\python.exe', 'C:\\Python312\\python.exe', 'C:\\Python311\\python.exe']
+    : ['python3', 'python'];
+  for (const c of candidates) {
+    try {
+      const cmd = process.platform === 'win32' ? 'where' : 'which';
+      const result = require('child_process').execSync(`${cmd} ${c}`, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim().split(/\r?\n/)[0];
+      if (result && fs.existsSync(result)) return result;
+    } catch {}
+  }
+  // 2. 直接检查常见安装路径
+  const commonPaths = process.platform === 'win32'
+    ? ['C:\\Python314\\python.exe', 'C:\\Python312\\python.exe', 'C:\\Python311\\python.exe',
+       `${process.env.LOCALAPPDATA}\\Programs\\Python\\Python314\\python.exe`,
+       `${process.env.LOCALAPPDATA}\\Programs\\Python\\Python312\\python.exe`]
+    : ['/usr/bin/python3', '/usr/local/bin/python3'];
+  for (const p of commonPaths) {
+    if (fs.existsSync(p)) return p;
+  }
+  return process.platform === 'win32' ? 'python' : 'python3';
+}
+
 function getBackendCommand(): { cmd: string; args: string[] } {
   if (isDev) {
-    const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+    const pythonCmd = findPython();
     const script = path.join(__dirname, '..', '..', '..', 'backend', 'main.py');
     return { cmd: pythonCmd, args: [script, '--force'] };
   }
