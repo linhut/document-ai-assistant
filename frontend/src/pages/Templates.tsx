@@ -322,14 +322,11 @@ export default function Templates() {
                     variant="outline"
                     size="sm"
                     className="text-xs"
-                    onClick={() => handleDownloadStyleDocx(template)}
-                    title="下载展示所有样式效果的预览文档"
-                    disabled={downloadingId === `docx-${template.id}`}
+                    onClick={() => navigate(`/document/enhanced-preview?templateId=${template.id}`)}
+                    title="打开实时排版编辑器，可在线调整样式并下载"
                   >
-                    {downloadingId === `docx-${template.id}`
-                      ? <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                      : <Sparkles className="h-3 w-3 mr-1" />}
-                    {downloadingId === `docx-${template.id}` ? '...' : '样式预览'}
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    样式预览
                   </Button>
                   <Button
                     variant="outline"
