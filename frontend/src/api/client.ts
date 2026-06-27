@@ -87,16 +87,31 @@ apiClient.interceptors.response.use(
 
 /**
  * 下载文件的辅助函数。
- * 统一处理文件下载，避免页面直接拼接 URL。
+ * 使用 fetch + blob，可捕获 HTTP 错误并给出提示。
  */
-export function downloadFile(endpoint: string, filename: string): void {
+export async function downloadFile(endpoint: string, filename: string): Promise<void> {
   const url = `${API_BASE_URL}${endpoint}`;
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) {
+      const text = await resp.text().catch(() => '');
+      let msg = `下载失败 (HTTP ${resp.status})`;
+      try { msg = JSON.parse(text).detail || msg; } catch {}
+      throw new Error(msg);
+    }
+    const blob = await resp.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+  } catch (err: any) {
+    console.error('downloadFile error:', err);
+    alert(err?.message || '下载失败，请重试');
+  }
 }
 
 export default apiClient;

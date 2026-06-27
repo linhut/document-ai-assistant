@@ -1,0 +1,41 @@
+# ============================================================
+# 桌签 - 样式模板
+# 非 GB/T 9704 标准公文
+# 使用50pt超大字体加粗居中，确保远距离可读
+# ============================================================
+
+name: "桌签"
+type: "table_sign"
+version: "1.0"
+author: "公文智能优化助手"
+standard: "自定义"
+
+page:
+  size: "A4"
+  margins:
+    top: "3.7cm"
+    bottom: "3.5cm"
+    left: "2.8cm"
+    right: "2.6cm"
+
+styles:
+  title:
+    style_name: "桌签姓名"
+    font_east_asia: "方正小标宋简体"
+    font_latin: "Times New Roman"
+    size: "50pt"
+    bold: true
+    alignment: "center"
+
+  body:
+    style_name: "桌签单位"
+    font_east_asia: "方正小标宋简体"
+    font_latin: "Times New Roman"
+    size: "50pt"
+    bold: true
+    alignment: "center"
+
+sample:
+  title: "XXX"
+  paragraphs:
+    - "XXX单位"

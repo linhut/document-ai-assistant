@@ -123,15 +123,56 @@ def generate_dotx_template(template_id: str, output_path: Path | str) -> Path:
     temp_docx = output_path.with_suffix(".docx")
     doc.save(str(temp_docx))
 
-    # 重命名为 .dotx
+    # 重命名为 .dotx 并修正 Content Type
     if output_path.suffix == ".dotx":
         import shutil
         shutil.move(str(temp_docx), str(output_path))
+        _fix_dotx_content_type(output_path)
     else:
         output_path = temp_docx
 
     logger.info(f"Generated dotx template: {output_path}")
     return output_path
+
+
+def _fix_dotx_content_type(dotx_path: Path) -> None:
+    """
+    修正 .dotx 文件的 Content Type。
+    python-docx 生成的文件 Content_Types.xml 标记为 document，
+    需要改为 template 才是合法的 .dotx 格式。
+    """
+    import zipfile
+    import tempfile
+
+    content_types_xml = '[Content_Types].xml'
+    # document → template 的替换对
+    replacements = [
+        (
+            'wordprocessingml.document.main+xml',
+            'wordprocessingml.template.main+xml',
+        ),
+    ]
+
+    tmp_path = dotx_path.with_suffix('.dotx.tmp')
+    try:
+        with zipfile.ZipFile(dotx_path, 'r') as zin:
+            with zipfile.ZipFile(tmp_path, 'w', zipfile.ZIP_DEFLATED) as zout:
+                for item in zin.infolist():
+                    data = zin.read(item.filename)
+                    if item.filename == content_types_xml:
+                        text = data.decode('utf-8')
+                        for old, new in replacements:
+                            text = text.replace(old, new)
+                        data = text.encode('utf-8')
+                    zout.writestr(item, data)
+        # 替换原文件
+        import shutil
+        shutil.move(str(tmp_path), str(dotx_path))
+    except Exception as e:
+        logger.warning(f"Failed to fix dotx content type: {e}")
+        # 清理临时文件
+        if tmp_path.exists():
+            tmp_path.unlink()
 
 
 # ---------------------------------------------------------------------------
