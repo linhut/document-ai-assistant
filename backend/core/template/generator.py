@@ -106,17 +106,8 @@ def generate_dotx_template(template_id: str, output_path: Path | str) -> Path:
     # 2. 创建 Word 样式（核心）
     _create_styles(doc, template.get("styles", {}))
 
-    # 3. 添加一个使用标题样式的段落作为提示
-    title_style_name = template.get("styles", {}).get("title", {}).get("style_name", "公文标题")
-    para = doc.add_paragraph()
-    run = para.add_run(f"【{template.get('name', template_id)}】")
-    title_style = None
-    for s in doc.styles:
-        if s.name == title_style_name:
-            title_style = s
-            break
-    if title_style:
-        para.style = title_style
+    # 3. 添加示例内容（与 docx 模板一致，确保内容充实）
+    _add_sample_content(doc, template)
 
     # 4. 保存为 dotx（template=True 标记）
     # python-docx 不直接支持 .dotx，先保存为 .docx 然后重命名
