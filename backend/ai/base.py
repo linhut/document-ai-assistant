@@ -33,8 +33,12 @@ class AIProvider(ABC):
         self.extra = kwargs
 
     @abstractmethod
-    async def analyze(self, document_text: str) -> AIAnalysisResult:
-        """Analyze a document and return structured issues."""
+    async def analyze(self, document_text: str, **kwargs) -> AIAnalysisResult:
+        """Analyze a document and return structured issues.
+
+        kwargs may include:
+          - document_type (str): 文种类型，如 "notice", "report" 等
+        """
         ...
 
     @abstractmethod
@@ -54,3 +58,16 @@ class AIProvider(ABC):
             return True
         except Exception:
             return False
+
+    async def close(self):
+        """Close the underlying HTTP client. Override in subclasses."""
+        pass
+
+    async def __aenter__(self):
+        """Support async context manager usage: ``async with create_provider(...) as p:``."""
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Ensure the HTTP client is closed when leaving the context."""
+        await self.close()
+        return False

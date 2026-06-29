@@ -118,14 +118,25 @@ async def _check_claude_provider(status: ProviderStatus, api_key: str) -> None:
 
 
 async def _run_all_checks() -> None:
-    """检测所有已配置的 AI provider。"""
+    """检测所有已配置的 AI provider。
+
+    使用 asyncio.to_thread() 避免阻塞事件循环。
+    """
     from db.database import SessionLocal
     from db.models import AIConfig
     from utils.crypto import decrypt_value
 
-    db = SessionLocal()
+    # 使用线程池执行同步数据库操作
+    def _db_check():
+        db = SessionLocal()
+        try:
+            configs = db.query(AIConfig).filter(AIConfig.is_active == True).all()
+            return configs
+        finally:
+            db.close()
+
     try:
-        configs = db.query(AIConfig).filter(AIConfig.is_active == True).all()
+        configs = await asyncio.to_thread(_db_check)
         if not configs:
             return
 
@@ -165,8 +176,6 @@ async def _run_all_checks() -> None:
             )
     except Exception as e:
         logger.error(f"Model health check error: {e}")
-    finally:
-        db.close()
 
 
 async def start_health_checker() -> None:

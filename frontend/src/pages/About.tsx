@@ -30,7 +30,7 @@ export default function About() {
 
   const loadFonts = async () => {
     try {
-      const resp = await apiClient.get('/api/settings/fonts');
+      const resp = await apiClient.get<{ fonts?: FontInfo[] }>('/api/settings/fonts');
       setFonts(resp.fonts || []);
     } catch (error) {
       console.error('Load fonts error:', error);

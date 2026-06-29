@@ -26,6 +26,7 @@ doc_title:
   size: 22pt
   align: center
   bold: false
+  line_spacing: 33pt
 
 # --- 一级标题格式（一、二、三…）---
 heading_1:
@@ -33,6 +34,8 @@ heading_1:
   font_fallback: "SimHei"
   size: 16pt
   bold: false
+  line_spacing: 33pt
+  first_line_indent: 2em
 
 # --- 二级标题格式（（一）（二）…）---
 heading_2:
@@ -40,6 +43,8 @@ heading_2:
   font_fallback: "KaiTi"
   size: 16pt
   bold: false
+  line_spacing: 33pt
+  first_line_indent: 2em
 
 # --- 三级标题格式（1. 2. 3.…）---
 heading_3:
@@ -47,6 +52,8 @@ heading_3:
   font_fallback: "FangSong"
   size: 16pt
   bold: true
+  line_spacing: 33pt
+  first_line_indent: 2em
 
 # --- 正文默认格式 ---
 body:
@@ -63,6 +70,7 @@ signature:
   font_fallback: "FangSong"
   size: 16pt
   align: right
+  right_indent: 4em
 
 # --- 日期 ---
 date:
@@ -71,6 +79,7 @@ date:
   size: 16pt
   format: "YYYY年MM月DD日"
   align: right
+  right_indent: 4em
 
 # ============================================================
 #  通用检查规则（共29条）
@@ -112,7 +121,7 @@ check_rules:
     expected: 210
     message: "纸张应为A4（宽210mm）"
 
-  # --- 公文大标题检查 (CHK-C007~C008, C021) ---
+  # --- 公文大标题检查 (CHK-C007~C008, C021, C033) ---
   - id: CHK-C007
     name: "公文大标题字体检查"
     severity: P0
@@ -134,7 +143,14 @@ check_rules:
     expected: "center"
     message: "公文标题应居中排列"
 
-  # --- 一级标题检查 (CHK-C009, C014, C022) ---
+  - id: CHK-C033
+    name: "公文大标题行距检查"
+    severity: P1
+    field: title.line_spacing
+    expected: 28.95pt
+    message: "公文标题行距应为固定值28磅（GB/T 9704标准）"
+
+  # --- 一级标题检查 (CHK-C009, C014, C022, C032) ---
   - id: CHK-C009
     name: "一级标题字体检查"
     severity: P0
@@ -156,6 +172,13 @@ check_rules:
     expected: "2em"
     message: "一级标题应左空二字编排（GB/T 9704标准）"
 
+  - id: CHK-C032
+    name: "一级标题行距检查"
+    severity: P1
+    field: heading_1.line_spacing
+    expected: 28.95pt
+    message: "一级标题行距应为固定值28磅（GB/T 9704标准）"
+
   # --- 二级标题检查 (CHK-C010, C015) ---
   - id: CHK-C010
     name: "二级标题字体检查"
@@ -171,6 +194,20 @@ check_rules:
     expected: 16pt
     message: "二级标题应使用三号字(16pt)（GB/T 9704标准）"
 
+  - id: CHK-C035
+    name: "二级标题行距检查"
+    severity: P1
+    field: heading_2.line_spacing
+    expected: 28.95pt
+    message: "二级标题行距应为固定值28磅（GB/T 9704标准）"
+
+  - id: CHK-C036
+    name: "二级标题左空二字检查"
+    severity: P1
+    field: heading_2.first_line_indent
+    expected: "2em"
+    message: "二级标题应左空二字编排（GB/T 9704标准）"
+
   # --- 三级标题检查 (CHK-C019, C020) ---
   - id: CHK-C019
     name: "三级标题字体检查"
@@ -185,6 +222,20 @@ check_rules:
     field: heading_3.size
     expected: 16pt
     message: "三级标题应使用三号字(16pt)加粗（GB/T 9704标准）"
+
+  - id: CHK-C037
+    name: "三级标题行距检查"
+    severity: P1
+    field: heading_3.line_spacing
+    expected: 28.95pt
+    message: "三级标题行距应为固定值28磅（GB/T 9704标准）"
+
+  - id: CHK-C038
+    name: "三级标题左空二字检查"
+    severity: P1
+    field: heading_3.first_line_indent
+    expected: "2em"
+    message: "三级标题应左空二字编排（GB/T 9704标准）"
 
   # --- 正文格式检查 (CHK-C004~C006, C012~C013) ---
   - id: CHK-C004
@@ -222,7 +273,7 @@ check_rules:
     expected: "justify"
     message: "正文应使用两端对齐（GB/T 9704标准）"
 
-  # --- 落款和日期检查 (CHK-C016~C017) ---
+  # --- 落款和日期检查 (CHK-C016~C017, C039~C040) ---
   - id: CHK-C016
     name: "落款右空四字检查"
     severity: P1
@@ -236,6 +287,20 @@ check_rules:
     field: date.align
     expected: "right"
     message: "成文日期应右空四字编排（GB/T 9704标准）"
+
+  - id: CHK-C039
+    name: "落款字体检查"
+    severity: P1
+    field: signature.font
+    expected: "仿宋_GB2312"
+    message: "落款应使用三号仿宋_GB2312（GB/T 9704标准）"
+
+  - id: CHK-C040
+    name: "日期字体检查"
+    severity: P1
+    field: date.font
+    expected: "仿宋_GB2312"
+    message: "成文日期应使用三号仿宋_GB2312（GB/T 9704标准）"
 
   # --- 标题加粗检查 (CHK-C025) ---
   - id: CHK-C025
@@ -372,6 +437,12 @@ fix_rules:
     target: doc_title
     value: "center"
 
+  - id: FIX-C037
+    ref_check: CHK-C033
+    action: set_line_spacing
+    target: doc_title
+    value: 28.95pt
+
   # --- 一级标题修复 ---
   - id: FIX-C006
     ref_check: CHK-C009
@@ -391,6 +462,12 @@ fix_rules:
     target: heading_1
     value: "2em"
 
+  - id: FIX-C032
+    ref_check: CHK-C032
+    action: set_line_spacing
+    target: heading_1
+    value: 28.95pt
+
   # --- 二级标题修复 ---
   - id: FIX-C007
     ref_check: CHK-C010
@@ -403,6 +480,18 @@ fix_rules:
     action: set_size
     target: heading_2
     value: 16pt
+
+  - id: FIX-C033
+    ref_check: CHK-C035
+    action: set_line_spacing
+    target: heading_2
+    value: 28.95pt
+
+  - id: FIX-C034
+    ref_check: CHK-C036
+    action: set_first_line_indent
+    target: heading_2
+    value: "2em"
 
   # --- 三级标题修复 ---
   - id: FIX-C008
@@ -422,6 +511,18 @@ fix_rules:
     target: heading_3
     value: true
 
+  - id: FIX-C035
+    ref_check: CHK-C037
+    action: set_line_spacing
+    target: heading_3
+    value: 28.95pt
+
+  - id: FIX-C036
+    ref_check: CHK-C038
+    action: set_first_line_indent
+    target: heading_3
+    value: "2em"
+
   # --- 正文加粗范围修复（在 set_bold 之后执行，覆盖整段加粗） ---
   - id: FIX-C031
     action: fix_bold_range
@@ -434,6 +535,18 @@ fix_rules:
     action: set_alignment
     target: signature
     value: "right"
+
+  - id: FIX-C038
+    ref_check: CHK-C039
+    action: set_font
+    target: signature
+    value: "仿宋_GB2312"
+
+  - id: FIX-C039
+    ref_check: CHK-C040
+    action: set_font
+    target: date
+    value: "仿宋_GB2312"
 
   - id: FIX-C024
     ref_check: CHK-C025

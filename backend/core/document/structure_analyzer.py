@@ -196,17 +196,19 @@ class DocumentStructureAnalyzer:
                         recipient_idx: Optional[int],
                         signature_idx: Optional[int]) -> Tuple[Optional[int], Optional[int]]:
         """查找正文范围"""
+        total = len(paragraphs)
+        if total == 0:
+            return None, None
+
         # 正文开始：主送机关后的第一个段落
         body_start = (recipient_idx + 1) if recipient_idx is not None else 1
 
         # 正文结束：落款前的最后一个段落
-        body_end = (signature_idx - 1) if signature_idx is not None else len(paragraphs) - 3
+        body_end = (signature_idx - 1) if signature_idx is not None else max(0, total - 3)
 
-        # 确保范围有效
-        if body_start >= len(paragraphs):
-            body_start = 1
-        if body_end <= body_start:
-            body_end = len(paragraphs) - 3
+        # 确保索引边界有效（防止负索引和越界）
+        body_start = max(0, min(body_start, total - 1))
+        body_end = max(body_start, min(body_end, total - 1))
 
         logger.debug(f"正文范围: {body_start} - {body_end}")
         return body_start, body_end

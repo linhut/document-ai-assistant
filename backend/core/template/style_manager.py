@@ -12,6 +12,7 @@ Style Manager: 管理样式模板的加载、保存、导入导出。
 from __future__ import annotations
 from pathlib import Path
 from typing import Any
+import re
 import yaml
 import shutil
 
@@ -108,14 +109,31 @@ def get_template(template_id: str, source: str = "all") -> dict | None:
 
 
 def save_template(template_id: str, content: dict, source: str = "user") -> bool:
-    """保存模板到指定层级。"""
+    """保存模板到指定层级。
+
+    安全措施：验证template_id只包含安全字符，防止路径遍历。
+    """
     _ensure_dirs()
+
+    # 验证template_id只包含安全字符
+    if not re.match(r'^[a-zA-Z0-9_-]+$', template_id):
+        logger.error(f"Invalid template_id: {template_id}")
+        return False
+
     d = _DIRS.get(source)
     if d is None:
         logger.error(f"Unknown source: {source}")
         return False
 
     f = d / f"{template_id}.yaml"
+
+    # 验证路径在允许的目录内
+    try:
+        f.resolve().relative_to(d.resolve())
+    except ValueError:
+        logger.error(f"Path traversal detected in template_id: {template_id}")
+        return False
+
     content.pop("_source", None)
     content.pop("_path", None)
 
@@ -130,15 +148,31 @@ def save_template(template_id: str, content: dict, source: str = "user") -> bool
 
 
 def delete_template(template_id: str, source: str = "user") -> bool:
-    """删除模板（仅 user/custom 可删）。"""
+    """删除模板（仅 user/custom 可删）。
+
+    安全措施：验证template_id只包含安全字符，防止路径遍历。
+    """
     if source == "official":
         logger.warning("Cannot delete official templates")
+        return False
+
+    # 验证template_id只包含安全字符
+    if not re.match(r'^[a-zA-Z0-9_-]+$', template_id):
+        logger.error(f"Invalid template_id: {template_id}")
         return False
 
     d = _DIRS.get(source)
     if d is None:
         return False
     f = d / f"{template_id}.yaml"
+
+    # 验证路径在允许的目录内
+    try:
+        f.resolve().relative_to(d.resolve())
+    except ValueError:
+        logger.error(f"Path traversal detected in template_id: {template_id}")
+        return False
+
     if not f.exists():
         return False
 

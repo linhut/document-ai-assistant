@@ -6,6 +6,7 @@
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import AppLayout from './components/layout/AppLayout';
 import ErrorBoundary from './components/ui/error-boundary';
+import { DocumentConfigProvider } from './hooks/useDocumentConfig';
 import Workspace from './pages/Workspace';
 import DocumentProcess from './pages/DocumentProcess';
 import CheckCenter from './pages/CheckCenter';
@@ -17,28 +18,32 @@ import About from './pages/About';
 import A4Preview from './pages/A4Preview';
 import ImportTemplate from './pages/ImportTemplate';
 import EnhancedA4Preview from './pages/EnhancedA4Preview';
+import MarkdownOptimize from './pages/MarkdownOptimize';
 
 export default function App() {
   return (
     <HashRouter>
-      <AppLayout>
+      <DocumentConfigProvider>
         <ErrorBoundary>
-          <Routes>
-            <Route path="/" element={<Workspace />} />
-            <Route path="/workspace" element={<Workspace />} />
-            <Route path="/document/process" element={<DocumentProcess />} />
-            <Route path="/document/check" element={<CheckCenter />} />
-            <Route path="/templates" element={<Templates />} />
-            <Route path="/templates/import" element={<ImportTemplate />} />
-            <Route path="/templates/:templateId/rules" element={<TemplateRules />} />
-            <Route path="/rules" element={<Rules />} />
-            <Route path="/settings/ai" element={<AISettings />} />
-            <Route path="/document/preview" element={<A4Preview />} />
-            <Route path="/document/enhanced-preview" element={<EnhancedA4Preview />} />
-            <Route path="/about" element={<About />} />
-          </Routes>
+          <AppLayout>
+            <Routes>
+              <Route path="/" element={<Workspace />} />
+              <Route path="/workspace" element={<Workspace />} />
+              <Route path="/document/process" element={<DocumentProcess />} />
+              <Route path="/document/check" element={<CheckCenter />} />
+              <Route path="/document/markdown" element={<MarkdownOptimize />} />
+              <Route path="/templates" element={<Templates />} />
+              <Route path="/templates/import" element={<ImportTemplate />} />
+              <Route path="/templates/:templateId/rules" element={<TemplateRules />} />
+              <Route path="/rules" element={<Rules />} />
+              <Route path="/settings/ai" element={<AISettings />} />
+              <Route path="/document/preview" element={<A4Preview />} />
+              <Route path="/document/enhanced-preview" element={<EnhancedA4Preview />} />
+              <Route path="/about" element={<About />} />
+            </Routes>
+          </AppLayout>
         </ErrorBoundary>
-      </AppLayout>
+      </DocumentConfigProvider>
     </HashRouter>
   );
 }

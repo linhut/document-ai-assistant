@@ -9,78 +9,44 @@
  * 支持两种模式：
  *   1. 文档预览：传入 docId，从 /api/documents/{id}/preview 加载
  *   2. 模板预览：传入 templateId，从 /api/templates/{id}/preview 加载
+ *
+ * 使用统一的 A4PageRenderer 组件渲染，通过 remapParagraphRoles
+ * 兼容旧数据中缺少 header_org/header_number 角色的段落。
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { X, ZoomIn, ZoomOut, RefreshCw, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { apiClient, downloadFile } from '@/api/client';
+import { downloadFromPost } from '@/lib/download';
+import { remapParagraphRoles } from '@/lib/role-remap';
+import A4PageRenderer from '@/components/A4PageRenderer';
+import type { DocParagraph, DocTable } from '@/lib/types';
 
-interface DocParagraph {
-  text: string;
-  role?: string;
-  is_heading: boolean;
-  heading_level?: number;
-  format: {
-    alignment?: string;
-    first_line_indent_pt?: number;
-    font_name?: string;
-    font_size_pt?: number;
-    line_spacing_pt?: number;
-    bold?: boolean;
-    color?: string;
-  };
-  runs?: { text: string; bold?: boolean; font_name?: string }[];
-}
-
-interface DocTableCellPara {
-  text: string;
-  format: { alignment?: string; font_name?: string; font_size_pt?: number; bold?: boolean };
-}
-
-interface DocTableCell {
-  row: number;
-  col: number;
-  text: string;
-  paragraphs: DocTableCellPara[];
-}
-
-interface DocTable {
-  index: number;
-  rows: number;
-  cols: number;
-  cells: DocTableCell[];
-  insert_after_index?: number;
-}
+/* ------------------------------------------------------------------ */
+/*  Props                                                              */
+/* ------------------------------------------------------------------ */
 
 interface A4PreviewModalProps {
   docId?: number;
   templateId?: string;
   templateName?: string;
   refreshKey?: number;
+  canDownload?: boolean;
   onClose: () => void;
 }
 
-const FONT_MAP: Record<string, string> = {
-  '方正小标宋简体': '"方正小标宋简体", "FZXiaoBiaoSong-B05S", serif',
-  '方正小标宋_GBK': '"方正小标宋简体", "FZXiaoBiaoSong-B05S", serif',
-  '黑体': '"黑体", "SimHei", sans-serif',
-  '楷体_GB2312': '"楷体_GB2312", "KaiTi", serif',
-  '楷体': '"楷体", "KaiTi", serif',
-  '仿宋_GB2312': '"仿宋_GB2312", "FangSong", serif',
-  '仿宋': '"仿宋", "FangSong", serif',
-  '宋体': '"宋体", "SimSun", serif',
-  'Times New Roman': '"Times New Roman", serif',
-};
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
 
-function getFontFamily(name?: string): string {
-  if (!name) return '"仿宋_GB2312", "FangSong", serif';
-  return FONT_MAP[name] || `"${name}", serif`;
-}
-
-export default function A4PreviewModal({ docId, templateId, templateName, refreshKey, onClose }: A4PreviewModalProps) {
+export default function A4PreviewModal({
+  docId, templateId, templateName, refreshKey, canDownload, onClose,
+}: A4PreviewModalProps) {
   const [paragraphs, setParagraphs] = useState<DocParagraph[]>([]);
   const [tables, setTables] = useState<DocTable[]>([]);
-  const [pageSetup, setPageSetup] = useState({ margin_top_mm: 37, margin_bottom_mm: 35, margin_left_mm: 28, margin_right_mm: 26 });
+  const [pageSetup, setPageSetup] = useState({
+    margin_top_mm: 37, margin_bottom_mm: 35, margin_left_mm: 28, margin_right_mm: 26,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [zoom, setZoom] = useState(80);
@@ -89,150 +55,79 @@ export default function A4PreviewModal({ docId, templateId, templateName, refres
   const titleText = isTemplateMode ? `模板预览 — ${templateName || templateId}` : 'A4 预览';
   const subtitleText = isTemplateMode ? '模板排版效果预览' : 'GB/T 9704 标准排版';
 
-  useEffect(() => {
-    loadData();
-  }, [docId, templateId, refreshKey]);
+  /* ---- 数据加载 ---- */
 
-  const loadData = async () => {
+  const loadData = async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       setError('');
 
       let resp: any;
       if (isTemplateMode) {
-        resp = await apiClient.post(`/api/templates/${templateId}/preview`, {}, { timeout: 30000 });
+        resp = await apiClient.post(`/api/templates/${templateId}/preview`, {}, { timeout: 30000, signal });
       } else if (docId) {
-        resp = await apiClient.get(`/api/documents/${docId}/preview`);
+        resp = await apiClient.get(`/api/documents/${docId}/preview`, { signal });
       } else {
         setError('未指定预览目标');
         return;
       }
 
-      setParagraphs(resp.paragraphs || []);
-      setTables(resp.tables || []);
-      setPageSetup(resp.page_setup || pageSetup);
+      if (!signal?.aborted) {
+        setParagraphs(resp.paragraphs || []);
+        setTables(resp.tables || []);
+        setPageSetup(resp.page_setup || pageSetup);
+      }
     } catch (err: any) {
+      if (err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED') return;
       const msg = err?.response?.data?.detail || err?.message || '预览加载失败';
       setError(typeof msg === 'string' ? msg : JSON.stringify(msg));
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
     }
   };
 
-  /* 按 role 分离结构 */
-  const title = paragraphs.find(p => p.role === 'title' || (p.is_heading && p.heading_level === 0));
-  const recipient = paragraphs.find(p => p.role === 'recipient');
-  const body = paragraphs.filter(p =>
-    p.role === 'body' || p.role === 'attachment' ||
-    (p.is_heading && p.heading_level && p.heading_level >= 1 && p.role !== 'title')
+  useEffect(() => {
+    const controller = new AbortController();
+    loadData(controller.signal);
+    return () => controller.abort();
+  }, [docId, templateId, refreshKey]);
+
+  /* ---- 角色映射：兼容旧数据（缺少 header_org/header_number） ---- */
+
+  const remappedParagraphs = useMemo(
+    () => remapParagraphRoles(paragraphs),
+    [paragraphs],
   );
-  const signature = paragraphs.find(p => p.role === 'signature');
-  const date = paragraphs.find(p => p.role === 'date');
 
-  /* 版头智能检测：通过红色文本识别发文机关标志，通过正则识别发文字号 */
-  const DOC_NUMBER_RE = /[一-龥]+发(?:〔\d{4}〕|[（(]\d{4}[）)])\d+号/;
-  const headerOrg = paragraphs.find(p => {
-    const c = p.format.color?.toUpperCase();
-    return c && (c === 'CC0000' || c === 'FF0000' || c === 'C00000' || c === 'E00000');
-  });
-  // 发文字号：排除已识别为标题/版头的段落，匹配标准格式
-  const headerDocNum = paragraphs.find(p =>
-    p !== headerOrg && p !== title && DOC_NUMBER_RE.test(p.text.trim())
-  );
-  const hasHeader = !!(headerOrg || headerDocNum);
-  // 版记检测
-  const ccPara = paragraphs.find(p => p.role === 'cc');
-  const hasFooter = !!ccPara;
+  /* ---- 页边距转换：mm → cm ---- */
 
-  /* 渲染单个段落 */
-  const renderP = (p: DocParagraph, key: number) => {
-    const fs = p.format.font_size_pt || 16;
-    const ff = getFontFamily(p.format.font_name);
-    const lh = p.format.line_spacing_pt ? `${p.format.line_spacing_pt}pt` : '29pt';
-    const indent = p.format.first_line_indent_pt ? `${p.format.first_line_indent_pt}pt` : undefined;
-    let align: string = p.format.alignment || 'left';
+  const margins = useMemo(() => ({
+    top: pageSetup.margin_top_mm / 10,
+    bottom: pageSetup.margin_bottom_mm / 10,
+    left: pageSetup.margin_left_mm / 10,
+    right: pageSetup.margin_right_mm / 10,
+  }), [pageSetup]);
 
-    const style: React.CSSProperties = {
-      fontSize: `${fs}pt`, fontFamily: ff, lineHeight: lh,
-      textAlign: align as any, textIndent: indent,
-      margin: 0, padding: 0,
-    };
+  /* ---- 下载处理 ---- */
 
-    if (p.is_heading && p.heading_level === 0) {
-      Object.assign(style, { fontSize: '22pt', fontFamily: '"方正小标宋简体", serif', textAlign: 'center', textIndent: '0' });
-    } else if (p.is_heading && p.heading_level === 1) {
-      Object.assign(style, { fontFamily: '"黑体", "SimHei", sans-serif', textIndent: '0' });
-    } else if (p.is_heading && p.heading_level === 2) {
-      Object.assign(style, { fontFamily: '"楷体_GB2312", "KaiTi", serif', textIndent: '0' });
-    } else if (p.is_heading && p.heading_level === 3) {
-      Object.assign(style, { fontFamily: '"仿宋_GB2312", "FangSong", serif' });
-      // 不再整段加粗，由 run 级别控制
+  const handleTemplateDownload = async () => {
+    try {
+      await downloadFromPost('/api/optimize/preview-download', {
+        paragraphs: paragraphs.map(p => ({
+          text: p.text, role: p.role, is_heading: p.is_heading,
+          heading_level: p.heading_level, format: p.format,
+        })),
+        tables: tables.length > 0 ? tables : undefined,
+        page_setup: pageSetup,
+      }, `${templateName || templateId || '模板'}（预览）.docx`);
+    } catch (e) {
+      console.error('Template download failed:', e);
     }
-
-    // 空行处理
-    const isEmpty = !p.text || p.text.trim() === '';
-    if (isEmpty) {
-      style.lineHeight = '0.6';
-      style.minHeight = `${(p.format.line_spacing_pt || 29) * 0.5}pt`;
-    }
-
-    // 按 run 渲染：每个 run 有独立的加粗状态
-    if (p.runs && p.runs.length > 1) {
-      return (
-        <p key={key} style={style}>
-          {p.runs.map((r, ri) => (
-            <span key={ri} style={{ fontWeight: r.bold ? 'bold' : undefined }}>{r.text}</span>
-          ))}
-        </p>
-      );
-    }
-    return <p key={key} style={style}>{p.text || ' '}</p>;
   };
 
-  /* 渲染表格 */
-  const renderTable = (table: DocTable, key: number) => {
-    const cellMap: Record<string, DocTableCell> = {};
-    for (const c of table.cells) { cellMap[`${c.row}-${c.col}`] = c; }
-    return (
-      <table key={`table-${key}`} style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12pt', fontFamily: '"仿宋_GB2312", "FangSong", serif', lineHeight: '20pt', margin: '0.5em 0' }}>
-        <tbody>
-          {Array.from({ length: table.rows }, (_, r) => (
-            <tr key={r}>
-              {Array.from({ length: table.cols }, (_, c) => {
-                const cell = cellMap[`${r}-${c}`];
-                const cellText = cell?.paragraphs?.map(cp => cp.text).join('') || cell?.text || '';
-                const isHeader = r === 0;
-                return (
-                  <td key={c} style={{ border: '1px solid #000', padding: '3pt 5pt', textAlign: isHeader ? 'center' : 'left', fontWeight: isHeader ? 'bold' : undefined, fontFamily: isHeader ? '"黑体", "SimHei", sans-serif' : undefined, verticalAlign: 'top' }}>
-                    {cellText}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    );
-  };
-
-  /* 按 insert_after_index 交错渲染 body + tables */
-  const renderBodyWithTables = () => {
-    const filtered = body.filter(p => p !== headerOrg && p !== headerDocNum);
-    if (tables.length === 0) return filtered.map((p, i) => renderP(p, i));
-
-    const tableMap: Record<number, DocTable[]> = {};
-    for (const t of tables) {
-      const idx = t.insert_after_index ?? -1;
-      if (!tableMap[idx]) tableMap[idx] = [];
-      tableMap[idx].push(t);
-    }
-    const elements: React.ReactNode[] = [];
-    filtered.forEach((p, i) => {
-      elements.push(renderP(p, i));
-      if (tableMap[i]) { for (const t of tableMap[i]) elements.push(renderTable(t, i)); }
-    });
-    return elements;
-  };
+  /* ---- 渲染 ---- */
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
@@ -258,7 +153,14 @@ export default function A4PreviewModal({ docId, templateId, templateName, refres
             <Button variant="ghost" size="sm" onClick={() => setZoom(z => Math.min(150, z + 10))}>
               <ZoomIn className="h-4 w-4" />
             </Button>
-            {!isTemplateMode && docId && (
+            {/* 模板模式：从预览数据下载 */}
+            {isTemplateMode && paragraphs.length > 0 && (
+              <Button variant="ghost" size="sm" onClick={handleTemplateDownload} title="下载模板文档">
+                <Download className="h-4 w-4" />
+              </Button>
+            )}
+            {/* 文档模式：从后端下载优化文件（需已优化） */}
+            {!isTemplateMode && docId && canDownload && (
               <Button variant="ghost" size="sm" onClick={() => downloadFile(`/api/optimize/${docId}/download`, `optimized_${docId}.docx`)} title="下载">
                 <Download className="h-4 w-4" />
               </Button>
@@ -283,101 +185,12 @@ export default function A4PreviewModal({ docId, templateId, templateName, refres
               <p>暂无预览内容</p>
             </div>
           ) : (
-            <div
-              style={{
-                transform: `scale(${zoom / 100})`,
-                transformOrigin: 'top center',
-              }}
-            >
-              <div style={{
-                width: '210mm',
-                minHeight: '297mm',
-                padding: `${pageSetup.margin_top_mm}mm ${pageSetup.margin_right_mm}mm ${pageSetup.margin_bottom_mm}mm ${pageSetup.margin_left_mm}mm`,
-                background: 'white',
-                boxShadow: '0 2px 16px rgba(0,0,0,0.2)',
-                margin: '0 auto',
-                position: 'relative',
-                fontFamily: '"仿宋_GB2312", "FangSong", serif',
-                fontSize: '16pt',
-                lineHeight: '29pt',
-                color: '#000',
-              }}>
-                {/* === 版头区域（自动检测 + gongwen 项目数值对齐） === */}
-                {hasHeader && (
-                  <div style={{ marginBottom: '58pt' }}>
-                    {headerOrg && (
-                      <p style={{
-                        fontSize: '30pt',
-                        fontFamily: '"方正小标宋简体", "FZXiaoBiaoSong-B05S", serif',
-                        color: '#E00000',
-                        textAlign: 'center',
-                        margin: '0',
-                        padding: '0',
-                        lineHeight: '1.4',
-                        letterSpacing: '0',
-                      }}>
-                        {headerOrg.text}
-                      </p>
-                    )}
-                    {headerDocNum && (
-                      <p style={{
-                        fontSize: `${headerDocNum.format.font_size_pt || 16}pt`,
-                        fontFamily: getFontFamily(headerDocNum.format.font_name),
-                        textAlign: 'center',
-                        margin: `${29 * 2}pt 0 4pt 0`,
-                        lineHeight: `${headerDocNum.format.line_spacing_pt || 29}pt`,
-                      }}>
-                        {headerDocNum.text}
-                      </p>
-                    )}
-                    <hr style={{ border: 'none', borderTop: '2px solid #E00000', margin: '0' }} />
-                  </div>
-                )}
-
-                {title && renderP(title, -1)}
-                {recipient && renderP(recipient, -2)}
-                {renderBodyWithTables()}
-
-                {(signature || date) && (
-                  <div style={{ marginTop: '3em' }}>
-                    {signature && renderP({ ...signature, format: { ...signature.format, alignment: 'right' } }, -3)}
-                    {date && renderP({ ...date, format: { ...date.format, alignment: 'right' } }, -4)}
-                  </div>
-                )}
-
-                {/* === 版记区域（自动检测：role=cc） === */}
-                {hasFooter && (
-                  <div style={{ marginTop: '1em' }}>
-                    <hr style={{ border: 'none', borderTop: '2px solid #000', margin: '0 0 0.5em 0' }} />
-                    {ccPara && (
-                      <p style={{
-                        fontSize: '14pt',
-                        fontFamily: getFontFamily(ccPara.format.font_name),
-                        paddingLeft: '1em', margin: 0,
-                        lineHeight: `${ccPara.format.line_spacing_pt || 29}pt`,
-                      }}>
-                        {ccPara.text}
-                      </p>
-                    )}
-                    <hr style={{ border: 'none', borderTop: '1px solid #000', margin: '0.5em 0 0 0' }} />
-                  </div>
-                )}
-
-                {/* 页码 — GB/T 9704: 四号宋体/Times New Roman */}
-                <div style={{
-                  position: 'absolute',
-                  bottom: `${pageSetup.margin_bottom_mm - 7}mm`,
-                  left: 0, right: 0,
-                  textAlign: 'center',
-                  fontSize: '14pt',
-                  fontFamily: '"宋体", "SimSun", "Times New Roman", serif',
-                  color: '#000',
-                  letterSpacing: '0.5pt',
-                }}>
-                  — 1 —
-                </div>
-              </div>
-            </div>
+            <A4PageRenderer
+              paragraphs={remappedParagraphs}
+              tables={tables}
+              margins={margins}
+              zoom={zoom}
+            />
           )}
         </div>
       </div>

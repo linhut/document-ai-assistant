@@ -7,12 +7,15 @@ Office Bridge API: Word/WPS 插件共用的 REST 接口。
 所有 Office 插件通过此 API 与本地 Python Core Engine 通信。
 插件端只需要做 HTTP 调用，不需要实现任何业务逻辑。
 """
+import re
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
+from starlette.background import BackgroundTask
 from pydantic import BaseModel
 from pathlib import Path
 import base64
 import tempfile
+import uuid
 
 from core.document.parser import parse_docx
 from core.document.generator import generate_docx
@@ -71,7 +74,7 @@ async def office_health():
     return {
         "status": "ok",
         "service": "office-bridge",
-        "version": "1.4.7",
+        "version": "1.4.8",
         "capabilities": ["check", "fix", "ai-optimize", "templates", "apply-template"],
     }
 
@@ -87,6 +90,7 @@ async def office_check(payload: DocumentPayload):
 
     接收 base64 编码的 docx，返回检查结果。
     """
+    doc_path = None
     try:
         doc_path = _decode_to_temp(payload.document_base64, payload.filename)
         model = parse_docx(doc_path)
@@ -111,8 +115,10 @@ async def office_check(payload: DocumentPayload):
             ],
         )
     except Exception as e:
-        logger.error(f"Office check failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Office check failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="文档检查失败，请稍后重试")
+    finally:
+        _cleanup_paths(doc_path)
 
 
 # ---------------------------------------------------------------------------
@@ -126,13 +132,15 @@ async def office_fix(payload: DocumentPayload):
 
     接收 base64 编码的 docx，返回修复后的 docx（base64）。
     """
+    doc_path = None
+    out_path = None
     try:
         doc_path = _decode_to_temp(payload.document_base64, payload.filename)
         model = parse_docx(doc_path)
         issues, fixed_model = _rule_engine.check_and_fix(model, payload.document_type)
 
         # 生成修复后的文档
-        out_path = _BRIDGE_TMP / f"fixed_{payload.filename}"
+        out_path = _BRIDGE_TMP / f"fixed_{uuid.uuid4().hex[:8]}_{payload.filename}"
         generate_docx(fixed_model, out_path)
 
         # 编码为 base64
@@ -145,8 +153,10 @@ async def office_fix(payload: DocumentPayload):
             message=f"已应用 {len(issues)} 项修复",
         )
     except Exception as e:
-        logger.error(f"Office fix failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Office fix failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="文档修复失败，请稍后重试")
+    finally:
+        _cleanup_paths(doc_path, out_path)
 
 
 # ---------------------------------------------------------------------------
@@ -161,6 +171,7 @@ async def office_ai_optimize(payload: DocumentPayload):
     暂时返回格式检查结果 + AI 分析提示。
     完整 AI 优化需要 Provider 配置。
     """
+    doc_path = None
     try:
         doc_path = _decode_to_temp(payload.document_base64, payload.filename)
         model = parse_docx(doc_path)
@@ -173,8 +184,10 @@ async def office_ai_optimize(payload: DocumentPayload):
             "note": "AI 优化功能需要在设置中配置 AI Provider",
         }
     except Exception as e:
-        logger.error(f"Office AI optimize failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Office AI optimize failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="AI优化失败，请稍后重试")
+    finally:
+        _cleanup_paths(doc_path)
 
 
 # ---------------------------------------------------------------------------
@@ -207,6 +220,8 @@ async def office_apply_template(payload: TemplateApplyRequest):
 
     将模板的样式定义应用到现有文档的格式上。
     """
+    doc_path = None
+    out_path = None
     try:
         doc_path = _decode_to_temp(payload.document_base64, payload.filename)
         model = parse_docx(doc_path)
@@ -220,7 +235,7 @@ async def office_apply_template(payload: TemplateApplyRequest):
         rules = load_rules_merged(payload.template_id)
         _, fixed_model = _rule_engine.check_and_fix(model, payload.template_id)
 
-        out_path = _BRIDGE_TMP / f"styled_{payload.filename}"
+        out_path = _BRIDGE_TMP / f"styled_{uuid.uuid4().hex[:8]}_{payload.filename}"
         generate_docx(fixed_model, out_path)
 
         with open(out_path, "rb") as f:
@@ -235,8 +250,10 @@ async def office_apply_template(payload: TemplateApplyRequest):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Apply template failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Apply template failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="模板应用失败，请稍后重试")
+    finally:
+        _cleanup_paths(doc_path, out_path)
 
 
 @router.post("/generate-template")
@@ -269,10 +286,11 @@ async def office_generate_template(template_id: str, format: str = "docx"):
             path=str(output_path),
             filename=output_path.name,
             media_type=media_type,
+            background=BackgroundTask(_cleanup_paths, output_path),
         )
     except Exception as e:
-        logger.error(f"Generate template failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Generate template failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="模板生成失败，请稍后重试")
 
 
 # ---------------------------------------------------------------------------
@@ -280,9 +298,44 @@ async def office_generate_template(template_id: str, format: str = "docx"):
 # ---------------------------------------------------------------------------
 
 def _decode_to_temp(b64_data: str, filename: str) -> Path:
-    """将 base64 数据解码为临时文件。"""
+    """将 base64 数据解码为临时文件。
+
+    安全措施：
+    1. 清理文件名中的危险字符（路径遍历等）
+    2. 验证最终路径在 _BRIDGE_TMP 目录内
+    3. 使用UUID前缀防止文件名冲突
+    """
+    # 清理文件名：只保留安全字符
+    safe_name = re.sub(r'[^\w一-鿿._-]', '_', filename)
+    if not safe_name:
+        safe_name = "document.docx"
+
+    # 使用UUID前缀防止文件名冲突
+    unique_name = f"{uuid.uuid4().hex[:8]}_{safe_name}"
+    tmp_path = _BRIDGE_TMP / unique_name
+
+    # 验证路径在允许的目录内（防止路径遍历）
+    try:
+        tmp_path.resolve().relative_to(_BRIDGE_TMP.resolve())
+    except ValueError:
+        raise ValueError("Invalid filename: path traversal detected")
+
     data = base64.b64decode(b64_data)
-    tmp_path = _BRIDGE_TMP / filename
+
+    # 限制文件大小（50MB）
+    if len(data) > 50 * 1024 * 1024:
+        raise ValueError("File too large: maximum 50MB allowed")
+
     with open(tmp_path, "wb") as f:
         f.write(data)
     return tmp_path
+
+
+def _cleanup_paths(*paths: Path) -> None:
+    """删除一组临时文件，忽略不存在或删除失败的情况。"""
+    for p in paths:
+        try:
+            if p and p.exists():
+                p.unlink()
+        except Exception:
+            pass

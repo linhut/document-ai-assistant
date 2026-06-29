@@ -192,6 +192,8 @@ def update_issue_status(db: Session, issue_id: int, status: str) -> bool:
 def optimize_document(
     db: Session, doc_id: int, doc_type: str | None = None, apply_fixes: bool = True,
     selected_rule_ids: list[str] | None = None,
+    header_config: dict | None = None,
+    footer_note_config: dict | None = None,
 ) -> dict:
     """Check + fix a document, then generate the optimized docx."""
     doc = get_document(db, doc_id)
@@ -218,14 +220,24 @@ def optimize_document(
         logger.error(f"RuleEngine failed for doc {doc_id}, type={doc_type}: {e}")
         raise ValueError(f"规则引擎处理失败: {str(e)}")
 
-    # 生成优化后的文档
-    out_name = Path(doc.filename).stem + _OPTIMIZED_SUFFIX
+    # 生成优化后的文档（包含doc_id防止文件名冲突）
+    out_name = f"{Path(doc.filename).stem}_doc{doc_id}{_OPTIMIZED_SUFFIX}"
     out_path = OUTPUT_DIR / out_name
     try:
         generate_docx(fixed_model, str(out_path))
     except Exception as e:
         logger.error(f"generate_docx failed for doc {doc_id}: {e}")
         raise ValueError(f"文档生成失败: {str(e)}")
+
+    # 版头/版记注入（参考 gongwen 项目方案）
+    try:
+        from api.routes.optimize import _inject_header_to_docx, _inject_footer_to_docx
+        if header_config and header_config.get('enabled', True):
+            _inject_header_to_docx(str(out_path), header_config)
+        if footer_note_config and footer_note_config.get('enabled', True):
+            _inject_footer_to_docx(str(out_path), footer_note_config)
+    except Exception as e:
+        logger.warning(f"Header/footer injection failed (non-fatal): {e}", exc_info=True)
 
     # 更新数据库（带 rollback 保护）
     try:

@@ -8,7 +8,7 @@
  * ImportTemplate - 导入文档自动生成模板规则
  * 上传已排版文档 → 自动提取格式 → 预览 → 保存为自定义规则
  */
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Upload, FileText, Loader2, CheckCircle2, Save, Eye, ChevronDown } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,17 @@ export default function ImportTemplate() {
   const [showYaml, setShowYaml] = useState(false);
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const typeInputRef = useRef<HTMLInputElement>(null);
+  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup blur timeout on unmount to prevent setState on unmounted component
+  useEffect(() => {
+    return () => {
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+        blurTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // 已知文档类型列表（用于下拉建议）
   const KNOWN_TYPES = [
@@ -118,7 +129,7 @@ export default function ImportTemplate() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const resp = await apiClient.post('/api/templates/extract', formData, {
+      const resp = await apiClient.post<ExtractResult>('/api/templates/extract', formData, {
         headers: { 'Content-Type': undefined },
         timeout: 60000,
       });
@@ -361,7 +372,9 @@ export default function ImportTemplate() {
                           setShowTypeDropdown(true);
                         }}
                         onFocus={() => setShowTypeDropdown(true)}
-                        onBlur={() => setTimeout(() => setShowTypeDropdown(false), 200)}
+                        onBlur={() => {
+                          blurTimeoutRef.current = setTimeout(() => setShowTypeDropdown(false), 200);
+                        }}
                         placeholder="输入或选择文档类型"
                         className="w-full border border-primary-200 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                       />

@@ -9,14 +9,14 @@
  */
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileText, Loader2, CheckCircle2, ChevronDown } from 'lucide-react';
+import { Upload, FileText, Loader2, CheckCircle2, ChevronDown, Eye, ArrowRight } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { apiClient } from '@/api/client';
 import { useToast } from '@/components/ui/toast';
+import A4PreviewModal from '@/components/A4PreviewModal';
 
 interface DocumentType {
   value: string;
@@ -38,7 +38,20 @@ export default function DocumentProcess() {
   const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
   const [typeSearch, setTypeSearch] = useState('');
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
+  const [checkComplete, setCheckComplete] = useState(false);
+  const [showA4Preview, setShowA4Preview] = useState(false);
   const typeInputRef = useRef<HTMLInputElement>(null);
+  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup blur timeout on unmount to prevent setState on unmounted component
+  useEffect(() => {
+    return () => {
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+        blurTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // 根据搜索词过滤类型（支持中文名和英文标识双向匹配）
   const filteredDocTypes = typeSearch.trim()
@@ -58,18 +71,22 @@ export default function DocumentProcess() {
 
   // 从后端API动态获取文档类型列表（包含官方+自定义）
   useEffect(() => {
+    const controller = new AbortController();
+
     const loadDocumentTypes = async () => {
       try {
-        const response = await apiClient.get('/api/templates/list');
+        const response = await apiClient.get<{ templates?: Array<{ id: string; name: string; category?: string; source?: string; description?: string }> }>('/api/templates/list', { signal: controller.signal });
+        if (controller.signal.aborted) return;
         const templates = response.templates || [];
-        const types: DocumentType[] = templates.map((t: any) => ({
+        const types: DocumentType[] = templates.map((t) => ({
           value: t.id,
           label: t.name,
           category: t.category || (t.source === 'custom' || t.source === 'user' ? 'custom' : 'government'),
           description: t.description || '',
         }));
         setDocumentTypes(types);
-      } catch (error) {
+      } catch (error: any) {
+        if (error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED') return;
         console.error('Failed to load document types:', error);
         // 回退到基础列表
         setDocumentTypes([
@@ -81,6 +98,7 @@ export default function DocumentProcess() {
       }
     };
     loadDocumentTypes();
+    return () => controller.abort();
   }, []);
 
   const isSupportedFormat = (name: string) => {
@@ -125,7 +143,7 @@ export default function DocumentProcess() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const uploadResponse = await apiClient.post('/api/documents/upload', formData, {
+      const uploadResponse = await apiClient.post<{ id: number }>('/api/documents/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
@@ -143,11 +161,8 @@ export default function DocumentProcess() {
       // Step 3: Complete
       setCurrentStep('检查完成！');
       setProgress(100);
-
-      // Navigate to check center
-      setTimeout(() => {
-        navigate(`/document/check?docId=${uploadedDocId}&type=${documentType}`);
-      }, 500);
+      setCheckComplete(true);
+      setIsProcessing(false);
 
     } catch (error: any) {
       setErrorMessage(error.response?.data?.detail || '处理失败，请重试');
@@ -255,7 +270,9 @@ export default function DocumentProcess() {
                         setTypeSearch('');
                         setShowTypeDropdown(true);
                       }}
-                      onBlur={() => setTimeout(() => setShowTypeDropdown(false), 200)}
+                      onBlur={() => {
+                        blurTimeoutRef.current = setTimeout(() => setShowTypeDropdown(false), 200);
+                      }}
                       placeholder="输入搜索或点击选择文档类型"
                       disabled={isProcessing}
                       className="w-full border border-primary-200 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
@@ -343,27 +360,60 @@ export default function DocumentProcess() {
               </Card>
             )}
 
+            {/* 检查完成 — 操作入口 */}
+            {checkComplete && docId && (
+              <Card className="border-status-success/30">
+                <CardContent className="py-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <CheckCircle2 className="h-6 w-6 text-status-success" />
+                    <div>
+                      <p className="font-medium text-primary-900">格式检查完成</p>
+                      <p className="text-sm text-primary-500">{file?.name}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button className="flex-1" onClick={() => navigate(`/document/check?docId=${docId}&type=${documentType}`)}>
+                      <ArrowRight className="h-4 w-4 mr-1.5" />查看检查结果
+                    </Button>
+                    <Button variant="outline" className="flex-1" onClick={() => setShowA4Preview(true)}>
+                      <Eye className="h-4 w-4 mr-1.5" />A4 预览
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* 开始检查按钮 */}
-            <Button
-              className="w-full h-12 text-base"
-              onClick={handleStartCheck}
-              disabled={!documentType || isProcessing}
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  处理中...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="h-5 w-5 mr-2" />
-                  开始检查
-                </>
-              )}
-            </Button>
+            {!checkComplete && (
+              <Button
+                className="w-full h-12 text-base"
+                onClick={handleStartCheck}
+                disabled={!documentType || isProcessing}
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    处理中...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-5 w-5 mr-2" />
+                    开始检查
+                  </>
+                )}
+              </Button>
+            )}
           </>
         )}
       </div>
+
+      {/* A4 预览弹窗 */}
+      {showA4Preview && docId && (
+        <A4PreviewModal
+          docId={docId}
+          onClose={() => setShowA4Preview(false)}
+        />
+      )}
     </div>
   );
 }

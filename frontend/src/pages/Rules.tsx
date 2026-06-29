@@ -64,24 +64,31 @@ export default function Rules() {
   const [editYamlText, setEditYamlText] = useState('');
 
   useEffect(() => {
-    loadRules();
+    const controller = new AbortController();
+    loadRules(controller.signal);
+    return () => controller.abort();
   }, [sourceFilter]);
 
-  const loadRules = async () => {
+  const loadRules = async (signal?: AbortSignal) => {
     setLoading(true);
     try {
-      const response = await apiClient.get(`/api/rules/?source=${sourceFilter}`);
-      setRules(response.rules || []);
-    } catch (error) {
+      const response = await apiClient.get<{ rules?: RuleItem[] }>(`/api/rules/?source=${sourceFilter}`, { signal });
+      if (!signal?.aborted) {
+        setRules(response.rules || []);
+      }
+    } catch (error: any) {
+      if (error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED') return;
       console.error('Load rules error:', error);
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
     }
   };
 
   const handleViewRule = async (rule: RuleItem) => {
     try {
-      const response = await apiClient.get(`/api/rules/${rule.key}?source_type=${rule.source_type}`);
+      const response = await apiClient.get<Record<string, unknown> & { content?: unknown }>(`/api/rules/${rule.key}?source_type=${rule.source_type}`);
       setSelectedRule({ ...response, source_type: rule.source_type });
       setDetailOpen(true);
     } catch (error) {
@@ -121,17 +128,22 @@ export default function Rules() {
 
   const handleExport = async (rule: RuleItem) => {
     try {
-      const response = await apiClient.post('/api/rules/export', {
+      const response = await apiClient.post<{ yaml_text: string }>('/api/rules/export', {
         key: rule.key,
         source_type: rule.source_type,
       });
       const blob = new Blob([response.yaml_text], { type: 'text/yaml' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${rule.key}.yaml`;
-      a.click();
-      URL.revokeObjectURL(url);
+      try {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${rule.key}.yaml`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
     } catch (error) {
       console.error('Export error:', error);
     }

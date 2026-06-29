@@ -13,7 +13,7 @@
  *
  * 所有 API 调用必须通过此 client，禁止直接 fetch。
  */
-import axios from 'axios';
+import axios, { type RawAxiosRequestConfig } from 'axios';
 
 /**
  * 获取 API 基础地址。
@@ -39,17 +39,27 @@ function getBaseUrl(): string {
 
 const API_BASE_URL = getBaseUrl();
 
-export const apiClient = axios.create({
+/**
+ * 底层 axios 实例。
+ * 响应拦截器会自动 unwrap response.data，
+ * 因此实际返回的是后端 JSON payload，而非 AxiosResponse。
+ */
+const rawClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
-}) as any;
+});
 
 // 请求拦截器
-apiClient.interceptors.request.use(
+rawClient.interceptors.request.use(
   (config) => {
+    // Attach Bearer token from localStorage if present
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -57,8 +67,8 @@ apiClient.interceptors.request.use(
   }
 );
 
-// 响应拦截器
-apiClient.interceptors.response.use(
+// 响应拦截器 — 返回 response.data（而非完整 AxiosResponse）
+rawClient.interceptors.response.use(
   (response) => {
     return response.data;
   },
@@ -70,6 +80,8 @@ apiClient.interceptors.response.use(
     let message: string;
     if (!error.response) {
       message = '无法连接到后端服务，请确认服务已启动';
+    } else if (status === 401) {
+      message = detail || '认证失败，请检查 Token 配置';
     } else if (status === 404) {
       message = detail || '请求的资源不存在';
     } else if (status === 400) {
@@ -86,13 +98,47 @@ apiClient.interceptors.response.use(
 );
 
 /**
+ * 类型安全的 API 客户端。
+ *
+ * 响应拦截器已经 unwraps response.data，所以所有方法
+ * 返回的 Promise 解析值就是后端 JSON payload（而非 AxiosResponse）。
+ * 这里的泛型 T 用来指定 payload 类型。
+ */
+export const apiClient = {
+  get<T = unknown>(url: string, config?: RawAxiosRequestConfig): Promise<T> {
+    return rawClient.get(url, config) as Promise<T>;
+  },
+  post<T = unknown>(url: string, data?: unknown, config?: RawAxiosRequestConfig): Promise<T> {
+    return rawClient.post(url, data, config) as Promise<T>;
+  },
+  put<T = unknown>(url: string, data?: unknown, config?: RawAxiosRequestConfig): Promise<T> {
+    return rawClient.put(url, data, config) as Promise<T>;
+  },
+  delete<T = unknown>(url: string, config?: RawAxiosRequestConfig): Promise<T> {
+    return rawClient.delete(url, config) as Promise<T>;
+  },
+};
+
+/**
  * 下载文件的辅助函数。
  * 使用 fetch + blob，可捕获 HTTP 错误并给出提示。
+ * 内置超时控制（默认 60 秒），防止大文件下载时无限等待。
  */
-export async function downloadFile(endpoint: string, filename: string): Promise<void> {
+export async function downloadFile(endpoint: string, filename: string, timeoutMs = 60000): Promise<void> {
   const url = `${API_BASE_URL}${endpoint}`;
+  const headers: Record<string, string> = {};
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  // 使用 AbortController 实现超时控制
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
-    const resp = await fetch(url);
+    const resp = await fetch(url, { headers, signal: controller.signal });
+    clearTimeout(timeoutId);
     if (!resp.ok) {
       const text = await resp.text().catch(() => '');
       let msg = `下载失败 (HTTP ${resp.status})`;
@@ -109,8 +155,15 @@ export async function downloadFile(endpoint: string, filename: string): Promise<
     document.body.removeChild(a);
     URL.revokeObjectURL(blobUrl);
   } catch (err: any) {
-    console.error('downloadFile error:', err);
-    alert(err?.message || '下载失败，请重试');
+    clearTimeout(timeoutId);
+    if (err?.name === 'AbortError') {
+      const msg = '下载超时，请检查网络连接或稍后重试';
+      console.error('downloadFile timeout:', url);
+      alert(msg);
+    } else {
+      console.error('downloadFile error:', err);
+      alert(err?.message || '下载失败，请重试');
+    }
   }
 }
 

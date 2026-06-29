@@ -4,6 +4,71 @@
 
 ---
 
+## [1.4.8] - 2026-06-30
+
+### 编排功能全面修复
+
+- **版头/版记注入** — 修复 `optimize_document` 路径无注入逻辑，新增 `header_config`/`footer_note_config` 参数
+- **版头段落顺序** — 重写 `_inject_header_to_docx`，按正确顺序逐个插入（机关名→空行→字号→签发人→红线）
+- **RED_LINE 消除** — 将 `text='__RED_LINE__'` 和 `text='__BLACK_LINE__'` 改为空文本
+- **表格位置保留** — 新增 `source_doc_id` 字段，`preview-download` 端点加载源文档作为基础
+- **下载按钮闭包** — `config` → `configRef.current` 避免捕获旧配置值
+- **缓存三重保障** — 模块级 Map + sessionStorage + localStorage
+
+### GB/T 9704 标准合规增强
+
+- **标题行距** — 28.95pt → 33pt（标题/一级/二级/三级标题）
+- **页脚距离** — 添加 `section.footer_distance = Cm(2.5)`
+- **检查规则** — 新增 8 条（CHK-C032~C040），总数 31→39
+- **修复规则** — 新增 8 条（FIX-C032~C039），总数 25→33
+
+### 借鉴 Word-Formatter-Pro 优化
+
+- **表格智能对齐** — `_smart_align_cell()`：表头居中加粗、数字右对齐、序号列居中、短文本居中
+- **内联标题分割** — `_split_inline_headings()`：标题+正文同段落时自动拆分
+- **附件分页标记** — `_add_attachment_page_breaks()`：附件前插入分页符
+- **空行处理三模式** — `keep_all` / `delete_single` / `keep_single`
+- **CLI 接口** — 新增 `wfp_cli.py`，支持 `format`/`check`/`optimize` 子命令
+
+### 安全加固
+
+- **认证中间件** — 新增 `auth.py`，Bearer Token 认证，公开路径白名单
+- **路径遍历修复** — office.py / manager.py / style_manager.py
+- **错误信息泄露** — 所有路由文件替换为通用错误消息
+- **密钥文件权限** — crypto.py 添加 `os.chmod(0o600)`
+- **datetime 废弃** — models.py 替换为 `datetime.now(timezone.utc)`
+- **上传竞态条件** — documents.py UUID 前缀临时文件名
+
+### 前端优化
+
+- **TypeScript strict** — tsconfig.app.json 启用 strict 模式
+- **AbortController** — 9 个页面系统性添加请求取消
+- **A4PageRenderer useMemo** — cfg 对象缓存避免失效
+- **apiClient 类型安全** — 移除 `as any`，添加泛型包装
+- **setTimeout 泄漏** — DocumentProcess / ImportTemplate useRef cleanup
+- **Map 无限增长** — MarkdownOptimize 100 条上限 + 5 分钟 TTL
+- **Electron sandbox** — main.ts 添加 `sandbox: true`
+- **ErrorBoundary 范围** — App.tsx 上移包裹 AppLayout
+- **日志轮转** — logger.py 使用 RotatingFileHandler(10MB, 5 备份)
+
+### 后端资源管理
+
+- **AI Provider context manager** — base.py 添加 `__aenter__`/`__aexit__`
+- **临时文件清理** — office.py BackgroundTask 清理
+- **缓存失效** — engine.py `invalidate_rule_cache()`
+- **健康检测非阻塞** — model_health.py `asyncio.to_thread()`
+- **行距检查修复** — checker.py 通用检查从文档模型读取实际值
+- **fix_bold_range 排除** — fixer.py 添加到排除列表
+
+### 版本发布系统
+
+- **build_release.py** — 多平台打包脚本（PyInstaller + Electron + 便携版 + CLI）
+- **release.yml** — GitHub Actions 自动发布工作流
+- **CHANGELOG.md** — 版本变更记录
+- **release-notes-v1.4.8.md** — 详细发布说明
+
+---
+
 ## [1.4.7] - 2026-06-27
 
 ### 信创跨平台支持（Phase 1）

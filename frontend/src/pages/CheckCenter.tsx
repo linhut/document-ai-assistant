@@ -8,7 +8,7 @@
  * 左侧：问题列表（点击选中 + 筛选 + 批量操作）
  * 右侧：AI 分析结果面板（调用已配置的AI进行智能分析）
  */
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Download, Loader2, CheckSquare, Square, FileText,
@@ -134,8 +134,17 @@ export default function CheckCenter() {
 
   /* ---- 初始化 ---- */
   useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
+
     // 检测 AI 配置状态
-    detectActiveAI().then(setAiStatus).catch(() => {});
+    detectActiveAI(signal).then(result => {
+      if (!signal.aborted) setAiStatus(result);
+    }).catch(err => {
+      if (err?.name !== 'CanceledError' && err?.code !== 'ERR_CANCELED') {
+        console.error('detectActiveAI failed:', err);
+      }
+    });
 
     const docIdParam = searchParams.get('docId');
     const typeParam = searchParams.get('type');
@@ -143,23 +152,36 @@ export default function CheckCenter() {
       const id = parseInt(docIdParam);
       setDocId(id);
       setDocumentType(typeParam || 'notice');
-      fetchResults(id);
-      apiClient.get(`/api/documents/${id}`).then(r => setIsOptimized(r.status === 'optimized')).catch(() => {});
+      fetchResults(id, signal);
+      apiClient.get<{ status: string }>(`/api/documents/${id}`, { signal }).then(r => {
+        if (!signal.aborted) setIsOptimized(r.status === 'optimized');
+      }).catch(err => {
+        if (err?.name !== 'CanceledError' && err?.code !== 'ERR_CANCELED') {
+          // silently ignore
+        }
+      });
     } else {
       setErrorMessage('未找到文档 ID，请先上传文档');
       setLoading(false);
     }
+
+    return () => controller.abort();
   }, [searchParams]);
 
-  const fetchResults = async (id: number) => {
+  const fetchResults = async (id: number, signal?: AbortSignal) => {
     try {
       setLoading(true);
-      const resp = await apiClient.get(`/api/check/${id}/results`);
-      setIssues(resp);
+      const resp = await apiClient.get<CheckIssue[]>(`/api/check/${id}/results`, { signal });
+      if (!signal?.aborted) {
+        setIssues(resp);
+      }
     } catch (e: any) {
+      if (e?.name === 'CanceledError' || e?.code === 'ERR_CANCELED') return;
       setErrorMessage(e.response?.data?.detail || '获取检查结果失败');
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
     }
   };
 
@@ -169,8 +191,8 @@ export default function CheckCenter() {
   const p1 = issues.filter(i => i.severity === 'P1').length;
   const p2 = issues.filter(i => i.severity === 'P2').length;
 
-  // 按 rule_id + check_type 分组，同类型问题合并显示
-  const groupedIssues = (() => {
+  // 按 rule_id + check_type 分组，同类型问题合并显示（使用 useMemo 避免每次渲染重复计算）
+  const groupedIssues = useMemo(() => {
     const map = new Map<string, { key: string; severity: string; check_type: string; rule_id: string; reason: string; suggested_fix: string; issues: CheckIssue[] }>();
     for (const issue of filteredIssues) {
       const gKey = issue.rule_id || `${issue.check_type}__${issue.reason}`;
@@ -180,7 +202,7 @@ export default function CheckCenter() {
       map.get(gKey)!.issues.push(issue);
     }
     return Array.from(map.values());
-  })();
+  }, [filteredIssues]);
 
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
@@ -215,7 +237,7 @@ export default function CheckCenter() {
     try {
       const payload: any = { document_type: documentType, apply_fixes: true };
       if (selectedRuleIds) payload.selected_rule_ids = selectedRuleIds;
-      const r = await apiClient.post(`/api/optimize/${docId}`, payload);
+      const r = await apiClient.post<{ fixes_applied: number }>(`/api/optimize/${docId}`, payload);
       success('成功', `已应用 ${r.fixes_applied} 个修复`);
       setIsOptimized(true);
       setA4RefreshKey(k => k + 1);
@@ -247,7 +269,7 @@ export default function CheckCenter() {
     try {
       const activeProvider = aiStatus?.provider || 'openai';
       const typeParam = documentType ? `&document_type=${documentType}` : '';
-      const resp = await apiClient.post(`/api/ai/analyze/${docId}?provider=${activeProvider}${typeParam}`, null, { timeout: 120000 });
+      const resp = await apiClient.post<AIResult>(`/api/ai/analyze/${docId}?provider=${activeProvider}${typeParam}`, null, { timeout: 120000 });
 
       if (resp.success === false) {
         setAiError(resp.message || 'AI 分析返回失败');
@@ -309,7 +331,7 @@ export default function CheckCenter() {
     if (!await confirm('确认', `将应用 ${selected.length} 项 AI 建议到文档？`)) return;
     setIsApplyingAi(true);
     try {
-      const r = await apiClient.post(`/api/ai/apply/${docId}`, {
+      const r = await apiClient.post<{ success: boolean; message?: string; applied_count?: number }>(`/api/ai/apply/${docId}`, {
         suggestions: selected.map(item => ({ original: item.original, suggestion: item.suggestion })),
       });
       if (r.success) {
@@ -478,7 +500,7 @@ export default function CheckCenter() {
                               ${selectedIds.has(issue.id) ? 'bg-accent-light/30' : 'hover:bg-primary-100/50'}`}
                             onClick={() => toggleSelect(issue.id)}>
                             <div className="flex items-center gap-2">
-                              <Checkbox checked={selectedIds.has(issue.id)} onCheckedChange={() => toggleSelect(issue.id)} onClick={e => e.stopPropagation()} />
+                              <Checkbox checked={selectedIds.has(issue.id)} onCheckedChange={() => toggleSelect(issue.id)} />
                               <span className="text-xs text-muted-foreground">{issue.location}</span>
                               {issue.original_text && (
                                 <span className="text-xs text-foreground truncate">"{issue.original_text}"</span>
@@ -717,6 +739,7 @@ export default function CheckCenter() {
         <A4PreviewModal
           docId={docId}
           refreshKey={a4RefreshKey}
+          canDownload={isOptimized}
           onClose={() => setShowA4Preview(false)}
         />
       )}

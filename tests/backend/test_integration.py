@@ -11,6 +11,19 @@ BASE_URL = "http://127.0.0.1:8765"
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
 
 
+def _get_auth_headers():
+    """获取认证 headers。"""
+    try:
+        from config import APP_DATA_DIR
+        token_file = APP_DATA_DIR / ".auth_token"
+        if token_file.exists():
+            token = token_file.read_text(encoding="utf-8").strip()
+            return {"Authorization": f"Bearer {token}"}
+    except Exception:
+        pass
+    return {}
+
+
 def test_complete_workflow():
     """Test complete document processing workflow."""
     print("=" * 60)
@@ -18,13 +31,15 @@ def test_complete_workflow():
     print("=" * 60)
     print()
 
+    headers = _get_auth_headers()
+
     # Step 1: Upload document
     print("Step 1: Uploading document...")
     test_file = FIXTURES_DIR / "test_notice.docx"
 
     with open(test_file, "rb") as f:
         files = {"file": (test_file.name, f, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")}
-        response = requests.post(f"{BASE_URL}/api/documents/upload", files=files)
+        response = requests.post(f"{BASE_URL}/api/documents/upload", files=files, headers=headers)
 
     assert response.status_code == 200, f"Upload failed: {response.text}"
     doc_data = response.json()
@@ -39,7 +54,8 @@ def test_complete_workflow():
     print("Step 2: Running format check...")
     response = requests.post(
         f"{BASE_URL}/api/check/{doc_id}",
-        json={"document_type": "notice"}
+        json={"document_type": "notice"},
+        headers=headers
     )
 
     assert response.status_code == 200, f"Check failed: {response.text}"
@@ -53,7 +69,7 @@ def test_complete_workflow():
 
     # Step 3: Get issue details
     print("Step 3: Getting issue details...")
-    response = requests.get(f"{BASE_URL}/api/check/{doc_id}/results")
+    response = requests.get(f"{BASE_URL}/api/check/{doc_id}/results", headers=headers)
 
     assert response.status_code == 200, f"Get results failed: {response.text}"
     issues = response.json()
@@ -70,7 +86,8 @@ def test_complete_workflow():
         json={
             "document_type": "notice",
             "apply_fixes": True
-        }
+        },
+        headers=headers
     )
 
     assert response.status_code == 200, f"Optimize failed: {response.text}"

@@ -60,3 +60,30 @@ class RuleEngine:
     def available_types(self) -> list[str]:
         from core.rules.loader import list_available_types
         return list_available_types()
+
+
+# 全局实例（供 services/document_service.py 使用）
+_global_engine: RuleEngine | None = None
+
+
+def get_rule_engine() -> RuleEngine:
+    """获取全局规则引擎实例。"""
+    global _global_engine
+    if _global_engine is None:
+        _global_engine = RuleEngine()
+    return _global_engine
+
+
+def invalidate_rule_cache(doc_type: str | None = None):
+    """使规则缓存失效。
+
+    在规则保存/删除后调用此函数，确保下次加载时获取最新规则。
+
+    Args:
+        doc_type: 指定文档类型使其缓存失效，None 则清除所有缓存
+    """
+    engine = get_rule_engine()
+    if doc_type:
+        engine._rules_cache.pop(doc_type, None)
+    else:
+        engine.clear_cache()

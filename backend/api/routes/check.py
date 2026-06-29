@@ -25,7 +25,9 @@ async def run_check(doc_id: int, req: CheckRequest | None = None, db: Session = 
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        from utils.logger import logger
+        logger.error(f"Check failed for doc {doc_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="文档检查失败，请稍后重试")
 
     issues = svc.get_check_results(db, doc_id)
     return CheckResultResponse(

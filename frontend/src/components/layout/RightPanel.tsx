@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { detectActiveAI, type AIStatus } from '@/lib/ai-status';
+import { detectActiveAI, AI_CONFIG_CHANGED, type AIStatus } from '@/lib/ai-status';
 import apiClient from '@/api/client';
 
 /* ------------------------------------------------------------------ */
@@ -50,23 +50,28 @@ function SystemStatus() {
 
   useEffect(() => {
     let ok = true;
-    Promise.allSettled([
-      detectActiveAI(),
-      apiClient.get('/api/rules/?source=all'),
-      apiClient.get('/api/settings/fonts'),
-    ]).then(([aiR, ruleR, fontR]) => {
-      if (!ok) return;
-      if (aiR.status === 'fulfilled') setAi(aiR.value);
-      if (ruleR.status === 'fulfilled') {
-        const d = ruleR.value as any;
-        setRules(Array.isArray(d) ? d.length : d?.total ?? 0);
-      }
-      if (fontR.status === 'fulfilled') {
-        const d = fontR.value as any;
-        setFonts(Array.isArray(d) ? d.length : d?.total ?? 0);
-      }
-    });
-    return () => { ok = false; };
+    const loadData = () => {
+      Promise.allSettled([
+        detectActiveAI(),
+        apiClient.get('/api/rules/?source=all'),
+        apiClient.get('/api/settings/fonts'),
+      ]).then(([aiR, ruleR, fontR]) => {
+        if (!ok) return;
+        if (aiR.status === 'fulfilled') setAi(aiR.value);
+        if (ruleR.status === 'fulfilled') {
+          const d = ruleR.value as any;
+          setRules(Array.isArray(d) ? d.length : d?.total ?? 0);
+        }
+        if (fontR.status === 'fulfilled') {
+          const d = fontR.value as any;
+          setFonts(Array.isArray(d) ? d.length : d?.total ?? 0);
+        }
+      });
+    };
+    loadData();
+    // 监听 AI 配置变更事件
+    window.addEventListener(AI_CONFIG_CHANGED, loadData);
+    return () => { ok = false; window.removeEventListener(AI_CONFIG_CHANGED, loadData); };
   }, []);
 
   return (
@@ -92,7 +97,7 @@ function DocAssistant() {
   useEffect(() => {
     apiClient.get('/api/templates/list')
       .then(r => setTemplates((Array.isArray(r) ? r : (r as any)?.templates || []).slice(0, 3)))
-      .catch(() => {});
+      .catch((err) => { console.error('Failed to load templates for sidebar:', err); });
   }, []);
 
   return (
@@ -141,7 +146,7 @@ function CheckStats() {
       items.forEach(i => { const s = i.severity || '?'; c[s] = (c[s] || 0) + 1; });
       setCounts(c);
       setTotal(items.length);
-    }).catch(() => {});
+    }).catch((err) => { console.error('Failed to load check results:', err); });
   }, []);
 
   const sevs = [
@@ -180,7 +185,7 @@ function TemplateStats() {
       const c: Record<string, number> = {};
       items.forEach(t => { const cat = t.category || '未分类'; c[cat] = (c[cat] || 0) + 1; });
       setCats(c);
-    }).catch(() => {});
+    }).catch((err) => { console.error('Failed to load template stats:', err); });
   }, []);
 
   return (

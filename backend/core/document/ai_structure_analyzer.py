@@ -56,7 +56,7 @@ def classify_with_ai(model: DocumentModel, provider_name: str = "openai") -> boo
     """
     try:
         from ai.manager import create_provider
-        from db.session import get_db_session
+        from db.database import SessionLocal
         from db.models import AIConfig
     except ImportError as e:
         logger.warning(f"AI structure analyzer dependencies not available: {e}")
@@ -65,22 +65,25 @@ def classify_with_ai(model: DocumentModel, provider_name: str = "openai") -> boo
     # 获取AI provider
     try:
         from utils.crypto import decrypt_value
-        db = next(get_db_session())
-        config = db.query(AIConfig).filter(
-            AIConfig.provider == provider_name,
-            AIConfig.is_active == True
-        ).first()
-        if not config:
-            logger.info(f"No active AI config for {provider_name}, skipping AI structure analysis")
-            return False
+        db = SessionLocal()
+        try:
+            config = db.query(AIConfig).filter(
+                AIConfig.provider == provider_name,
+                AIConfig.is_active == True
+            ).first()
+            if not config:
+                logger.info(f"No active AI config for {provider_name}, skipping AI structure analysis")
+                return False
 
-        api_key = decrypt_value(config.api_key_encrypted) if config.api_key_encrypted else ""
-        provider = create_provider(
-            provider_name,
-            api_key=api_key,
-            base_url=config.base_url or "",
-            model=config.model or "",
-        )
+            api_key = decrypt_value(config.api_key_encrypted) if config.api_key_encrypted else ""
+            provider = create_provider(
+                provider_name,
+                api_key=api_key,
+                base_url=config.base_url or "",
+                model=config.model or "",
+            )
+        finally:
+            db.close()
     except Exception as e:
         logger.warning(f"Failed to create AI provider for structure analysis: {e}")
         return False
@@ -97,6 +100,11 @@ def classify_with_ai(model: DocumentModel, provider_name: str = "openai") -> boo
 
     if len(paragraphs_text) < 3:
         logger.info("Too few paragraphs for AI structure analysis")
+        try:
+            import asyncio
+            asyncio.get_event_loop().run_until_complete(provider.close())
+        except Exception:
+            pass
         return False
 
     # 构建提示词
@@ -105,11 +113,31 @@ def classify_with_ai(model: DocumentModel, provider_name: str = "openai") -> boo
     # 调用AI
     try:
         logger.info(f"Calling AI ({provider_name}) for structure analysis of {len(paragraphs_text)} paragraphs")
-        result = provider.analyze(prompt, task_type="classification")
+        # provider.analyze() 是 async 函数，需要使用 asyncio 运行
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # 如果事件循环正在运行，使用 run_coroutine_threadsafe
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    result = pool.submit(asyncio.run, provider.analyze(prompt, task_type="classification")).result(timeout=30)
+            else:
+                result = loop.run_until_complete(provider.analyze(prompt, task_type="classification"))
+        except RuntimeError:
+            # 没有事件循环，直接运行
+            result = asyncio.run(provider.analyze(prompt, task_type="classification"))
         raw_response = result.raw_response if hasattr(result, 'raw_response') else str(result)
     except Exception as e:
         logger.error(f"AI structure analysis failed: {e}")
         return False
+    finally:
+        # 关闭 provider 的 HTTP 连接
+        try:
+            import asyncio as _asyncio
+            _asyncio.run(provider.close())
+        except Exception:
+            pass
 
     # 解析AI返回的JSON
     classifications = _parse_ai_response(raw_response)

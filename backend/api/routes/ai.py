@@ -65,9 +65,17 @@ async def get_ai_model_status():
 
 @router.post("/config")
 async def save_ai_config(req: AIConfigRequest, db: Session = Depends(get_db)):
-    """Save AI provider configuration. API key is encrypted before storage."""
+    """Save AI provider configuration. API key is encrypted before storage.
+
+    保存规则：
+    - 如果 is_active 未传或为 True：将当前 provider 设为活跃，其他所有 provider 禁用
+    - 如果 is_active 明确为 False：只禁用当前 provider，不影响其他
+    """
     try:
         config = db.query(AIConfig).filter(AIConfig.provider == req.provider).first()
+
+        # 判断是否要激活当前配置
+        should_activate = req.is_active if req.is_active is not None else True
 
         if config:
             # 更新已有配置 — 仅更新非空字段
@@ -77,8 +85,7 @@ async def save_ai_config(req: AIConfigRequest, db: Session = Depends(get_db)):
                 config.base_url = req.base_url
             if req.model:
                 config.model = req.model
-            if req.is_active is not None:
-                config.is_active = req.is_active
+            config.is_active = should_activate
         else:
             # 新建配置
             if not req.api_key:
@@ -88,19 +95,26 @@ async def save_ai_config(req: AIConfigRequest, db: Session = Depends(get_db)):
                 api_key_encrypted=encrypt_value(req.api_key),
                 base_url=req.base_url,
                 model=req.model,
-                is_active=req.is_active if req.is_active is not None else True,
+                is_active=should_activate,
             )
             db.add(config)
 
-        db.commit()
-        logger.info(f"AI config saved: {req.provider}")
+        # 如果激活当前配置，禁用其他所有 provider（确保唯一活跃）
+        if should_activate:
+            db.query(AIConfig).filter(
+                AIConfig.provider != req.provider,
+                AIConfig.is_active == True,
+            ).update({"is_active": False})
 
-        return {"success": True, "message": "配置保存成功"}
+        db.commit()
+        logger.info(f"AI config saved: {req.provider} (active={should_activate})")
+
+        return {"success": True, "message": "配置保存成功", "active": should_activate}
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Save AI config failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Save AI config failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="保存AI配置失败，请稍后重试")
 
 
 @router.get("/config/{provider}")
@@ -154,23 +168,23 @@ async def test_ai_connection(req: AITestRequest, db: Session = Depends(get_db)):
     """Test AI provider connection with detailed error classification."""
     try:
         resolved_key = _resolve_api_key(req.api_key, req.provider, db)
-        provider = create_provider(req.provider, resolved_key, req.base_url, req.model)
-        success = await provider.test_connection()
+        async with create_provider(req.provider, resolved_key, req.base_url, req.model) as provider:
+            success = await provider.test_connection()
 
-        if success:
-            return {
-                "success": True,
-                "message": "连接成功",
-                "provider": req.provider,
-                "model": req.model or "default",
-                "base_url": req.base_url,
-            }
-        else:
-            return {
-                "success": False,
-                "message": "连接失败，请检查配置",
-                "provider": req.provider,
-            }
+            if success:
+                return {
+                    "success": True,
+                    "message": "连接成功",
+                    "provider": req.provider,
+                    "model": req.model or "default",
+                    "base_url": req.base_url,
+                }
+            else:
+                return {
+                    "success": False,
+                    "message": "连接失败，请检查配置",
+                    "provider": req.provider,
+                }
     except ValueError as e:
         return {"success": False, "message": f"配置错误: {str(e)}", "error_type": "config"}
     except Exception as e:
@@ -231,6 +245,22 @@ async def get_default_ai_config():
     return default
 
 
+@router.get("/active")
+async def get_active_ai_config(db: Session = Depends(get_db)):
+    """获取当前已激活的 AI 配置（首个 is_active=True 的记录）。"""
+    config = db.query(AIConfig).filter(AIConfig.is_active == True).first()
+    if not config:
+        return {"exists": False, "active": False}
+    return {
+        "exists": True,
+        "active": True,
+        "provider": config.provider,
+        "model": config.model or "",
+        "base_url": config.base_url or "",
+        "is_active": True,
+    }
+
+
 @router.post("/analyze/{doc_id}")
 async def ai_analyze(doc_id: int, provider: str = "openai", document_type: str = "", db: Session = Depends(get_db)):
     """Run AI analysis on a document."""
@@ -264,7 +294,13 @@ async def ai_analyze(doc_id: int, provider: str = "openai", document_type: str =
 
         # 调用 AI
         ai_provider = create_provider(provider_name, api_key, base_url, model)
-        result = await ai_provider.analyze(doc_text, document_type=doc_type)
+        try:
+            result = await ai_provider.analyze(doc_text, document_type=doc_type)
+        finally:
+            try:
+                await ai_provider.close()
+            except Exception:
+                pass
 
         return {
             "success": True,
@@ -273,10 +309,10 @@ async def ai_analyze(doc_id: int, provider: str = "openai", document_type: str =
             "raw_response": result.raw_response,
         }
     except Exception as e:
-        logger.error(f"AI analyze failed: {e}")
+        logger.error(f"AI analyze failed: {e}", exc_info=True)
         return {
             "success": False,
-            "message": f"AI 分析失败: {str(e)[:100]}",
+            "message": "AI 分析失败，请稍后重试",
         }
 
 
@@ -299,8 +335,8 @@ async def apply_ai_suggestions(doc_id: int, req: ApplyAIRequest, db: Session = D
     try:
         doc_model = parse_docx(doc.file_path)
     except Exception as e:
-        logger.error(f"parse_docx failed for doc {doc_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"文档解析失败: {str(e)[:100]}")
+        logger.error(f"parse_docx failed for doc {doc_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="文档解析失败，请确认文件格式正确")
 
     # 逐条应用建议：在段落文本中做原文替换
     applied = 0
@@ -340,8 +376,8 @@ async def apply_ai_suggestions(doc_id: int, req: ApplyAIRequest, db: Session = D
     try:
         generate_docx(doc_model, str(out_path))
     except Exception as e:
-        logger.error(f"generate_docx failed: {e}")
-        raise HTTPException(status_code=500, detail=f"文档生成失败: {str(e)[:100]}")
+        logger.error(f"generate_docx failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="文档生成失败，请稍后重试")
 
     # 更新 DB
     try:

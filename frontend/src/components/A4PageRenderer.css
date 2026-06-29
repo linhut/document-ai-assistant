@@ -1,0 +1,205 @@
+/*
+ * A4PageRenderer.css — A4 页面样式（mm 单位方案）
+ *
+ * GB/T 9704 标准：
+ * - A4 纸张：210mm × 297mm
+ * - 版心：156mm × 225mm（上37mm 下35mm 左28mm 右26mm）
+ * - 每面 22 行 × 每行 28 字
+ */
+
+/* A4 页面容器 */
+.a4-page {
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  margin: 0 auto;
+  background: white;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.a4-page + .a4-page {
+  margin-top: 16px;
+}
+
+/* 内容区：mm 边距 */
+.a4-content {
+  padding:
+    var(--margin-top, 37mm)
+    var(--margin-right, 26mm)
+    var(--margin-bottom, 35mm)
+    var(--margin-left, 28mm);
+  height: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 视窗裁剪容器 */
+.a4-content-viewport {
+  overflow: hidden;
+  flex: 1;
+}
+
+/* ---- 标题与正文段落样式（GB/T 9704） ---- */
+.a4-title {
+  margin: 0;
+  margin-bottom: var(--body-line-height, 28.95px);
+}
+
+.a4-h1 {
+  margin: 0;
+  margin-top: var(--body-line-height, 28.95px);
+}
+
+.a4-h2 {
+  margin: 0;
+}
+
+.a4-h3 {
+  margin: 0;
+}
+
+.a4-paragraph {
+  margin: 0;
+}
+
+.a4-empty-line {
+  margin: 0;
+}
+
+/* ---- 版头（GB/T 9704 §7.2） ---- */
+.a4-header-section {
+  margin-bottom: calc(var(--body-line-height, 28.95px) * 2);
+  flex-shrink: 0;
+}
+
+.a4-header-org {
+  font-family: '方正小标宋_GBK', '方正小标宋简体', 'FZXiaoBiaoSong-B05S', serif;
+  font-size: 30px;
+  color: #e00000;
+  text-align: center;
+  line-height: 1.4;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.a4-header-meta {
+  display: flex;
+  justify-content: center;
+  padding: 0 1em;
+  margin-top: calc(var(--body-line-height, 28.95px) * 2);
+  font-family: var(--body-font, '仿宋_GB2312');
+  font-size: var(--body-size, 16px);
+  line-height: var(--body-line-height, 28.95px);
+  letter-spacing: 0;
+}
+
+.a4-header-meta--with-signer {
+  justify-content: space-between;
+}
+
+.a4-header-signer-label {
+  font-family: var(--body-font, '仿宋_GB2312');
+}
+
+.a4-header-signer-name {
+  font-family: '楷体_GB2312', 'KaiTi', 'STKaiti', serif;
+}
+
+/* 红色分隔线 */
+.a4-header-separator {
+  border-bottom: 2px solid #e00000;
+  margin-top: 8px;
+}
+
+/* ---- 版记（GB/T 9704 §7.4） ---- */
+/* 绝对定位于版心下边缘，不挤压正文空间 */
+.a4-footer-note {
+  position: absolute;
+  bottom: var(--margin-bottom, 35mm);
+  left: var(--margin-left, 28mm);
+  right: var(--margin-right, 26mm);
+  font-family: var(--body-font, '仿宋_GB2312');
+  font-size: 14px;
+  line-height: 28px;
+  /* 版记溢出时不裁剪，允许向下扩展 */
+  overflow: visible;
+}
+
+.a4-footer-note-line-top,
+.a4-footer-note-line-bottom {
+  height: 0;
+  border-top: 0.35mm solid #000;
+}
+
+.a4-footer-note-line-middle {
+  height: 0;
+  border-top: 0.25mm solid #000;
+}
+
+.a4-footer-note-cc {
+  display: flex;
+  padding: 0 1em;
+}
+
+.a4-footer-note-cc-label {
+  flex: 0 0 auto;
+}
+
+.a4-footer-note-cc-text {
+  flex: 1 1 auto;
+}
+
+.a4-footer-note-printer {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 1em;
+}
+
+/* ---- 页码（GB/T 9704：四号宋体，版心下边缘之下约 7mm） ---- */
+.a4-page-number {
+  position: absolute;
+  bottom: calc(var(--margin-bottom, 35mm) - 10mm);
+  left: var(--margin-left, 28mm);
+  right: var(--margin-right, 26mm);
+  font-family: 'Times New Roman', var(--page-number-font, '宋体'), serif;
+  font-size: 14px;
+  color: #000;
+  letter-spacing: 0.5pt;
+}
+
+.a4-page-number--center {
+  text-align: center;
+}
+
+.a4-page-number--odd {
+  text-align: right;
+}
+
+.a4-page-number--even {
+  text-align: left;
+}
+
+/* ---- 印章预留 ---- */
+.a4-stamp-placeholder {
+  position: absolute;
+  right: calc(var(--margin-right, 26mm) + 15mm);
+  bottom: calc(var(--margin-bottom, 35mm) + 25mm);
+  width: 40mm;
+  height: 40mm;
+  border: 2px dashed #ccc;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ccc;
+  font-size: 12px;
+}
+
+/* ---- 首句加粗 ---- */
+.a4-bold-first {
+  font-weight: bold;
+}
