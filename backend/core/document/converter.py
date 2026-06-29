@@ -55,10 +55,13 @@ def convert_to_docx(file_path: Path, output_dir: Path) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / f"{file_path.stem}.docx"
 
-    # 已经存在同名 docx 则直接返回
+    # 已经存在同名 docx 则先删除，确保使用最新转换结果
     if output_path.exists():
-        logger.info(f"docx 已存在，跳过转换: {output_path}")
-        return output_path
+        try:
+            output_path.unlink()
+            logger.info(f"删除旧的输出文件: {output_path}")
+        except OSError as e:
+            logger.warning(f"删除旧输出文件失败: {e}，将覆盖写入")
 
     import sys
     converted = False

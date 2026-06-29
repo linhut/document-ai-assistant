@@ -9,6 +9,7 @@ Priority: user > custom > official
 from __future__ import annotations
 import copy
 import json
+import re
 import yaml
 from pathlib import Path
 from typing import Any
@@ -128,13 +129,30 @@ def _dedup_extend(base_list: list, new_items: list, dedup_key) -> None:
 
 
 def save_rule(key: str, content: dict, source_type: str = "user") -> bool:
-    """Save a user/custom rule YAML file."""
+    """Save a user/custom rule YAML file.
+
+    安全措施：验证key只包含安全字符，防止路径遍历。
+    """
     _ensure_dirs()
+
+    # 验证key只包含安全字符
+    if not re.match(r'^[a-zA-Z0-9_-]+$', key):
+        logger.error(f"Invalid rule key: {key}")
+        return False
+
     if source_type == "custom":
         dir_path = CUSTOM_RULES_DIR
     else:
         dir_path = USER_RULES_DIR
     file_path = dir_path / f"{key}.yaml"
+
+    # 验证路径在允许的目录内
+    try:
+        file_path.resolve().relative_to(dir_path.resolve())
+    except ValueError:
+        logger.error(f"Path traversal detected in rule key: {key}")
+        return False
+
     try:
         with open(file_path, "w", encoding="utf-8") as fh:
             yaml.dump(content, fh, allow_unicode=True, default_flow_style=False)
@@ -146,13 +164,30 @@ def save_rule(key: str, content: dict, source_type: str = "user") -> bool:
 
 
 def delete_rule(key: str, source_type: str = "user") -> bool:
-    """Delete a user/custom rule YAML file."""
+    """Delete a user/custom rule YAML file.
+
+    安全措施：验证key只包含安全字符，防止路径遍历。
+    """
     _ensure_dirs()
+
+    # 验证key只包含安全字符
+    if not re.match(r'^[a-zA-Z0-9_-]+$', key):
+        logger.error(f"Invalid rule key: {key}")
+        return False
+
     if source_type == "custom":
         dir_path = CUSTOM_RULES_DIR
     else:
         dir_path = USER_RULES_DIR
     file_path = dir_path / f"{key}.yaml"
+
+    # 验证路径在允许的目录内
+    try:
+        file_path.resolve().relative_to(dir_path.resolve())
+    except ValueError:
+        logger.error(f"Path traversal detected in rule key: {key}")
+        return False
+
     try:
         if file_path.exists():
             file_path.unlink()

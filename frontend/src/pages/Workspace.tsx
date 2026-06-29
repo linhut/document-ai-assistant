@@ -30,7 +30,7 @@ import {
   GlobeLock,
 } from 'lucide-react';
 import apiClient from '@/api/client';
-import { detectActiveAI } from '@/lib/ai-status';
+import { detectActiveAI, AI_CONFIG_CHANGED } from '@/lib/ai-status';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -164,32 +164,33 @@ export default function Workspace() {
   const stateRef = useRef({ setDocuments, setHealthOk, setBackendVersion, setRuleCount, setAiModel, setLoading });
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
+    const { signal } = controller;
 
     async function loadDashboard() {
       try {
         const [docRes, healthRes, ruleRes, aiRes, netRes] = await Promise.allSettled([
-          apiClient.get('/api/documents/?skip=0&limit=50'),
-          apiClient.get('/api/health'),
-          apiClient.get('/api/rules/?source=all'),
-          detectActiveAI(),
-          apiClient.get('/api/settings/network'),
+          apiClient.get<DocumentItem[] | { documents?: DocumentItem[] }>('/api/documents/?skip=0&limit=50', { signal }),
+          apiClient.get<HealthResponse>('/api/health', { signal }),
+          apiClient.get<RulesResponse>('/api/rules/?source=all', { signal }),
+          detectActiveAI(signal),
+          apiClient.get<{ web_access_enabled?: boolean; lan_url?: string }>('/api/settings/network', { signal }),
         ]);
 
-        if (cancelled) return;
+        if (signal.aborted) return;
 
         // Documents
         if (docRes.status === 'fulfilled') {
-          const data = docRes.value as DocumentItem[] | { documents?: DocumentItem[] };
+          const data = docRes.value;
           const list = Array.isArray(data)
             ? data
-            : ((data as Record<string, unknown>).documents as DocumentItem[] | undefined) ?? [];
+            : (data.documents ?? []);
           stateRef.current.setDocuments(list);
         }
 
         // Health
         if (healthRes.status === 'fulfilled') {
-          const h = healthRes.value as HealthResponse;
+          const h = healthRes.value;
           stateRef.current.setHealthOk(h.status === 'ok');
           stateRef.current.setBackendVersion(h.version ?? '');
         } else {
@@ -198,7 +199,7 @@ export default function Workspace() {
 
         // Rules
         if (ruleRes.status === 'fulfilled') {
-          const r = ruleRes.value as RulesResponse;
+          const r = ruleRes.value;
           stateRef.current.setRuleCount(r.total ?? 0);
         }
 
@@ -219,21 +220,36 @@ export default function Workspace() {
 
         stateRef.current.setLoading(false);
       } catch {
-        if (!cancelled) {
+        if (!signal.aborted) {
           stateRef.current.setLoading(false);
         }
       }
     }
 
     void loadDashboard();
-    return () => { cancelled = true; };
+    // 监听 AI 配置变更，刷新 AI 状态显示
+    const onAIChanged = () => {
+      detectActiveAI(signal).then(a => {
+        if (!signal.aborted) {
+          stateRef.current.setAiModel(
+            a && a.exists && a.active ? `${a.provider ?? 'AI'} / ${a.model ?? '默认'}` : ''
+          );
+        }
+      }).catch((err) => {
+        if (err?.name !== 'CanceledError' && err?.code !== 'ERR_CANCELED') {
+          console.error('Failed to refresh AI status:', err);
+        }
+      });
+    };
+    window.addEventListener(AI_CONFIG_CHANGED, onAIChanged);
+    return () => { controller.abort(); window.removeEventListener(AI_CONFIG_CHANGED, onAIChanged); };
   }, []);
 
   /* ---- Toggle web access ---- */
   const handleToggleWebAccess = async () => {
     setTogglingWeb(true);
     try {
-      const resp = await apiClient.post('/api/settings/network', { enabled: !webAccess });
+      const resp = await apiClient.post<{ web_access_enabled: boolean; lan_url?: string }>('/api/settings/network', { enabled: !webAccess });
       setWebAccess(resp.web_access_enabled);
       setLanUrl(resp.lan_url || '');
     } catch (err) {

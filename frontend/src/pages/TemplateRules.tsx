@@ -37,20 +37,27 @@ export default function TemplateRules() {
   const [rules, setRules] = useState<CheckRule[]>([]);
 
   useEffect(() => {
-    loadTemplateRules();
+    const controller = new AbortController();
+    loadTemplateRules(controller.signal);
+    return () => controller.abort();
   }, [templateId]);
 
-  const loadTemplateRules = async () => {
+  const loadTemplateRules = async (signal?: AbortSignal) => {
     try {
-      const response = await apiClient.get(`/api/templates/${templateId}`);
-      setTemplate(response);
-      if (response.rules?.check_rules) {
-        setRules(response.rules.check_rules);
+      const response = await apiClient.get<{ rules?: { check_rules?: CheckRule[]; template_name?: string; document_type?: string } }>(`/api/templates/${templateId}`, { signal });
+      if (!signal?.aborted) {
+        setTemplate(response);
+        if (response.rules?.check_rules) {
+          setRules(response.rules.check_rules);
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED') return;
       console.error('Load template rules error:', error);
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
     }
   };
 

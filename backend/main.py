@@ -16,12 +16,15 @@ import signal
 import socket
 import subprocess
 import sys
+from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes import documents, check, optimize, ai, settings, templates, rules, template_download, office
+from api.routes import auth as auth_route
+from auth import AuthMiddleware, init_auth
 from db.database import init_db
 from utils.logger import logger
 
@@ -119,7 +122,7 @@ def _setup_signal_handlers() -> None:
 app = FastAPI(
     title="Official Document AI Assistant",
     description="AI 公文智能优化助手核心引擎 API",
-    version="1.4.7",
+    version="1.4.8",
 )
 
 app.add_middleware(
@@ -136,6 +139,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(AuthMiddleware)
+
 app.include_router(documents.router, prefix="/api/documents", tags=["documents"])
 app.include_router(check.router, prefix="/api/check", tags=["check"])
 app.include_router(optimize.router, prefix="/api/optimize", tags=["optimize"])
@@ -145,10 +150,14 @@ app.include_router(templates.router, prefix="/api/templates", tags=["templates"]
 app.include_router(rules.router, prefix="/api/rules", tags=["rules"])
 app.include_router(template_download.router, prefix="/api/template", tags=["template_download"])
 app.include_router(office.router, prefix="/api/office", tags=["office"])
+app.include_router(auth_route.router, prefix="/api/auth", tags=["auth"])
 
 
 @app.on_event("startup")
 async def startup():
+    # Initialize authentication (generates token on first run)
+    init_auth()
+
     init_db()
     _init_default_ai_config()
     _log_directory_status()
@@ -237,7 +246,7 @@ def _init_default_ai_config():
 async def root():
     return {
         "app": "Official Document AI Assistant",
-        "version": "1.4.6",
+        "version": app.version,
         "docs": "/docs",
         "health": "/api/health"
     }

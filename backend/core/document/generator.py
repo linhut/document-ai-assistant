@@ -13,7 +13,7 @@ Document generator: converts DocumentModel back into a .docx file.
 from __future__ import annotations
 from pathlib import Path
 from docx import Document
-from docx.shared import Pt, Mm, RGBColor
+from docx.shared import Pt, Mm, Cm, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
@@ -62,6 +62,9 @@ def generate_docx(model: DocumentModel, output_path: Path | str) -> Path:
     # 0. Apply document-level font defaults (prevents Word from using MS Gothic)
     _apply_document_defaults(doc)
 
+    # 构建段落索引缓存（_replace_paragraphs 中大量调用 _find_paragraph_object）
+    _build_paragraph_index(doc)
+
     # 1. Apply page setup
     _apply_page_setup(doc, model)
 
@@ -85,6 +88,8 @@ def generate_docx(model: DocumentModel, output_path: Path | str) -> Path:
 
     # 7. Save
     doc.save(str(output_path))
+    # 清除段落索引缓存（文档已保存，doc 对象可能被 GC）
+    _clear_paragraph_index(doc)
     logger.info(f"Document saved: {output_path} (font issues: {len(font_issues)})")
 
     return output_path
@@ -183,6 +188,9 @@ def _apply_page_setup(doc: Document, model: DocumentModel):
         section.left_margin = Mm(ps.margin_left_mm)
     if ps.margin_right_mm is not None and 0 <= ps.margin_right_mm <= 100:
         section.right_margin = Mm(ps.margin_right_mm)
+
+    # 页脚距边界 2.5cm（GB/T 9704 标准）
+    section.footer_distance = Cm(2.5)
 
 
 # ---------------------------------------------------------------------------
@@ -340,12 +348,29 @@ def _update_pPr(p_element, para_model: Paragraph):
         pPr.append(spacing)
 
 
+# 预构建段落元素 → Paragraph 对象的映射，避免 O(N^2) 查找
+_paragraph_index_cache: dict[int, dict[int, Any]] = {}
+
+
+def _build_paragraph_index(doc: Document) -> dict[int, Any]:
+    """为 doc 对象构建 XML 元素 id → Paragraph 对象的哈希索引（O(N) 一次性构建）。"""
+    cache_key = id(doc)
+    if cache_key in _paragraph_index_cache:
+        return _paragraph_index_cache[cache_key]
+    idx: dict[int, Any] = {id(p._element): p for p in doc.paragraphs}
+    _paragraph_index_cache[cache_key] = idx
+    return idx
+
+
+def _clear_paragraph_index(doc: Document) -> None:
+    """清除缓存索引（在段落数量变化后调用）。"""
+    _paragraph_index_cache.pop(id(doc), None)
+
+
 def _find_paragraph_object(doc: Document, p_element):
-    """通过 XML 元素找到对应的 python-docx Paragraph 对象。"""
-    for para in doc.paragraphs:
-        if para._element is p_element:
-            return para
-    return None
+    """通过 XML 元素找到对应的 python-docx Paragraph 对象（O(1) 哈希查找）。"""
+    idx = _build_paragraph_index(doc)
+    return idx.get(id(p_element))
 
 
 def _add_runs_to_paragraph(para, para_model: Paragraph):
@@ -357,7 +382,13 @@ def _add_runs_to_paragraph(para, para_model: Paragraph):
     else:
         if para_model.text:
             run = para.add_run(para_model.text)
-            set_run_font(run, BODY_FONT)
+            # 优先使用段落 format 中的 font_name，fallback 到 BODY_FONT
+            fmt_font = None
+            if para_model.runs and para_model.runs[0].format:
+                fmt_font = para_model.runs[0].format.font_name
+            if not fmt_font and para_model.format:
+                fmt_font = getattr(para_model.format, 'font_name', None)
+            set_run_font(run, fmt_font or BODY_FONT)
 
 
 def _add_runs_via_xml(p_element, para_model: Paragraph):
@@ -433,8 +464,37 @@ def _update_tables(doc: Document, model: DocumentModel):
                  f"added {max(0, len(model_tables) - len(existing_tables))}")
 
 
+def _smart_align_cell(cell_text: str, is_header: bool, col_idx: int, total_cols: int) -> str:
+    """智能判断单元格对齐方式（参考 Word-Formatter-Pro）。
+
+    规则：
+    - 表头：居中
+    - 序号列（第一列）：居中
+    - 短文本（≤4字符）：居中
+    - 数字内容（含小数、百分比）：右对齐
+    - 其他：左对齐
+    """
+    text = cell_text.strip()
+    if not text:
+        return 'left'
+    if is_header:
+        return 'center'
+    # 序号列居中（优先级最高，避免被数字规则覆盖）
+    if col_idx == 0:
+        return 'center'
+    # 短文本居中
+    if len(text) <= 4:
+        return 'center'
+    # 数字右对齐（含小数、百分比、逗号分隔数字）
+    import re
+    if re.match(r'^[\d.,%‰]+$', text):
+        return 'right'
+    return 'left'
+
+
 def _update_table_content(table, table_model: TableModel):
-    """更新已有表格的单元格内容。"""
+    """更新已有表格的单元格内容（带智能对齐）。"""
+    total_cols = len(table.columns) if hasattr(table, 'columns') else 0
     for cell_model in table_model.cells:
         try:
             cell = table.cell(cell_model.row, cell_model.col)
@@ -464,6 +524,10 @@ def _update_table_content(table, table_model: TableModel):
                         run._element.getparent().remove(run._element)
                     run = para.add_run(cell_model.text)
                     set_run_font(run, BODY_FONT)
+                    # 智能对齐
+                    is_header = cell_model.row == 0
+                    align = _smart_align_cell(cell_model.text, is_header, cell_model.col, total_cols)
+                    para.alignment = {'left': WD_ALIGN_PARAGRAPH.LEFT, 'center': WD_ALIGN_PARAGRAPH.CENTER, 'right': WD_ALIGN_PARAGRAPH.RIGHT}.get(align, WD_ALIGN_PARAGRAPH.LEFT)
         except Exception as e:
             logger.warning(f"Failed to update table cell ({cell_model.row},{cell_model.col}): {e}")
 
@@ -513,6 +577,8 @@ def _add_table(doc: Document, table_model: TableModel):
                 borders.append(border)
             tblPr.append(borders)
 
+        # 智能对齐：表头行居中加粗，数据行按内容类型对齐
+        total_cols = max(1, table_model.cols)
         for cell_model in table_model.cells:
             try:
                 cell = table.cell(cell_model.row, cell_model.col)
@@ -531,10 +597,28 @@ def _add_table(doc: Document, table_model: TableModel):
                             para = cell.add_paragraph()
                             _add_runs_to_paragraph(para, para_model)
                             _apply_paragraph_format(para, para_model)
+                    # 智能对齐（表头居中加粗，数据行按内容类型）
+                    is_header = cell_model.row == 0
+                    cell_text = cell_model.text or (cell_model.paragraphs[0].text if cell_model.paragraphs else '')
+                    align = _smart_align_cell(cell_text, is_header, cell_model.col, total_cols)
+                    align_map = {'left': WD_ALIGN_PARAGRAPH.LEFT, 'center': WD_ALIGN_PARAGRAPH.CENTER, 'right': WD_ALIGN_PARAGRAPH.RIGHT}
+                    for para in cell.paragraphs:
+                        para.alignment = align_map.get(align, WD_ALIGN_PARAGRAPH.LEFT)
+                    if is_header:
+                        for para in cell.paragraphs:
+                            for run in para.runs:
+                                run.bold = True
                 elif cell_model.text:
                     if cell.paragraphs:
                         run = cell.paragraphs[0].add_run(cell_model.text)
                         set_run_font(run, BODY_FONT)
+                        # 智能对齐
+                        is_header = cell_model.row == 0
+                        align = _smart_align_cell(cell_model.text, is_header, cell_model.col, total_cols)
+                        align_map = {'left': WD_ALIGN_PARAGRAPH.LEFT, 'center': WD_ALIGN_PARAGRAPH.CENTER, 'right': WD_ALIGN_PARAGRAPH.RIGHT}
+                        cell.paragraphs[0].alignment = align_map.get(align, WD_ALIGN_PARAGRAPH.LEFT)
+                        if is_header:
+                            run.bold = True
             except Exception as e:
                 logger.warning(f"Failed to write table cell ({cell_model.row},{cell_model.col}): {e}")
 

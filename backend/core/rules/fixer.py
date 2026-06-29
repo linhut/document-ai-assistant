@@ -99,6 +99,7 @@ def apply_fixes(model: DocumentModel, rules: dict[str, Any], selected_rule_ids: 
             "remove_extra_spaces", "remove_extra_blank_lines",
             "normalize_punctuation", "normalize_headings",
             "strip_markdown", "convert_markdown",
+            "fix_bold_range",  # fix_bold_range 不需要 value 参数
         ):
             logger.warning(f"Fix rule {rule_id} missing required 'value' field, skipping")
             skipped += 1

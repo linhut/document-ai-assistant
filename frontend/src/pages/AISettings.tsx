@@ -20,47 +20,59 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { apiClient } from '@/api/client';
+import { notifyAIConfigChanged } from '@/lib/ai-status';
 
 interface ProviderInfo {
-  value: string;
+  value: string;      // DB 存储 key（custom 服务用 "custom:<服务名>" 格式确保唯一）
+  providerType: string; // 实际后端 provider 类型（openai/deepseek/claude/ollama/custom）
   label: string;
   defaultUrl: string;
   defaultModel: string;
 }
 
 const PROVIDERS: ProviderInfo[] = [
-  { value: 'openai', label: 'OpenAI', defaultUrl: 'https://api.openai.com/v1', defaultModel: 'gpt-4o-mini' },
-  { value: 'deepseek', label: 'DeepSeek', defaultUrl: 'https://api.deepseek.com/v1', defaultModel: 'deepseek-chat' },
-  { value: 'claude', label: 'Claude (Anthropic)', defaultUrl: 'https://api.anthropic.com', defaultModel: 'claude-sonnet-4-20250514' },
-  { value: 'custom', label: '阿里云百炼 (Qwen)', defaultUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', defaultModel: 'qwen-turbo' },
-  { value: 'custom', label: '智谱 AI (GLM)', defaultUrl: 'https://open.bigmodel.cn/api/paas/v4', defaultModel: 'glm-4-flash' },
-  { value: 'custom', label: '月之暗面 (Kimi)', defaultUrl: 'https://api.moonshot.cn/v1', defaultModel: 'moonshot-v1-8k' },
-  { value: 'custom', label: 'MiniMax', defaultUrl: 'https://api.minimax.chat/v1', defaultModel: 'MiniMax-Text-01' },
-  { value: 'custom', label: '腾讯混元', defaultUrl: 'https://api.hunyuan.cloud.tencent.com/v1', defaultModel: 'hunyuan-lite' },
-  { value: 'custom', label: '百度千帆', defaultUrl: 'https://qianfan.baidubce.com/v2', defaultModel: 'ernie-speed-8k' },
-  { value: 'custom', label: '火山方舟 (Ark)', defaultUrl: 'https://ark.cn-beijing.volces.com/api/v3', defaultModel: 'doubao-1.5-pro-32k' },
-  { value: 'custom', label: '豆包 (Doubao)', defaultUrl: 'https://ark.cn-beijing.volces.com/api/v3', defaultModel: 'doubao-1.5-pro-32k' },
-  { value: 'custom', label: '零一万物 (Yi)', defaultUrl: 'https://api.lingyiwanwu.com/v1', defaultModel: 'yi-lightning' },
-  { value: 'custom', label: '商汤 SenseNova', defaultUrl: 'https://api.sensenova.cn/v1', defaultModel: 'SenseChat-5' },
-  { value: 'custom', label: '天工 Skywork', defaultUrl: 'https://api.tiangong.cn/v1', defaultModel: 'skywork-mega' },
-  { value: 'custom', label: 'OpenRouter', defaultUrl: 'https://openrouter.ai/api/v1', defaultModel: 'openai/gpt-4o-mini' },
-  { value: 'custom', label: 'SiliconFlow', defaultUrl: 'https://api.siliconflow.cn/v1', defaultModel: 'Qwen/Qwen2.5-7B-Instruct' },
-  { value: 'custom', label: '小米 MiMo (OpenAI)', defaultUrl: 'https://api.xiaomimimo.com/v1', defaultModel: 'MiMo-7B' },
-  { value: 'custom', label: '小米 MiMo (Anthropic)', defaultUrl: 'https://api.xiaomimimo.com/anthropic', defaultModel: 'MiMo-7B' },
-  { value: 'custom', label: '小米 MiMo Token Plan CN (OpenAI)', defaultUrl: 'https://token-plan-cn.xiaomimimo.com/v1', defaultModel: 'MiMo-7B' },
-  { value: 'custom', label: '小米 MiMo Token Plan CN (Anthropic)', defaultUrl: 'https://token-plan-cn.xiaomimimo.com/anthropic', defaultModel: 'MiMo-7B' },
-  { value: 'custom', label: '讯飞星火', defaultUrl: 'https://spark-api-open.xf-yun.com/v1', defaultModel: 'generalv3.5' },
-  { value: 'ollama', label: 'Ollama (本地)', defaultUrl: 'http://localhost:11434/v1', defaultModel: 'qwen2.5:7b' },
-  { value: 'custom', label: '自定义 (OpenAI 兼容)', defaultUrl: 'https://cpa.linhut.cn/v1', defaultModel: 'gpt-4o-mini' },
+  { value: 'openai', providerType: 'openai', label: 'OpenAI', defaultUrl: 'https://api.openai.com/v1', defaultModel: 'gpt-4o-mini' },
+  { value: 'deepseek', providerType: 'deepseek', label: 'DeepSeek', defaultUrl: 'https://api.deepseek.com/v1', defaultModel: 'deepseek-chat' },
+  { value: 'claude', providerType: 'claude', label: 'Claude (Anthropic)', defaultUrl: 'https://api.anthropic.com', defaultModel: 'claude-sonnet-4-20250514' },
+  { value: 'custom:aliyun_qwen', providerType: 'custom', label: '阿里云百炼 (Qwen)', defaultUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', defaultModel: 'qwen-turbo' },
+  { value: 'custom:zhipu_glm', providerType: 'custom', label: '智谱 AI (GLM)', defaultUrl: 'https://open.bigmodel.cn/api/paas/v4', defaultModel: 'glm-4-flash' },
+  { value: 'custom:moonshot_kimi', providerType: 'custom', label: '月之暗面 (Kimi)', defaultUrl: 'https://api.moonshot.cn/v1', defaultModel: 'moonshot-v1-8k' },
+  { value: 'custom:minimax', providerType: 'custom', label: 'MiniMax', defaultUrl: 'https://api.minimax.chat/v1', defaultModel: 'MiniMax-Text-01' },
+  { value: 'custom:tencent_hunyuan', providerType: 'custom', label: '腾讯混元', defaultUrl: 'https://api.hunyuan.cloud.tencent.com/v1', defaultModel: 'hunyuan-lite' },
+  { value: 'custom:baidu_qianfan', providerType: 'custom', label: '百度千帆', defaultUrl: 'https://qianfan.baidubce.com/v2', defaultModel: 'ernie-speed-8k' },
+  { value: 'custom:volcengine_ark', providerType: 'custom', label: '火山方舟 (Ark)', defaultUrl: 'https://ark.cn-beijing.volces.com/api/v3', defaultModel: 'doubao-1.5-pro-32k' },
+  { value: 'custom:doubao', providerType: 'custom', label: '豆包 (Doubao)', defaultUrl: 'https://ark.cn-beijing.volces.com/api/v3', defaultModel: 'doubao-1.5-pro-32k' },
+  { value: 'custom:lingyiwanwu_yi', providerType: 'custom', label: '零一万物 (Yi)', defaultUrl: 'https://api.lingyiwanwu.com/v1', defaultModel: 'yi-lightning' },
+  { value: 'custom:sensenova', providerType: 'custom', label: '商汤 SenseNova', defaultUrl: 'https://api.sensenova.cn/v1', defaultModel: 'SenseChat-5' },
+  { value: 'custom:tiangong_skywork', providerType: 'custom', label: '天工 Skywork', defaultUrl: 'https://api.tiangong.cn/v1', defaultModel: 'skywork-mega' },
+  { value: 'custom:openrouter', providerType: 'custom', label: 'OpenRouter', defaultUrl: 'https://openrouter.ai/api/v1', defaultModel: 'openai/gpt-4o-mini' },
+  { value: 'custom:siliconflow', providerType: 'custom', label: 'SiliconFlow', defaultUrl: 'https://api.siliconflow.cn/v1', defaultModel: 'Qwen/Qwen2.5-7B-Instruct' },
+  { value: 'custom:xiaomi_mimo_openai', providerType: 'custom', label: '小米 MiMo (OpenAI)', defaultUrl: 'https://api.xiaomimimo.com/v1', defaultModel: 'MiMo-7B' },
+  { value: 'custom:xiaomi_mimo_anthropic', providerType: 'custom', label: '小米 MiMo (Anthropic)', defaultUrl: 'https://api.xiaomimimo.com/anthropic', defaultModel: 'MiMo-7B' },
+  { value: 'custom:xiaomi_mimo_tp_cn_openai', providerType: 'custom', label: '小米 MiMo Token Plan CN (OpenAI)', defaultUrl: 'https://token-plan-cn.xiaomimimo.com/v1', defaultModel: 'MiMo-7B' },
+  { value: 'custom:xiaomi_mimo_tp_cn_anthropic', providerType: 'custom', label: '小米 MiMo Token Plan CN (Anthropic)', defaultUrl: 'https://token-plan-cn.xiaomimimo.com/anthropic', defaultModel: 'MiMo-7B' },
+  { value: 'custom:xunfei_spark', providerType: 'custom', label: '讯飞星火', defaultUrl: 'https://spark-api-open.xf-yun.com/v1', defaultModel: 'generalv3.5' },
+  { value: 'ollama', providerType: 'ollama', label: 'Ollama (本地)', defaultUrl: 'http://localhost:11434/v1', defaultModel: 'qwen2.5:7b' },
+  { value: 'custom:default', providerType: 'custom', label: '自定义 (OpenAI 兼容)', defaultUrl: 'https://cpa.linhut.cn/v1', defaultModel: 'gpt-4o-mini' },
 ];
 
+/**
+ * 从 DB key 提取后端 provider 类型
+ * "custom:aliyun_qwen" → "custom"
+ * "openai" → "openai"
+ */
+function getBackendProviderType(dbKey: string): string {
+  return dbKey.startsWith('custom:') ? 'custom' : dbKey;
+}
+
 export default function AISettings() {
-  const [provider, setProvider] = useState('custom');
+  const [provider, setProvider] = useState('custom:default');
   const [selectedLabel, setSelectedLabel] = useState('自定义 (OpenAI 兼容)');
   const [apiKey, setApiKey] = useState('');
   const [baseUrl, setBaseUrl] = useState('https://cpa.linhut.cn/v1');
   const [model, setModel] = useState('gpt-4o-mini');
   const [isConnected, setIsConnected] = useState(false);
+  const [isActive, setIsActive] = useState(true);
   const [isTesting, setIsTesting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
@@ -69,50 +81,64 @@ export default function AISettings() {
   const [hasSavedKey, setHasSavedKey] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [modelStatuses, setModelStatuses] = useState<any[]>([]);
+  const [modelStatuses, setModelStatuses] = useState<Array<{ provider: string; model: string; online: boolean; latency_ms?: number; error?: string }>>([]);
 
   const currentProvider = PROVIDERS.find(p => p.label === selectedLabel);
 
   useEffect(() => {
-    loadConfig();
-    loadDefaultConfig();
-  }, [selectedLabel]);
+    const controller = new AbortController();
+    loadConfig(controller.signal);
+    loadDefaultConfig(controller.signal);
+    return () => controller.abort();
+  }, [provider]);
 
   // 模型可用性状态轮询（每 60 秒）
   useEffect(() => {
-    loadModelStatus();
-    const timer = setInterval(loadModelStatus, 60000);
-    return () => clearInterval(timer);
+    const controller = new AbortController();
+    loadModelStatus(controller.signal);
+    const timer = setInterval(() => loadModelStatus(controller.signal), 60000);
+    return () => { clearInterval(timer); controller.abort(); };
   }, []);
 
-  const loadDefaultConfig = async () => {
+  const loadDefaultConfig = async (signal?: AbortSignal) => {
     try {
-      const resp = await apiClient.get('/api/ai/default');
+      const resp = await apiClient.get<{ api_key?: string }>('/api/ai/default', { signal });
       if (resp.api_key && !apiKey) {
         setApiKeyMasked(resp.api_key);
       }
-    } catch {
+    } catch (err: any) {
+      if (err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED') return;
       // 默认配置加载失败不影响正常使用
       console.warn('加载默认 AI 配置失败');
     }
   };
 
-  const loadModelStatus = async () => {
+  const loadModelStatus = async (signal?: AbortSignal) => {
     try {
-      const resp = await apiClient.get('/api/ai/status');
+      const resp = await apiClient.get<{ statuses?: typeof modelStatuses }>('/api/ai/status', { signal });
       if (resp.statuses) setModelStatuses(resp.statuses);
-    } catch {
+    } catch (err: any) {
+      if (err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED') return;
       // 静默失败
     }
   };
 
-  const loadConfig = async () => {
+  const loadConfig = async (signal?: AbortSignal) => {
     try {
-      const response = await apiClient.get(`/api/ai/config/${provider}`);
+      interface ConfigResponse {
+        exists?: boolean;
+        base_url?: string;
+        model?: string;
+        is_active?: boolean;
+        api_key_masked?: string;
+        default?: { base_url?: string; model?: string; api_key_masked?: string };
+      }
+      const response = await apiClient.get<ConfigResponse>(`/api/ai/config/${encodeURIComponent(provider)}`, { signal });
       if (response.exists) {
         setBaseUrl(response.base_url || '');
         setModel(response.model || '');
-        setIsConnected(response.is_active);
+        setIsConnected(response.is_active ?? true);
+        setIsActive(response.is_active ?? true);
         if (response.api_key_masked) {
           setApiKeyMasked(response.api_key_masked);
           setHasSavedKey(true);
@@ -126,7 +152,8 @@ export default function AISettings() {
           setHasSavedKey(true);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED') return;
       console.error('Load config error:', error);
     }
   };
@@ -143,7 +170,11 @@ export default function AISettings() {
     setIsFetchingModels(true);
     setErrorMessage('');
     try {
-      const resp = await apiClient.post('/api/ai/models', { base_url: baseUrl, api_key: apiKey || '__saved__', provider });
+      const resp = await apiClient.post<{ success: boolean; models: string[]; count: number; message?: string }>('/api/ai/models', {
+        base_url: baseUrl,
+        api_key: apiKey || '__saved__',
+        provider: getBackendProviderType(provider),
+      });
       if (resp.success && resp.models.length > 0) {
         setAvailableModels(resp.models);
         setSuccessMessage(`获取到 ${resp.count} 个模型`);
@@ -166,8 +197,11 @@ export default function AISettings() {
     setErrorMessage('');
     setSuccessMessage('');
     try {
-      const response = await apiClient.post('/api/ai/test', {
-        provider, api_key: apiKey || '__saved__', base_url: baseUrl, model,
+      const response = await apiClient.post<{ success: boolean; model?: string; message?: string }>('/api/ai/test', {
+        provider: getBackendProviderType(provider),
+        api_key: apiKey || '__saved__',
+        base_url: baseUrl,
+        model,
       });
       if (response.success) {
         setIsConnected(true);
@@ -193,19 +227,21 @@ export default function AISettings() {
     setErrorMessage('');
     setSuccessMessage('');
     try {
-      const response = await apiClient.post('/api/ai/config', {
-        provider,
-        api_key: apiKey || '',  // 空则保留已保存的密钥
+      const response = await apiClient.post<{ success: boolean }>('/api/ai/config', {
+        provider,                 // 完整 DB key（如 "custom:aliyun_qwen"）
+        api_key: apiKey || '',    // 空则保留已保存的密钥
         base_url: baseUrl,
         model,
+        is_active: true,          // 保存时自动启用
       });
       if (response.success) {
-        setSuccessMessage('配置已保存！');
+        setSuccessMessage('配置已保存并启用！');
         setIsConnected(true);
+        setIsActive(true);
+        notifyAIConfigChanged(); // 通知全局刷新 AI 状态
         if (apiKey) {
           setApiKey('');
           setHasSavedKey(true);
-          // 重新加载以获取新的脱敏 key
           await loadConfig();
         }
       }
@@ -225,10 +261,28 @@ export default function AISettings() {
     setModel(info.defaultModel);
     setAvailableModels([]);
     setIsConnected(false);
+    setIsActive(true);
     setHasSavedKey(false);
     setApiKeyMasked('');
+    setApiKey('');
     setErrorMessage('');
     setSuccessMessage('');
+  };
+
+  const handleToggleActive = async (newState: boolean) => {
+    setIsActive(newState);
+    setIsConnected(newState);
+    try {
+      await apiClient.post('/api/ai/config', {
+        provider,
+        is_active: newState,
+      });
+      notifyAIConfigChanged(); // 通知全局刷新 AI 状态
+    } catch {
+      setIsActive(!newState);
+      setIsConnected(!newState);
+      console.error('切换 AI 状态失败');
+    }
   };
 
   return (
@@ -245,26 +299,14 @@ export default function AISettings() {
                 <span className="font-medium text-primary-900">AI 服务状态</span>
               </div>
               <div className="flex items-center gap-3">
-                <Badge variant={isConnected ? 'default' : 'secondary'}>
-                  {isConnected ? '✓ 已连接' : '未配置'}
+                <Badge variant={isActive ? 'default' : 'secondary'}>
+                  {isActive ? '✓ 已启用' : '已禁用'}
                 </Badge>
-                <span title={isConnected ? '点击禁用 AI 服务' : '点击启用 AI 服务'}>
+                <span title={isActive ? '点击禁用 AI 服务' : '点击启用 AI 服务'}>
                   <Switch
-                    checked={isConnected}
-                    onCheckedChange={async (newState) => {
-                    setIsConnected(newState);
-                    try {
-                      await apiClient.post('/api/ai/config', {
-                        provider,
-                        is_active: newState,
-                      });
-                    } catch {
-                      // 失败时回滚状态
-                      setIsConnected(!newState);
-                      console.error('切换 AI 状态失败');
-                    }
-                  }}
-                />
+                    checked={isActive}
+                    onCheckedChange={handleToggleActive}
+                  />
                 </span>
               </div>
             </div>
@@ -277,7 +319,7 @@ export default function AISettings() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm">模型可用性监控</CardTitle>
-                <Button variant="ghost" size="sm" onClick={loadModelStatus} className="h-6 px-2">
+                <Button variant="ghost" size="sm" onClick={() => loadModelStatus()} className="h-6 px-2">
                   <RefreshCw className="h-3 w-3" />
                 </Button>
               </div>
@@ -324,7 +366,7 @@ export default function AISettings() {
                 </SelectTrigger>
                 <SelectContent>
                   {PROVIDERS.map((p) => (
-                    <SelectItem key={p.label} value={p.label}>
+                    <SelectItem key={p.value} value={p.label}>
                       {p.label}
                     </SelectItem>
                   ))}
@@ -344,14 +386,9 @@ export default function AISettings() {
                   placeholder={hasSavedKey ? '已配置，输入新密钥可替换' : '请输入 API Key'}
                   value={hasSavedKey && !apiKey ? '••••••••••••••••' : apiKey}
                   onChange={(e) => {
-                    // 如果是从星号状态开始输入，清除星号，开始接收真实输入
-                    if (hasSavedKey && apiKey === '' && e.target.value !== '••••••••••••••••') {
-                      // 用户开始输入新密钥
-                    }
                     setApiKey(e.target.value === '••••••••••••••••' ? '' : e.target.value);
                   }}
-                  onFocus={(e) => {
-                    // 聚焦时如果显示的是星号，清空以便输入
+                  onFocus={() => {
                     if (hasSavedKey && !apiKey) {
                       setApiKey('');
                     }
@@ -468,6 +505,7 @@ export default function AISettings() {
             <p>• 点击「获取模型」自动从 API 端点获取可用模型列表</p>
             <p>• Claude Provider 使用 Anthropic Messages API，需对应的 API Key</p>
             <p>• Ollama 为本地模型，需先在本地安装并启动 Ollama 服务</p>
+            <p>• 保存配置时自动启用该 AI 服务，可通过开关手动禁用</p>
             <p className="text-xs text-primary-400 mt-2 pt-2 border-t border-primary-200">
               如需测试KEY，请联系管理员获取
             </p>

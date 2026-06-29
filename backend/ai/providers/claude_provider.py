@@ -12,6 +12,18 @@ from ai.base import AIProvider, AIAnalysisResult
 from utils.logger import logger
 
 
+# 文档类型中文名映射（与 OpenAIProvider 保持一致）
+_TYPE_NAMES = {
+    "notice": "通知", "announcement": "公告", "report": "报告",
+    "request": "请示", "reply": "批复", "instruction": "意见",
+    "decision": "决定", "resolution": "决议", "command": "命令",
+    "bill": "议案", "minutes": "会议纪要", "meeting": "会议纪要",
+    "communique": "公报", "regulation": "条例", "work_plan": "工作方案",
+    "summary": "总结", "letter": "函", "bulletin": "通报",
+    "notice_public": "公示", "opinion": "意见", "table_sign": "签发单",
+}
+
+
 class ClaudeProvider(AIProvider):
     """Anthropic Claude provider."""
 
@@ -65,15 +77,55 @@ class ClaudeProvider(AIProvider):
                 raise Exception(f"Claude API 超时 ({self.timeout}s)")
         raise Exception(f"Claude API 调用失败: {last_error}")
 
-    async def analyze(self, document_text: str) -> AIAnalysisResult:
-        system = "你是公文格式专家。分析文档返回 JSON 格式的 issues 列表。"
-        prompt = f"分析以下公文文档，检查格式规范、表达准确性、逻辑完整性：\n\n{document_text[:2000]}\n\n返回 JSON: {{\"issues\": [{{\"type\":\"...\", \"location\":\"...\", \"original\":\"...\", \"suggestion\":\"...\", \"reason\":\"...\", \"severity\":\"high/medium/low\"}}]}}"
+    async def analyze(self, document_text: str, **kwargs) -> AIAnalysisResult:
+        """Analyze a document for formatting issues, with optional document_type awareness."""
+        document_type = kwargs.get("document_type", "notice")
+        type_name = _TYPE_NAMES.get(document_type, document_type)
+
+        system = "你是公文格式专家。分析文档返回 JSON 格式的 issues 列表。只返回JSON，不要解释文字。"
+        prompt = (
+            f"分析以下【{type_name}】公文文档，检查格式规范、表达准确性、逻辑完整性：\n\n"
+            f"{document_text[:3000]}\n\n"
+            '返回 JSON: {"issues": [{"type":"...", "location":"...", "original":"...", '
+            '"suggestion":"...", "reason":"...", "severity":"high/medium/low"}]}'
+        )
         result = await self._call_api([{"role": "user", "content": prompt}], system=system)
+
+        # 多策略 JSON 解析（与 OpenAIProvider 保持一致）
+        return self._parse_analyze_response(result)
+
+    @staticmethod
+    def _parse_analyze_response(raw: str) -> AIAnalysisResult:
+        """Robust JSON parsing with multiple fallback strategies."""
+        import re
         try:
-            data = json.loads(result)
-            return AIAnalysisResult(issues=data.get("issues", []), raw_response=result)
+            data = json.loads(raw)
+            if isinstance(data, dict) and "issues" in data:
+                return AIAnalysisResult(issues=data["issues"], raw_response=raw)
         except json.JSONDecodeError:
-            return AIAnalysisResult(issues=[{"type": "AI分析", "suggestion": result, "severity": "low"}], raw_response=result)
+            pass
+        m = re.search(r'```(?:json)?\s*\n?(.*?)\n?```', raw, re.DOTALL)
+        if m:
+            try:
+                data = json.loads(m.group(1).strip())
+                if isinstance(data, dict) and "issues" in data:
+                    return AIAnalysisResult(issues=data["issues"], raw_response=raw)
+            except json.JSONDecodeError:
+                pass
+        m = re.search(r'\{[\s\S]*"issues"\s*:[\s\S]*\}', raw)
+        if m:
+            try:
+                candidate = re.sub(r',\s*([}\]])', r'\1', m.group(0))
+                data = json.loads(candidate)
+                if isinstance(data, dict) and "issues" in data:
+                    return AIAnalysisResult(issues=data["issues"], raw_response=raw)
+            except json.JSONDecodeError:
+                pass
+        return AIAnalysisResult(
+            issues=[{"type": "AI分析", "location": "全文", "original": "",
+                     "suggestion": raw[:500], "reason": "AI 综合建议", "severity": "low"}],
+            raw_response=raw,
+        )
 
     async def proofread(self, text: str) -> list[dict[str, Any]]:
         prompt = f"检查以下文本的错别字和标点问题，返回 JSON 数组：\n{text[:1000]}"
@@ -84,7 +136,20 @@ class ClaudeProvider(AIProvider):
             return []
 
     async def rewrite(self, text: str, context: str = "") -> str:
-        prompt = f"优化以下公文文本表达，保持原意，使用规范公文表达：\n{text}\n上下文：{context or '无'}"
+        """Rewrite/rewrite text for official document style.
+
+        If context is non-empty, it is treated as the FULL prompt (including instructions).
+        If context is empty, a default rewrite prompt is used.
+        """
+        if context:
+            # context 包含完整指令时直接作为用户消息
+            prompt = context
+        else:
+            prompt = (
+                "优化以下公文文本表达，保持原意，使用规范公文表达：\n"
+                f"{text}\n"
+                "只返回优化后的文本，不要解释。"
+            )
         return await self._call_api([{"role": "user", "content": prompt}])
 
     async def test_connection(self) -> bool:

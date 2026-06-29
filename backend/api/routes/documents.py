@@ -47,10 +47,12 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
 
     # Save to temp location
     import re
+    import uuid as _uuid
     safe_name = re.sub(r'[^\w一-鿿._-]', '_', filename)
     tmp_dir = TEMP_DIR
     tmp_dir.mkdir(parents=True, exist_ok=True)
-    temp_path = tmp_dir / safe_name
+    # 使用 UUID 前缀防止并发上传同名文件互相覆盖
+    temp_path = tmp_dir / f"{_uuid.uuid4().hex[:8]}_{safe_name}"
 
     with open(temp_path, "wb") as f:
         f.write(content)
@@ -65,17 +67,17 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
         except RuntimeError as e:
             raise HTTPException(status_code=400, detail=str(e))
         except Exception as e:
-            logger.error(f"文档转换失败: {e}")
+            logger.error(f"文档转换失败: {e}", exc_info=True)
             raise HTTPException(
                 status_code=500,
-                detail=f"文档格式转换失败: {str(e)}"
+                detail="文档格式转换失败，请确认文件未损坏"
             )
 
     try:
         doc = svc.upload_document(db, temp_path, file.filename)
     except Exception as e:
-        logger.error(f"Upload failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Upload failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="文档上传失败，请稍后重试")
     finally:
         # 清理临时文件（upload_document 已复制到 UPLOAD_DIR）
         try:
@@ -145,8 +147,8 @@ async def validate_document(doc_id: int, db: Session = Depends(get_db)):
         result = run_validate(doc.file_path)
         return result.to_dict()
     except Exception as e:
-        logger.error(f"Validation failed: {e}")
-        raise HTTPException(status_code=500, detail=f"验证失败: {str(e)}")
+        logger.error(f"Validation failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="文档验证失败，请稍后重试")
 
 
 @router.get("/{doc_id}/preview")
@@ -241,6 +243,7 @@ async def get_document_preview(doc_id: int, db: Session = Depends(get_db)):
         return {
             "paragraphs": paragraphs,
             "tables": tables,
+            "filename": doc.filename if doc else "",
             "page_setup": {
                 "margin_top_mm": model.page_setup.margin_top_mm or 37,
                 "margin_bottom_mm": model.page_setup.margin_bottom_mm or 35,

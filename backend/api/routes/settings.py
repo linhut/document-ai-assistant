@@ -140,11 +140,10 @@ def _get_lan_ip() -> str:
 
     # 回退：通过 UDP 连接获取
     try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        ip = s.getsockname()[0]
-        s.close()
-        return ip
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+            return ip
     except Exception:
         return "127.0.0.1"
 

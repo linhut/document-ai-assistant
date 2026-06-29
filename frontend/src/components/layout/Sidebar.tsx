@@ -26,8 +26,9 @@ import {
   ChevronRight,
   Layout,
   X,
+  Pen,
 } from 'lucide-react';
-import { detectActiveAI, type AIStatus } from '../../lib/ai-status';
+import { detectActiveAI, AI_CONFIG_CHANGED, type AIStatus } from '../../lib/ai-status';
 
 interface SidebarProps {
   collapsed?: boolean;
@@ -75,14 +76,17 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   // Fetch AI configuration status — 检测所有 provider，不硬编码
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    const refresh = async () => {
       const status = await detectActiveAI();
       if (!cancelled) {
         setAiReady(status?.active ?? false);
         setAiInfo(status);
       }
-    })();
-    return () => { cancelled = true; };
+    };
+    refresh();
+    // 监听 AI 配置变更事件（AISettings 保存/切换后触发）
+    window.addEventListener(AI_CONFIG_CHANGED, refresh);
+    return () => { cancelled = true; window.removeEventListener(AI_CONFIG_CHANGED, refresh); };
   }, []);
 
   const isActive = (path: string) => location.pathname === path;
@@ -100,6 +104,7 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
       items: [
         { icon: Home, label: '工作台', path: '/workspace' },
         { icon: FileText, label: '文档处理', path: '/document/process' },
+        { icon: Pen, label: 'Markdown 优化', path: '/document/markdown' },
       ],
     },
     {

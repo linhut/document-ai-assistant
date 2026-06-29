@@ -76,17 +76,24 @@ export default function Templates() {
   ]);
 
   useEffect(() => {
-    loadTemplates();
+    const controller = new AbortController();
+    loadTemplates(controller.signal);
+    return () => controller.abort();
   }, []);
 
-  const loadTemplates = async () => {
+  const loadTemplates = async (signal?: AbortSignal) => {
     try {
-      const response = await apiClient.get('/api/templates/list');
-      setTemplates(response.templates || []);
-    } catch (error) {
+      const response = await apiClient.get<{ templates?: Template[] }>('/api/templates/list', { signal });
+      if (!signal?.aborted) {
+        setTemplates(response.templates || []);
+      }
+    } catch (error: any) {
+      if (error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED') return;
       console.error('Load templates error:', error);
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
     }
   };
 
@@ -174,7 +181,7 @@ export default function Templates() {
         ...newTemplate,
         custom_rules: newTemplate.custom_rules ? customRules : undefined
       };
-      const response = await apiClient.post('/api/templates/create', payload);
+      const response = await apiClient.post<{ message?: string }>('/api/templates/create', payload);
       success('成功', response.message || '模板创建成功！');
       setShowCreateDialog(false);
       setShowRulesDialog(false);
@@ -471,7 +478,12 @@ export default function Templates() {
         </Dialog>
 
         {/* 自定义规则配置对话框 */}
-        <Dialog open={showRulesDialog} onOpenChange={() => {}}>
+        <Dialog open={showRulesDialog} onOpenChange={(open) => {
+          if (!open) {
+            setShowRulesDialog(false);
+            setShowCreateDialog(true);
+          }
+        }}>
           <DialogContent className="max-w-3xl w-full max-h-[85vh] overflow-y-auto">
             <DialogHeader className="sticky top-0 bg-background z-10 border-b pb-4">
               <DialogTitle>配置检查规则</DialogTitle>

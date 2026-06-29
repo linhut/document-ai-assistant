@@ -4,7 +4,14 @@
 """
 SQLAlchemy ORM models for the application database.
 """
-from datetime import datetime
+from datetime import datetime, timezone
+
+
+def _utcnow():
+    """Return current UTC time (replaces deprecated datetime.utcnow)."""
+    return datetime.now(timezone.utc)
+
+
 from sqlalchemy import (
     Column, Integer, String, Text, Boolean, DateTime, ForeignKey, Float
 )
@@ -25,8 +32,8 @@ class Document(Base):
     page_count = Column(Integer, default=0)
     paragraph_count = Column(Integer, default=0)
     optimized_path = Column(String(1024), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     versions = relationship("DocumentVersion", back_populates="document", cascade="all, delete-orphan")
     check_results = relationship("CheckResult", back_populates="document", cascade="all, delete-orphan")
@@ -40,7 +47,7 @@ class DocumentVersion(Base):
     version = Column(Integer, nullable=False, default=1)
     file_path = Column(String(1024), nullable=False)
     change_summary = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
 
     document = relationship("Document", back_populates="versions")
 
@@ -58,7 +65,7 @@ class CheckResult(Base):
     suggested_fix = Column(Text, nullable=True)
     reason = Column(Text, nullable=True)
     status = Column(String(16), default="pending")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
 
     document = relationship("Document", back_populates="check_results")
 
@@ -73,8 +80,8 @@ class AIConfig(Base):
     model = Column(String(128), nullable=True)
     extra_params = Column(Text, nullable=True)
     is_active = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
 
 class Rule(Base):
@@ -90,5 +97,5 @@ class Rule(Base):
     rule_content = Column(Text, nullable=True)
     rule_version = Column(Integer, nullable=False, default=1)
     is_enabled = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)

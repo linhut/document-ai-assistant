@@ -9,6 +9,7 @@ Encryption utilities for sensitive data (API keys, etc.).
 from cryptography.fernet import Fernet
 import base64
 import os
+import sys
 from pathlib import Path
 
 from config import APP_DATA_DIR
@@ -19,7 +20,10 @@ _KEY_FILE = str(APP_DATA_DIR / ".encryption_key")
 
 
 def _get_or_create_key() -> bytes:
-    """Get existing encryption key or create new one."""
+    """Get existing encryption key or create new one.
+
+    安全措施：创建密钥文件后设置 restrictive permissions。
+    """
     os.makedirs(os.path.dirname(_KEY_FILE), exist_ok=True)
 
     if os.path.exists(_KEY_FILE):
@@ -29,6 +33,22 @@ def _get_or_create_key() -> bytes:
         key = Fernet.generate_key()
         with open(_KEY_FILE, "wb") as f:
             f.write(key)
+
+        # 设置 restrictive permissions (仅所有者可读写)
+        try:
+            if sys.platform != "win32":
+                os.chmod(_KEY_FILE, 0o600)
+            else:
+                # Windows: 使用 icacls 设置 restrictive permissions
+                import subprocess
+                subprocess.run(
+                    ["icacls", _KEY_FILE, "/inheritance:r",
+                     "/grant:r", f"{os.getenv('USERNAME', 'Everyone')}:F"],
+                    capture_output=True, check=False
+                )
+        except Exception:
+            pass  # 权限设置失败不阻止密钥创建
+
         return key
 
 

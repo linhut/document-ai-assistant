@@ -734,8 +734,8 @@ async def download_style_template_docx(template_id: str):
             media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
     except Exception as e:
-        logger.error(f"Style template download failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Style template download failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="模板下载失败，请稍后重试")
 
 
 @router.get("/styles/{template_id}/download/dotx")
@@ -758,8 +758,8 @@ async def download_style_template_dotx(template_id: str):
             media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document.template",
         )
     except Exception as e:
-        logger.error(f"Dotx template download failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Dotx template download failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="模板下载失败，请稍后重试")
 
 
 @router.post("/styles/import")

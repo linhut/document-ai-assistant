@@ -165,21 +165,54 @@ def remove_extra_spaces(model: DocumentModel) -> None:
                 run.text = re.sub(r' {2,}', ' ', run.text)
 
 
-def remove_extra_blank_lines(model: DocumentModel) -> None:
-    """清除连续空行（连续的空段落）。"""
-    to_remove: set[int] = set()
-    for i, para in enumerate(model.paragraphs):
-        if not para.text.strip() and i > 0:
-            prev = model.paragraphs[i - 1]
-            if not prev.text.strip():
-                to_remove.add(i)
+def remove_extra_blank_lines(model: DocumentModel, mode: str = 'delete_single') -> None:
+    """处理空行（参考 Word-Formatter-Pro 的三种模式）。
 
-    for idx in sorted(to_remove, reverse=True):
-        model.paragraphs.pop(idx)
+    Args:
+        model: 文档模型
+        mode: 空行处理模式
+            - 'keep_all': 不改动任何空行
+            - 'delete_single': 删除单个空行，多个空行保留至1个
+            - 'keep_single': 保留单个空行，多个空行保留至1个
+    """
+    if mode == 'keep_all':
+        return
+
+    if mode == 'keep_single':
+        # 保留单个空行，多个连续空行合并为1个
+        to_remove: set[int] = set()
+        blank_count = 0
+        for i, para in enumerate(model.paragraphs):
+            if not para.text.strip():
+                blank_count += 1
+                if blank_count > 1:
+                    to_remove.add(i)
+            else:
+                blank_count = 0
+
+        for idx in sorted(to_remove, reverse=True):
+            model.paragraphs.pop(idx)
+    else:
+        # delete_single: 删除单个空行，多个空行保留至1个
+        to_remove: set[int] = set()
+        for i, para in enumerate(model.paragraphs):
+            if not para.text.strip() and i > 0:
+                prev = model.paragraphs[i - 1]
+                if not prev.text.strip():
+                    to_remove.add(i)
+
+        for idx in sorted(to_remove, reverse=True):
+            model.paragraphs.pop(idx)
 
     # 重新编号段落索引，保证连续性
     for i, p in enumerate(model.paragraphs):
         p.index = i
+
+
+# 空行处理模式常量（参考 Word-Formatter-Pro）
+BLANK_LINE_MODE_KEEP_ALL = 'keep_all'
+BLANK_LINE_MODE_DELETE_SINGLE = 'delete_single'
+BLANK_LINE_MODE_KEEP_SINGLE = 'keep_single'
 
 
 def fix_bold_range(model: DocumentModel) -> int:
@@ -215,7 +248,10 @@ def fix_bold_range(model: DocumentModel) -> int:
         # 有边界 → 首句保持加粗，后续取消
         split_pos = m.end()
         char_count = 0
-        for run in para.runs:
+        # 先收集需要分裂的 run 位置和文本，再统一修改
+        # 避免在迭代 runs 列表过程中插入新元素
+        insertions: list[tuple[int, str, str]] = []  # [(run_index, first_part, second_part)]
+        for run_idx, run in enumerate(para.runs):
             run_end = char_count + len(run.text)
             if run_end <= split_pos:
                 pass  # 首句内，保持加粗
@@ -225,20 +261,23 @@ def fix_bold_range(model: DocumentModel) -> int:
                 split_in_run = split_pos - char_count
                 first_part = run.text[:split_in_run]
                 second_part = run.text[split_in_run:]
-                run.text = first_part
-                from core.document.models import Run as _Run, RunFormat as _RF
-                new_run = _Run(
-                    index=run.index + 1,
-                    text=second_part,
-                    format=_RF(
-                        font_name=run.format.font_name,
-                        font_size_pt=run.format.font_size_pt,
-                        bold=False,
-                    ),
-                )
-                idx = para.runs.index(run)
-                para.runs.insert(idx + 1, new_run)
+                insertions.append((run_idx, first_part, second_part))
             char_count = run_end
+
+        # 按索引倒序执行分裂操作，避免索引偏移
+        for run_idx, first_part, second_part in reversed(insertions):
+            para.runs[run_idx].text = first_part
+            from core.document.models import Run as _Run, RunFormat as _RF
+            new_run = _Run(
+                index=run_idx + 1,
+                text=second_part,
+                format=_RF(
+                    font_name=para.runs[run_idx].format.font_name,
+                    font_size_pt=para.runs[run_idx].format.font_size_pt,
+                    bold=False,
+                ),
+            )
+            para.runs.insert(run_idx + 1, new_run)
 
         changes += 1
 
@@ -677,7 +716,99 @@ def convert_markdown(model: DocumentModel) -> int:
                 tbl.insert_after_index = min(adjusted, len(model.paragraphs) - 1)
         changes += 1  # 统一计为 1 次批量删除
 
+    # === 第三步：内联标题分割（参考 Word-Formatter-Pro）===
+    # 当标题和正文在同一段落中时自动拆分
+    _split_inline_headings(model)
+
     return changes
+
+
+def _split_inline_headings(model: DocumentModel) -> None:
+    """内联标题分割：当标题和正文在同一段落中时自动拆分。
+
+    参考 Word-Formatter-Pro 的实现：
+    - 标题段落中包含"。"且后面紧跟正文时，自动拆分为标题+正文两个段落
+    - 例如："关于XX的通知。各有关单位：为贯彻落实..."
+    → 标题: "关于XX的通知"
+    → 正文: "各有关单位：为贯彻落实..."
+    """
+    # 正则匹配标题+正文在同一段落的情况
+    # 模式：标题文本（以。或；结尾）+ 正文文本
+    inline_pattern = re.compile(
+        r'^(.{2,60}[。；])\s*(.{4,}.*)$', re.DOTALL
+    )
+
+    insertions = []
+    for i, para in enumerate(model.paragraphs):
+        text = para.text.strip()
+        if not text or para.is_heading:
+            continue
+
+        match = inline_pattern.match(text)
+        if match:
+            title_text = match.group(1).strip()
+            body_text = match.group(2).strip()
+
+            # 确保标题文本确实像一个标题（包含标题关键词）
+            title_keywords = [
+                "关于", "通知", "请示", "报告", "函", "纪要", "决定", "通告", "公告",
+                "的意见", "的方案", "的办法", "的规定", "的决定", "的通知"
+            ]
+            is_likely_title = any(kw in title_text for kw in title_keywords)
+
+            if is_likely_title and len(title_text) >= 4:
+                insertions.append((i, title_text, body_text))
+
+    # 执行拆分（从后往前，避免索引偏移）
+    for i, title_text, body_text in reversed(insertions):
+        # 创建标题段落
+        title_para = Paragraph(
+            index=i, text=title_text, is_heading=True, heading_level=0, role='title',
+            runs=[Run(index=0, text=title_text, format=RunFormat(
+                font_name='方正小标宋简体', font_size_pt=22,
+            ))],
+            format=ParagraphFormat(alignment='center', line_spacing_pt=33.0),
+        )
+
+        # 创建正文段落
+        body_para = Paragraph(
+            index=i + 1, text=body_text, is_heading=False, heading_level=None, role='body',
+            runs=[Run(index=0, text=body_text, format=RunFormat(
+                font_name='仿宋_GB2312', font_size_pt=16,
+            ))],
+            format=ParagraphFormat(
+                alignment='justify', line_spacing_pt=28.95, first_line_indent_pt=32.0,
+            ),
+        )
+
+        # 替换原段落为两个新段落
+        model.paragraphs[i] = title_para
+        model.paragraphs.insert(i + 1, body_para)
+
+    # 重新编号
+    for i, p in enumerate(model.paragraphs):
+        p.index = i
+
+
+# --- 附件标记正则 ---
+RE_ATTACHMENT = re.compile(r'^\s*附件[：:1-9]?\s*(?:说明|清单|内容)?')
+
+
+def _add_attachment_page_breaks(model: DocumentModel) -> None:
+    """在附件标记段落前添加分页标记。
+
+    参考 Word-Formatter-Pro 的实现：
+    - 检测 "附件"、"附件1"、"附件：" 等模式
+    - 在附件前设置分页标记（通过 paragraph 前缀标记）
+    - 附件标题和副标题保持原有格式
+    """
+    for i, para in enumerate(model.paragraphs):
+        text = para.text.strip()
+        if RE_ATTACHMENT.match(text):
+            # 在段落文本前插入分页标记
+            # generator 会识别这个标记并插入分页符
+            if not para.text.startswith('\x0C'):
+                para.text = '\x0C' + para.text
 
 
 def _detect_md_table_regions(paragraphs: list) -> list[dict]:

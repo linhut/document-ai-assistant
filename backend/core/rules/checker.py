@@ -67,7 +67,28 @@ def check_document(model: DocumentModel, rules: dict[str, Any]) -> list[CheckIss
             issues.extend(_check_signature_area(model, rule_id, severity, name, field_path, expected, message, rules))
         else:
             # Generic check -- compare against rule's expected value at top level
-            actual = _get_nested(rules, field_path)
+            # 修复：从文档模型读取实际值，而不是从规则字典读取
+            model_dict = {
+                "title": {
+                    "font": model.paragraphs[0].runs[0].format.font_name if model.paragraphs and model.paragraphs[0].runs else None,
+                    "size": model.paragraphs[0].runs[0].format.font_size_pt if model.paragraphs and model.paragraphs[0].runs else None,
+                } if model.paragraphs else {},
+                "body": {
+                    "font": model.paragraphs[1].runs[0].format.font_name if len(model.paragraphs) > 1 and model.paragraphs[1].runs else None,
+                    "size": model.paragraphs[1].runs[0].format.font_size_pt if len(model.paragraphs) > 1 and model.paragraphs[1].runs else None,
+                } if len(model.paragraphs) > 1 else {},
+                "page_setup": {
+                    "margins": {
+                        "top": model.page_setup.margin_top_mm,
+                        "bottom": model.page_setup.margin_bottom_mm,
+                        "left": model.page_setup.margin_left_mm,
+                        "right": model.page_setup.margin_right_mm,
+                    },
+                    "paper_width_mm": model.page_setup.paper_width_mm,
+                    "paper_height_mm": model.page_setup.paper_height_mm,
+                },
+            }
+            actual = _get_nested(model_dict, field_path)
             if actual is not None and str(actual) != str(expected):
                 issues.append(CheckIssue(
                     rule_id=rule_id, check_type="format", severity=severity,

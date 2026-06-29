@@ -71,6 +71,8 @@ class OptimizeRequest(BaseModel):
     apply_fixes: bool = True
     apply_ai_suggestions: bool = False
     selected_rule_ids: Optional[list[str]] = Field(default=None, description="仅应用指定规则ID的修复，为None时应用全部")
+    header_config: Optional[dict[str, Any]] = Field(default=None, description="版头配置：{org_name, doc_number, signer, enabled}")
+    footer_note_config: Optional[dict[str, Any]] = Field(default=None, description="版记配置：{cc, printer, printDate, enabled}")
 
 
 class OptimizeResponse(BaseModel):

@@ -109,10 +109,9 @@ class OpenAIProvider(AIProvider):
             f"API 调用失败（已重试 {self.max_retries} 次）: {last_error or '未知错误，请检查网络或 API 配额'}"
         )
 
-    async def analyze(self, document_text: str, document_type: str = "notice") -> AIAnalysisResult:
+    async def analyze(self, document_text: str, **kwargs) -> AIAnalysisResult:
         """Analyze document against GB/T 9704 official document standards, type-aware."""
-
-        # 文档类型中文名映射
+        document_type = kwargs.get("document_type", "notice")
         TYPE_NAMES = {
             "notice": "通知", "announcement": "公告", "report": "报告",
             "request": "请示", "reply": "批复", "instruction": "意见",
@@ -283,20 +282,20 @@ class OpenAIProvider(AIProvider):
             return []
 
     async def rewrite(self, text: str, context: str = "") -> str:
-        """Suggest improved version of text."""
-        prompt = f"""请优化以下文本的表达，使其更加规范、简洁、准确：
+        """Suggest improved version of text.
 
-原文：{text}
-
-上下文：{context if context else "无"}
-
-要求：
-1. 保持原意
-2. 使用公文规范表达
-3. 简洁明了
-
-请直接返回优化后的文本，不要解释。
-"""
+        If context is non-empty, it is treated as the FULL prompt (including instructions).
+        If context is empty, a default rewrite prompt is used.
+        """
+        if context:
+            prompt = context
+        else:
+            prompt = (
+                "请优化以下文本的表达，使其更加规范、简洁、准确：\n\n"
+                f"原文：{text}\n\n"
+                "要求：\n1. 保持原意\n2. 使用公文规范表达\n3. 简洁明了\n\n"
+                "请直接返回优化后的文本，不要解释。"
+            )
         messages = [{"role": "user", "content": prompt}]
         return await self._call_api(messages, temperature=0.3)
 
