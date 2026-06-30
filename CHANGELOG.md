@@ -4,6 +4,15 @@
 
 ---
 
+## [1.4.9] - 2026-06-30
+
+### 项目优化
+- 统一包名为英文格式：`doc-optimizer-v{version}-{platform}-{arch}.{ext}`
+- 移除 Git 仓库中的非必要文件（旧报告、脚本、测试辅助工具）
+- 重命名中文目录 `公文模板/` → `dotx_templates/`
+- 新增 `.gitignore` 规则和 pre-commit 钩子防止非必要文件入库
+- 新增 `CONTRIBUTING.md` 提交规范
+
 ## [1.4.8] - 2026-06-30
 
 ### 编排功能全面修复
