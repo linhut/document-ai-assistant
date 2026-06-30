@@ -6,7 +6,7 @@ Templates management API: create, read, update templates.
 支持两种模板体系：
   1. 规则模板 (rules/official/) — 用于格式检查和修复
   2. 样式模板 (templates/official/) — 用于生成 Word 模板文件
-  3. 预置 .dotx 模板 (公文模板/) — 可直接使用的 Word 模板文件
+  3. 预置 .dotx 模板 (dotx_templates/) — 可直接使用的 Word 模板文件
 """
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from fastapi.responses import FileResponse
@@ -27,12 +27,12 @@ router = APIRouter()
 OFFICIAL_TEMPLATES_DIR = BASE_DIR / "templates" / "official"
 
 # 真实的 .dotx 模板文件目录（来自公文模板项目）
-TEMPLATES_DOTX_DIR = BASE_DIR / "公文模板"
+TEMPLATES_DOTX_DIR = BASE_DIR / "dotx_templates"
 
 # 生成的模板输出目录（可写，位于用户数据目录）
 _GENERATED_TEMPLATES_DIR = APP_DATA_DIR / "generated_templates"
 
-# template_id → 中文文件名映射（与公文模板/ 目录中的文件名对应）
+# template_id → 中文文件名映射（与 dotx_templates/ 目录中的文件名对应）
 _TEMPLATE_ID_TO_CN = {
     "notice": "通知", "request": "请示", "report": "报告", "letter": "函",
     "meeting": "会议纪要", "decision": "决定", "announcement": "通告",
@@ -777,7 +777,7 @@ async def import_style_template(
 
 
 # ---------------------------------------------------------------------------
-#  预置 .dotx 模板下载（公文模板/ 体系）
+#  预置 .dotx 模板下载（dotx_templates/ 体系）
 # ---------------------------------------------------------------------------
 
 def _replace_brand_in_dotx(src_path: Path, dst_path: Path) -> None:
@@ -829,7 +829,7 @@ def _replace_brand_in_dotx(src_path: Path, dst_path: Path) -> None:
 async def download_official_dotx(template_id: str):
     """
     下载预置的官方 .dotx 模板文件。
-    优先从 公文模板/ 目录读取真实模板（带品牌替换），
+    优先从 dotx_templates/ 目录读取真实模板（带品牌替换），
     若不存在则回退到样式模板引擎动态生成。
     """
     cn_name = _TEMPLATE_ID_TO_CN.get(template_id, template_id)
@@ -837,7 +837,7 @@ async def download_official_dotx(template_id: str):
     output_dir.mkdir(parents=True, exist_ok=True)
     cached_path = output_dir / f"{cn_name}.dotx"
 
-    # 1. 优先从 公文模板/ 目录读取真实 .dotx 文件
+    # 1. 优先从 dotx_templates/ 目录读取真实 .dotx 文件
     source_dotx = TEMPLATES_DOTX_DIR / f"{cn_name}.dotx"
     if source_dotx.exists():
         # 检查缓存：如果缓存文件比源文件新则直接使用
@@ -845,7 +845,7 @@ async def download_official_dotx(template_id: str):
             logger.info(f"使用缓存的 .dotx 模板: {cn_name}")
         else:
             # 执行品牌替换并缓存
-            logger.info(f"从公文模板/读取 .dotx 模板: {cn_name}")
+            logger.info(f"从 dotx_templates/读取 .dotx 模板: {cn_name}")
             _replace_brand_in_dotx(source_dotx, cached_path)
 
         return FileResponse(

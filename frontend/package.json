@@ -80,7 +80,7 @@
     "linux": {
       "target": ["AppImage", "deb"],
       "executableName": "ai-document-assistant",
-      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "artifactName": "doc-optimizer-v${version}-${arch}.${ext}",
       "category": "Office"
     },
     "deb": {
@@ -88,6 +88,7 @@
     },
     "mac": {
       "target": ["dmg"],
+      "artifactName": "doc-optimizer-v${version}-${arch}.${ext}",
       "category": "public.app-category.productivity"
     },
     "extraResources": [
