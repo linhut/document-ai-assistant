@@ -118,7 +118,7 @@ jobs:
       - name: Install frontend dependencies
         run: |
           cd frontend
-          npm ci --legacy-peer-deps
+          npm install --legacy-peer-deps
 
       - name: Build PyInstaller backend
         shell: bash
@@ -180,7 +180,7 @@ jobs:
       - name: Install frontend dependencies
         run: |
           cd frontend
-          npm ci --legacy-peer-deps
+          npm install --legacy-peer-deps
 
       - name: Build frontend (web)
         run: |
