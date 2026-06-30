@@ -69,10 +69,16 @@ docs/reports/
 docs/OPTIMIZATION_REPORT.md
 docs/refactor-feasibility-report.md
 
-# Local scripts
+# Local scripts and utilities (not needed in repo)
 启动应用.bat
 assets/LinuxDo.png
 generate_icon.py
+frontend/build_electron.py
+packaging/build_release.py
+
+# Template generation scripts (run locally, output committed instead)
 scripts/generate_missing_templates.py
+tests/fixtures/create_test_doc.py
+
 *.pid
 *.tmp
