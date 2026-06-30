@@ -1,6 +1,5 @@
 # ============================================================
 # GitHub Actions: 多平台自动发布
-# 参考 Word-Formatter-Pro 的发布流程
 # ============================================================
 # 触发条件：推送 v* tag（如 v1.4.8）
 # 产物：Windows x64/ARM64 / Linux x64 / macOS x64/ARM64 / 便携版 / CLI
@@ -27,7 +26,7 @@ env:
 
 jobs:
   # -----------------------------------------------------------
-  # Job 1: 构建 PyInstaller 后端
+  # Job 1: 构建 PyInstaller 后端 (Windows)
   # -----------------------------------------------------------
   build-backend:
     runs-on: windows-latest
@@ -44,6 +43,7 @@ jobs:
           pip install pyinstaller
 
       - name: Build backend server
+        shell: bash
         run: |
           cd backend
           pyinstaller --onefile --name backend_server \
@@ -55,6 +55,7 @@ jobs:
             main.py
 
       - name: Build CLI
+        shell: bash
         run: |
           cd backend
           pyinstaller --onefile --name doc-optimizer-cli \
@@ -67,31 +68,37 @@ jobs:
         with:
           name: backend-win-x64
           path: |
-            dist/backend_server.exe
-            dist/doc-optimizer-cli.exe
+            backend/dist/backend_server.exe
+            backend/dist/doc-optimizer-cli.exe
 
   # -----------------------------------------------------------
-  # Job 2: 构建 Electron 前端
+  # Job 2: 构建 Electron 前端 (按平台)
   # -----------------------------------------------------------
   build-frontend:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: windows-latest
             platform: win-x64
-            build_cmd: npm run electron:build:win
+            arch: x64
+            pyinstaller_sep: ";"
           - os: windows-latest
             platform: win-arm64
-            build_cmd: npm run electron:build:win -- --arm64
+            arch: arm64
+            pyinstaller_sep: ";"
           - os: ubuntu-latest
             platform: linux-x64
-            build_cmd: npm run electron:build:linux
+            arch: x64
+            pyinstaller_sep: ":"
           - os: macos-latest
             platform: mac-x64
-            build_cmd: npm run electron:build:mac
+            arch: x64
+            pyinstaller_sep: ":"
           - os: macos-latest
             platform: mac-arm64
-            build_cmd: npm run electron:build:mac -- --arm64
+            arch: arm64
+            pyinstaller_sep: ":"
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -111,33 +118,54 @@ jobs:
       - name: Install frontend dependencies
         run: |
           cd frontend
-          npm ci
+          npm ci --legacy-peer-deps
 
       - name: Build PyInstaller backend
+        shell: bash
         run: |
           pip install pyinstaller
           cd backend
           pyinstaller --onefile --name backend_server \
-            --add-data "core;core" --add-data "api;api" --add-data "ai;ai" \
-            --add-data "db;db" --add-data "services;services" --add-data "utils;utils" \
-            --add-data "../rules;rules" --add-data "../templates;templates" \
+            --add-data "core${{ matrix.pyinstaller_sep }}core" \
+            --add-data "api${{ matrix.pyinstaller_sep }}api" \
+            --add-data "ai${{ matrix.pyinstaller_sep }}ai" \
+            --add-data "db${{ matrix.pyinstaller_sep }}db" \
+            --add-data "services${{ matrix.pyinstaller_sep }}services" \
+            --add-data "utils${{ matrix.pyinstaller_sep }}utils" \
+            --add-data "../rules${{ matrix.pyinstaller_sep }}rules" \
+            --add-data "../templates${{ matrix.pyinstaller_sep }}templates" \
             --hidden-import uvicorn --hidden-import fastapi --hidden-import sqlalchemy \
             --hidden-import pydantic --hidden-import httpx --hidden-import docx \
             main.py
 
-      - name: Build frontend
+      - name: Build frontend + Electron
+        shell: bash
         run: |
           cd frontend
-          ${{ matrix.build_cmd }}
+          npm run build
+          npx tsc -p tsconfig.electron.json
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            npx electron-builder --win --${{ matrix.arch }} --publish=never
+          elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            npx electron-builder --linux --${{ matrix.arch }} --publish=never
+          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+            npx electron-builder --mac --${{ matrix.arch }} --publish=never
+          fi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: frontend-${{ matrix.platform }}
-          path: frontend/dist_electron/*
+          path: |
+            frontend/release/*.exe
+            frontend/release/*.AppImage
+            frontend/release/*.deb
+            frontend/release/*.dmg
+            frontend/release/*.zip
+          if-no-files-found: warn
 
   # -----------------------------------------------------------
-  # Job 3: 构建便携版
+  # Job 3: 构建便携版 (Windows)
   # -----------------------------------------------------------
   build-portable:
     runs-on: windows-latest
@@ -152,7 +180,7 @@ jobs:
       - name: Install frontend dependencies
         run: |
           cd frontend
-          npm ci
+          npm ci --legacy-peer-deps
 
       - name: Build frontend (web)
         run: |
@@ -166,21 +194,22 @@ jobs:
           path: dist/
 
       - name: Create portable package
+        shell: bash
         run: |
           mkdir -p portable/doc-optimizer
-          cp dist/backend_server.exe portable/doc-optimizer/
+          cp dist/backend/dist/backend_server.exe portable/doc-optimizer/
           cp -r frontend/dist portable/doc-optimizer/frontend
           cp -r rules portable/doc-optimizer/rules
           cp -r templates portable/doc-optimizer/templates
-          cp dist/doc-optimizer-cli.exe portable/doc-optimizer/
+          cp dist/backend/dist/doc-optimizer-cli.exe portable/doc-optimizer/
           cd portable
-          zip -r ../doc-optimizer-v${GITHUB_REF_NAME#v}-portable.zip doc-optimizer
+          python -c "import shutil; shutil.make_archive('../doc-optimizer-portable', 'zip', '.', 'doc-optimizer')"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: portable-win-x64
-          path: doc-optimizer-*-portable.zip
+          path: doc-optimizer-portable.zip
 
   # -----------------------------------------------------------
   # Job 4: 创建 GitHub Release
@@ -188,6 +217,7 @@ jobs:
   create-release:
     runs-on: ubuntu-latest
     needs: [build-frontend, build-portable]
+    if: always() && needs.build-frontend.result != 'failure'
     steps:
       - uses: actions/checkout@v4
 
@@ -196,7 +226,10 @@ jobs:
         with:
           path: artifacts/
 
-      - name: Create release
+      - name: List downloaded artifacts
+        run: find artifacts/ -type f | head -30
+
+      - name: Upload to release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
