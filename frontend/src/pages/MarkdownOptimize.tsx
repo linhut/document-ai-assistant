@@ -1,4 +1,9 @@
 /*
+ * This file is part of the Official Document AI Assistant.
+ * (c) 2026 Jose AI (https://www.linhut.cn)
+ * Licensed under the MIT License. See the LICENSE file for details.
+ */
+/*
  * MarkdownOptimize — Markdown 公文优化页面（Module A）
  *
  * 左侧（360px）：Markdown 编辑器 + 文种选择

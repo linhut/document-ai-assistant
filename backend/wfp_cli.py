@@ -5,7 +5,7 @@ Licensed under the MIT License. See the LICENSE file for details.
 
 公文文档优化器 CLI 接口
 
-参考 Word-Formatter-Pro 的 CLI 架构，支持子命令：
+支持子命令：
 - format: 格式化文档
 - check: 检查文档格式
 - optimize: 优化文档

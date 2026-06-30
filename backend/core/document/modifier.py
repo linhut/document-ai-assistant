@@ -166,7 +166,7 @@ def remove_extra_spaces(model: DocumentModel) -> None:
 
 
 def remove_extra_blank_lines(model: DocumentModel, mode: str = 'delete_single') -> None:
-    """处理空行（参考 Word-Formatter-Pro 的三种模式）。
+    """处理空行（支持三种模式）。
 
     Args:
         model: 文档模型
@@ -209,7 +209,7 @@ def remove_extra_blank_lines(model: DocumentModel, mode: str = 'delete_single') 
         p.index = i
 
 
-# 空行处理模式常量（参考 Word-Formatter-Pro）
+# 空行处理模式常量
 BLANK_LINE_MODE_KEEP_ALL = 'keep_all'
 BLANK_LINE_MODE_DELETE_SINGLE = 'delete_single'
 BLANK_LINE_MODE_KEEP_SINGLE = 'keep_single'
@@ -716,7 +716,7 @@ def convert_markdown(model: DocumentModel) -> int:
                 tbl.insert_after_index = min(adjusted, len(model.paragraphs) - 1)
         changes += 1  # 统一计为 1 次批量删除
 
-    # === 第三步：内联标题分割（参考 Word-Formatter-Pro）===
+    # === 第三步：内联标题分割 ===
     # 当标题和正文在同一段落中时自动拆分
     _split_inline_headings(model)
 
@@ -726,8 +726,7 @@ def convert_markdown(model: DocumentModel) -> int:
 def _split_inline_headings(model: DocumentModel) -> None:
     """内联标题分割：当标题和正文在同一段落中时自动拆分。
 
-    参考 Word-Formatter-Pro 的实现：
-    - 标题段落中包含"。"且后面紧跟正文时，自动拆分为标题+正文两个段落
+    标题段落中包含"。"且后面紧跟正文时，自动拆分为标题+正文两个段落
     - 例如："关于XX的通知。各有关单位：为贯彻落实..."
     → 标题: "关于XX的通知"
     → 正文: "各有关单位：为贯彻落实..."
@@ -797,8 +796,7 @@ RE_ATTACHMENT = re.compile(r'^\s*附件[：:1-9]?\s*(?:说明|清单|内容)?')
 def _add_attachment_page_breaks(model: DocumentModel) -> None:
     """在附件标记段落前添加分页标记。
 
-    参考 Word-Formatter-Pro 的实现：
-    - 检测 "附件"、"附件1"、"附件：" 等模式
+    检测 "附件"、"附件1"、"附件：" 等模式
     - 在附件前设置分页标记（通过 paragraph 前缀标记）
     - 附件标题和副标题保持原有格式
     """

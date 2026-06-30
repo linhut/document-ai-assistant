@@ -465,7 +465,7 @@ def _update_tables(doc: Document, model: DocumentModel):
 
 
 def _smart_align_cell(cell_text: str, is_header: bool, col_idx: int, total_cols: int) -> str:
-    """智能判断单元格对齐方式（参考 Word-Formatter-Pro）。
+    """智能判断单元格对齐方式。
 
     规则：
     - 表头：居中

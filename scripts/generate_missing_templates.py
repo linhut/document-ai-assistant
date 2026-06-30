@@ -1,3 +1,6 @@
+# This file is part of the Official Document AI Assistant.
+# (c) 2026 Jose AI (https://www.linhut.cn)
+# Licensed under the MIT License. See the LICENSE file for details.
 # -*- coding: utf-8 -*-
 """生成缺失的 5 种公文类型 .dotx 模板文件"""
 

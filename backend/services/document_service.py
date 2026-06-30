@@ -229,7 +229,7 @@ def optimize_document(
         logger.error(f"generate_docx failed for doc {doc_id}: {e}")
         raise ValueError(f"文档生成失败: {str(e)}")
 
-    # 版头/版记注入（参考 gongwen 项目方案）
+    # 版头/版记注入
     try:
         from api.routes.optimize import _inject_header_to_docx, _inject_footer_to_docx
         if header_config and header_config.get('enabled', True):

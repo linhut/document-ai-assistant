@@ -412,7 +412,7 @@ def _set_picture_absolute_position(
 
 
 # ---------------------------------------------------------------------------
-#  版头/版记直接注入（参考 gongwen 项目方案，使用 python-docx API）
+#  版头/版记直接注入（使用 python-docx API）
 # ---------------------------------------------------------------------------
 
 def _insert_before(new_para, reference_p, body) -> None:

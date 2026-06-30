@@ -1,4 +1,9 @@
 /*
+ * This file is part of the Official Document AI Assistant.
+ * (c) 2026 Jose AI (https://www.linhut.cn)
+ * Licensed under the MIT License. See the LICENSE file for details.
+ */
+/*
  * 共享文档数据类型
  * 用于 A4 预览组件之间的类型复用
  */

@@ -1,3 +1,6 @@
+# This file is part of the Official Document AI Assistant.
+# (c) 2026 Jose AI (https://www.linhut.cn)
+# Licensed under the MIT License. See the LICENSE file for details.
 """
 生成应用统一图标：.ico (Windows) + .svg (Web favicon)
 设计：深蓝底色 + 白色文档 + 金色横线 + 红色印章
