@@ -138,6 +138,16 @@ jobs:
             --hidden-import pydantic --hidden-import httpx --hidden-import docx \
             main.py
 
+      - name: Prepare dist-resources
+        shell: bash
+        run: |
+          mkdir -p frontend/dist-resources/backend
+          cp backend/dist/backend_server frontend/dist-resources/backend/
+          cp -r rules frontend/dist-resources/backend/rules
+          cp -r templates frontend/dist-resources/backend/templates
+          mkdir -p frontend/dist-resources/backend/TTF
+          mkdir -p frontend/dist-resources/backend/data
+
       - name: Build frontend + Electron
         shell: bash
         run: |
