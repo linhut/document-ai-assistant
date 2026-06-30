@@ -3,7 +3,7 @@
 (c) 2026 Jose AI (https://www.linhut.cn)
 Licensed under the MIT License. See the LICENSE file for details.
 
-多平台打包脚本 — 参考 Word-Formatter-Pro 的 build_release.py
+多平台打包脚本
 
 支持打包目标：
   1. PyInstaller 后端 (backend_server.exe)

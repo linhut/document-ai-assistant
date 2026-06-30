@@ -1,3 +1,6 @@
+# This file is part of the Official Document AI Assistant.
+# (c) 2026 Jose AI (https://www.linhut.cn)
+# Licensed under the MIT License. See the LICENSE file for details.
 """
 模板生成测试：验证所有公文类型的模板均可正常生成，且字体 XML 正确。
 """

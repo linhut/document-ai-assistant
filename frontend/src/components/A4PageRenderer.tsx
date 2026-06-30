@@ -1,4 +1,9 @@
 /*
+ * This file is part of the Official Document AI Assistant.
+ * (c) 2026 Jose AI (https://www.linhut.cn)
+ * Licensed under the MIT License. See the LICENSE file for details.
+ */
+/*
  * A4PageRenderer — A4 分页渲染器
  *
  * 统一的 A4 预览组件，所有 A4 预览页面共用。
@@ -6,7 +11,7 @@
  *
  * GB/T 9704 标准：210mm × 297mm，版心 156mm × 225mm
  *
- * 设计原则（参考 hehecat/gongwen）：
+ * 设计原则：
  * - 配置层使用 pt 数值（16, 28.95, 22 等）
  * - CSS 渲染时直接使用相同数值作为 px（16px ≈ 16pt 在视觉密度上近似等价）
  * - 这保证了预览与 Word 文档的行数/分页高度一致

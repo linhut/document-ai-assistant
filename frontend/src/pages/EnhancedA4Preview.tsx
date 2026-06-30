@@ -1,4 +1,9 @@
 /*
+ * This file is part of the Official Document AI Assistant.
+ * (c) 2026 Jose AI (https://www.linhut.cn)
+ * Licensed under the MIT License. See the LICENSE file for details.
+ */
+/*
  * EnhancedA4Preview — A4 实时预览编辑页（Module B）
  *
  * 左侧：格式设置面板（边距/字体/版头版记/特殊选项/高级设置）

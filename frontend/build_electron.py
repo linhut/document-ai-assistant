@@ -1,3 +1,6 @@
+# This file is part of the Official Document AI Assistant.
+# (c) 2026 Jose AI (https://www.linhut.cn)
+# Licensed under the MIT License. See the LICENSE file for details.
 """
 build_electron.py — Windows electron-builder 完整包装脚本
 自动处理 win-unpacked.tmp → win-unpacked 的 EPERM rename 问题

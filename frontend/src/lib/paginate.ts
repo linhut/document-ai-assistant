@@ -1,4 +1,9 @@
 /*
+ * This file is part of the Official Document AI Assistant.
+ * (c) 2026 Jose AI (https://www.linhut.cn)
+ * Licensed under the MIT License. See the LICENSE file for details.
+ */
+/*
  * paginate.ts — A4 分页引擎（行级 DOM 度量方案）
  *
  * 核心思路（复用 gongwen 项目算法）：

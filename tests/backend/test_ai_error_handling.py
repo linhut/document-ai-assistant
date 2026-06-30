@@ -1,3 +1,6 @@
+# This file is part of the Official Document AI Assistant.
+# (c) 2026 Jose AI (https://www.linhut.cn)
+# Licensed under the MIT License. See the LICENSE file for details.
 """
 AI Provider 测试：错误处理、重试机制、超时控制（使用 mock，不需要真实 API）
 """

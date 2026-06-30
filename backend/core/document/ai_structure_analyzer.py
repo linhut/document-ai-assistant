@@ -4,7 +4,7 @@
 """
 AI Structure Analyzer — 基于AI的文档结构智能分析
 
-参考 AIPoliDoc 的AI分类方案：
+功能：
 - 提取段落文本（前80字符）
 - 发送给AI模型进行语义分类
 - 返回结构化分类结果，更新DocumentModel的标题/正文标记
@@ -94,7 +94,7 @@ def classify_with_ai(model: DocumentModel, provider_name: str = "openai") -> boo
         text = para.text.strip()
         if not text:
             continue
-        # 截取前80字符（参考AIPoliDoc的优化模式）
+        # 截取前80字符
         truncated = text[:80] + ("..." if len(text) > 80 else "")
         paragraphs_text.append(f"{i}: {truncated}")
 
@@ -154,7 +154,7 @@ def _parse_ai_response(raw: str) -> list[dict] | None:
     """
     解析AI返回的JSON分类结果。
 
-    包含5层容错策略（参考AIPoliDoc的JSON修复方案）：
+    包含5层容错策略：
     1. 直接解析
     2. 提取```json```代码块
     3. 提取[...]数组
