@@ -56,3 +56,23 @@ backend/dist/
 # Office plugin build
 office-plugin/node_modules/
 office-plugin/dist/
+
+# Code analysis tool cache
+.codegraph/
+
+# Office temporary/lock files
+~$*
+
+# Old docs / phase reports (no longer needed in version control)
+docs/archive/
+docs/reports/
+docs/OPTIMIZATION_REPORT.md
+docs/refactor-feasibility-report.md
+
+# Local scripts
+启动应用.bat
+assets/LinuxDo.png
+generate_icon.py
+scripts/generate_missing_templates.py
+*.pid
+*.tmp
