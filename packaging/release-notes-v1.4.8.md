@@ -55,10 +55,13 @@
 |------|------|------|
 | `doc-optimizer-v1.4.8-win-x64.exe` | Windows x64 | NSIS 安装包 |
 | `doc-optimizer-v1.4.8-win-arm64.exe` | Windows ARM64 | 信创 ARM 平台 |
-| `doc-optimizer-v1.4.8-linux-x64.AppImage` | Linux x64 | AppImage 格式 |
-| `doc-optimizer-v1.4.8-mac-x64.dmg` | macOS x64 | DMG 安装包 |
-| `doc-optimizer-v1.4.8-mac-arm64.dmg` | macOS ARM64 | Apple Silicon |
+| `AI.-1.4.8-x86_64.AppImage` | Linux x64 | AppImage 格式 |
+| `AI.-1.4.8-amd64.deb` | Linux x64 | deb 安装包 |
+| `AI.-1.4.8.dmg` | macOS x64 | DMG 安装包 |
+| `AI.-1.4.8-arm64.dmg` | macOS ARM64 | Apple Silicon |
 | `doc-optimizer-v1.4.8-portable.zip` | 全平台 | 便携版（无需安装） |
+| `backend_server.exe` | Windows | 后端服务 |
+| `doc-optimizer-cli.exe` | Windows | CLI 工具 |
 
 ## 🔧 技术变更
 
