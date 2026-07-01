@@ -73,7 +73,6 @@ docs/refactor-feasibility-report.md
 
 # Local test scripts and utilities (not needed in repo)
 启动应用.bat
-assets/LinuxDo.png
 generate_icon.py
 frontend/build_electron.py
 packaging/build_release.py
