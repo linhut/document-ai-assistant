@@ -136,6 +136,7 @@ jobs:
             --add-data "../templates${{ matrix.pyinstaller_sep }}templates" \
             --add-data "config.py${{ matrix.pyinstaller_sep }}." \
             --add-data "auth.py${{ matrix.pyinstaller_sep }}." \
+            --add-data "main.py${{ matrix.pyinstaller_sep }}." \
             --hidden-import uvicorn --hidden-import fastapi --hidden-import sqlalchemy \
             --hidden-import pydantic --hidden-import httpx --hidden-import docx \
             --hidden-import cryptography --hidden-import yaml --hidden-import aiofiles \
