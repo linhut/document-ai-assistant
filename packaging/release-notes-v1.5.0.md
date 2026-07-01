@@ -1,5 +1,19 @@
 ## v1.5.0 更新说明
 
+### 本次版本包
+
+| 包名 | 平台 | 说明 |
+|------|------|------|
+| `doc-optimizer-v1.5.0-win-x64.exe` | Windows x64 | NSIS 安装包 |
+| `doc-optimizer-v1.5.0-win-arm64.exe` | Windows ARM64 | 信创 ARM 平台 |
+| `doc-optimizer-v1.5.0-x86_64.AppImage` | Linux x64 | AppImage 格式 |
+| `doc-optimizer-v1.5.0-amd64.deb` | Linux x64 | Debian/Ubuntu 安装包 |
+| `doc-optimizer-v1.5.0-x64.dmg` | macOS x64 | Intel Mac |
+| `doc-optimizer-v1.5.0-arm64.dmg` | macOS ARM64 | Apple Silicon Mac |
+| `doc-optimizer-portable.zip` | Windows 通用 | 便携版（免安装） |
+| `backend_server.exe` | Windows | 后端服务（独立运行） |
+| `doc-optimizer-cli.exe` | Windows | CLI 命令行工具 |
+
 ### 版记（末页）—— 完全符合 GB/T 9704-2012
 
 - **分隔线**：上下两条 0.35mm 黑色实线，与版心等宽
@@ -36,7 +50,7 @@
 - 数据库定期备份机制
 - 文件锁机制（多文档并发处理）
 - 认证 Token 自动获取（前端启动时自动同步）
-- C 页码奇偶页设置（前端传参归一化 + settings.xml 文档级开关）
+- 页码奇偶页设置（前端传参归一化 + settings.xml 文档级开关）
 - CI 流程：添加 ruff（Python 代码检查）和 ESLint（前端代码检查）
 - Release 流程：body_path 自动降级（文件不存在时生成默认说明）
 - 表格定位修复：preview-download 保留 insert_after_index
