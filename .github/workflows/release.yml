@@ -134,8 +134,28 @@ jobs:
             --add-data "utils${{ matrix.pyinstaller_sep }}utils" \
             --add-data "../rules${{ matrix.pyinstaller_sep }}rules" \
             --add-data "../templates${{ matrix.pyinstaller_sep }}templates" \
+            --add-data "config.py${{ matrix.pyinstaller_sep }}." \
+            --add-data "wfp_cli.py${{ matrix.pyinstaller_sep }}." \
+            --add-data "verify_all.py${{ matrix.pyinstaller_sep }}." \
             --hidden-import uvicorn --hidden-import fastapi --hidden-import sqlalchemy \
             --hidden-import pydantic --hidden-import httpx --hidden-import docx \
+            --hidden-import config --hidden-import auth \
+            --hidden-import core.document.models --hidden-import core.document.font_utils \
+            --hidden-import core.rules.engine --hidden-import core.rules.loader \
+            --hidden-import core.rules.manager --hidden-import core.rules.fixer \
+            --hidden-import core.document.parser --hidden-import core.document.generator \
+            --hidden-import core.document.modifier --hidden-import core.document.parser_format \
+            --hidden-import core.template.style_manager --hidden-import core.template.generator \
+            --hidden-import utils.logger --hidden-import utils.file_utils \
+            --hidden-import utils.crypto --hidden-import utils.db_backup \
+            --hidden-import db.database --hidden-import db.models \
+            --hidden-import services.document_service \
+            --hidden-import api.routes.documents --hidden-import api.routes.check \
+            --hidden-import api.routes.optimize --hidden-import api.routes.ai \
+            --hidden-import api.routes.settings --hidden-import api.routes.templates \
+            --hidden-import api.routes.template_download --hidden-import api.routes.rules \
+            --hidden-import api.routes.office --hidden-import api.routes.auth \
+            --hidden-import api.schemas.api_models \
             main.py
 
       - name: Prepare dist-resources
