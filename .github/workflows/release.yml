@@ -127,7 +127,7 @@ jobs:
           cd backend
           # 使用 onedir 模式 + .spec 文件（自动分析全部模块依赖）
           pyinstaller backend_server.spec --clean --noconfirm \
-            --distpath ../dist
+            --distpath ./dist
           echo "=== backend/dist/ contents ==="
           ls -la ../dist/backend_server/
           echo "=== backend_server.exe exists? ==="
