@@ -570,3 +570,14 @@ fix_rules:
   - id: FIX-C020
     action: normalize_headings
     target: all
+
+  # --- 页码修复 ---
+  - id: FIX-C025
+    ref_check: CHK-C023
+    action: set_page_number
+    target: page_footer
+    value:
+      font: "宋体"
+      size: 14pt
+      alignment: "center"
+      format: "— {PAGE} —"

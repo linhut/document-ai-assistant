@@ -21,8 +21,37 @@ jobs:
       - name: Run tests
         run: pytest tests/ -v --tb=short
 
+  lint-python:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ruff
+        run: pip install ruff
+      - name: Run ruff check
+        run: ruff check backend/ tests/ --output-format=github
+
+  lint-frontend:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+      - name: Run ESLint
+        run: |
+          cd frontend
+          npx eslint src/ --max-warnings=50
+
   frontend-build:
     runs-on: windows-latest
+    needs: [lint-python, lint-frontend]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -29,6 +29,8 @@ frontend/dist-resources/
 .DS_Store
 Thumbs.db
 Thumbs.db:encryptable
+# Windows reserved device name (appears as untracked in git)
+nul
 
 # Build outputs
 *.exe
@@ -69,12 +71,21 @@ docs/reports/
 docs/OPTIMIZATION_REPORT.md
 docs/refactor-feasibility-report.md
 
-# Local scripts and utilities (not needed in repo)
+# Local test scripts and utilities (not needed in repo)
 启动应用.bat
 assets/LinuxDo.png
 generate_icon.py
 frontend/build_electron.py
 packaging/build_release.py
+
+# Test artifacts (local debugging only)
+/test_*.py
+start_*.bat
+start_*.ps1
+backend/*.log
+backend/..*.*.log
+*.log
+*.tmp
 
 # Template generation scripts (run locally, output committed instead)
 scripts/generate_missing_templates.py

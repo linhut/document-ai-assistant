@@ -194,6 +194,7 @@ def optimize_document(
     selected_rule_ids: list[str] | None = None,
     header_config: dict | None = None,
     footer_note_config: dict | None = None,
+    page_number_config: dict | None = None,
 ) -> dict:
     """Check + fix a document, then generate the optimized docx."""
     doc = get_document(db, doc_id)
@@ -231,13 +232,15 @@ def optimize_document(
 
     # 版头/版记注入
     try:
-        from api.routes.optimize import _inject_header_to_docx, _inject_footer_to_docx
+        from api.routes.optimize import _inject_header_to_docx, _inject_footer_to_docx, _inject_page_number_to_docx
         if header_config and header_config.get('enabled', True):
             _inject_header_to_docx(str(out_path), header_config)
         if footer_note_config and footer_note_config.get('enabled', True):
             _inject_footer_to_docx(str(out_path), footer_note_config)
+        if page_number_config and page_number_config.get('enabled', True):
+            _inject_page_number_to_docx(str(out_path), page_number_config)
     except Exception as e:
-        logger.warning(f"Header/footer injection failed (non-fatal): {e}", exc_info=True)
+        logger.warning(f"Header/footer/page-number injection failed (non-fatal): {e}", exc_info=True)
 
     # 更新数据库（带 rollback 保护）
     try:

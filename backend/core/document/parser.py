@@ -25,6 +25,7 @@ from core.document.models import (
     ParagraphFormat, PageSetup, Table, TableCell, HeaderFooter
 )
 from core.document.font_utils import detect_font_from_run, get_effective_font
+from core.document.parser_format import parse_paragraph_format, parse_run, _safe_pt2
 from utils.logger import logger
 
 # 中文公文标题特征字体映射 → heading_level
@@ -269,12 +270,12 @@ def _parse_paragraph(para, index: int) -> Paragraph:
                 heading_level = 1
 
     # 段落格式
-    para_format = _parse_paragraph_format(para)
+    para_format = parse_paragraph_format(para)
 
     # Run 格式
     runs = []
     for run_idx, run in enumerate(para.runs):
-        parsed_run = _parse_run(run, run_idx)
+        parsed_run = parse_run(run, run_idx)
         runs.append(parsed_run)
 
     # 如果没有 run 但有文本，创建一个文本 run
@@ -754,20 +755,10 @@ def _parse_paragraph_format(para) -> ParagraphFormat:
     left_indent_pt = _safe_pt2(pf.left_indent)
     right_indent_pt = _safe_pt2(pf.right_indent)
 
-    return ParagraphFormat(
-        alignment=alignment,
-        line_spacing_pt=line_spacing_pt,
-        line_spacing_rule=line_spacing_rule,
-        first_line_indent_pt=first_line_indent_pt,
-        left_indent_pt=left_indent_pt,
-        right_indent_pt=right_indent_pt,
-        space_before_pt=_safe_pt2(pf.space_before, 0),
-        space_after_pt=_safe_pt2(pf.space_after, 0),
-    )
 
 
 # ---------------------------------------------------------------------------
-#  Run
+#  Table
 # ---------------------------------------------------------------------------
 
 def _parse_run(run, index: int) -> Run:

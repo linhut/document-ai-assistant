@@ -88,12 +88,13 @@ export default function TemplateRules() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // TODO: 实现保存规则API
-      info('提示', '规则保存功能将在后续版本实现');
-      // await apiClient.put(`/api/templates/${templateId}/rules`, { check_rules: rules });
-      // success('成功', '规则保存成功！');
+      await apiClient.put(`/api/templates/${templateId}/rules`, {
+        check_rules: rules,
+        fix_rules: [],
+      });
+      success('成功', `规则保存成功！共 ${rules.length} 条检查规则`);
     } catch (error: any) {
-      showError('错误', '保存失败：' + (error.response?.data?.detail || '请重试'));
+      showError('错误', '保存失败：' + (error?.response?.data?.detail || error?.message || '请重试'));
     } finally {
       setSaving(false);
     }

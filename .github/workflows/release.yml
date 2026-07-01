@@ -239,11 +239,25 @@ jobs:
       - name: List downloaded artifacts
         run: find artifacts/ -type f | head -30
 
+      - name: Prepare release notes
+        shell: bash
+        run: |
+          RELEASE_NOTES="packaging/release-notes-${{ github.ref_name }}.md"
+          if [ -f "$RELEASE_NOTES" ]; then
+            echo "Found release notes: $RELEASE_NOTES"
+          else
+            echo "# Release ${{ github.ref_name }}" > "$RELEASE_NOTES"
+            echo "" >> "$RELEASE_NOTES"
+            echo "Automatically generated release for ${{ github.ref_name }}." >> "$RELEASE_NOTES"
+            echo "See packaging/ directory for available release notes." >> "$RELEASE_NOTES"
+            echo "Created fallback release notes: $RELEASE_NOTES"
+          fi
+
       - name: Upload to release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: v${{ github.ref_name }}
+          name: ${{ github.ref_name }}
           body_path: packaging/release-notes-${{ github.ref_name }}.md
           draft: false
           prerelease: false

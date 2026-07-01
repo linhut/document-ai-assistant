@@ -314,7 +314,7 @@ export default function EnhancedA4Preview() {
               {cfg.header.enabled && (
                 <div className="space-y-2 ml-1 pl-3 border-l-2 border-primary-100">
                   <TextField label="发文机关" value={cfg.header.orgName} onChange={v => p({ header: { ...cfg.header, orgName: v } })} placeholder="国务院办公厅文件" hint="红色方正小标宋居中" />
-                  <TextField label="发文字号" value={cfg.header.docNumber} onChange={v => p({ header: { ...cfg.header, docNumber: v } })} placeholder="国办发〔2024〕1号" hint="六角括号" />
+                  <TextField label="发文字号" value={cfg.header.docNumber} onChange={v => p({ header: { ...cfg.header, docNumber: v } })} placeholder="国办发〔2026〕1号" hint="国办发〔2026〕1号" />
                   <TextField label="签发人" value={cfg.header.signer} onChange={v => p({ header: { ...cfg.header, signer: v } })} placeholder="张三" hint="仅上行文" />
                 </div>
               )}

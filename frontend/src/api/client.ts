@@ -40,6 +40,30 @@ function getBaseUrl(): string {
 const API_BASE_URL = getBaseUrl();
 
 /**
+ * 初始化 auth token：从后端公开接口获取并存入 localStorage。
+ * 首次启动时自动调用，无需用户手动配置。
+ */
+export async function initAuthToken(): Promise<string | null> {
+  try {
+    const base = API_BASE_URL;
+    const resp = await fetch(`${base}/api/auth/token`);
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data.token) {
+        localStorage.setItem('auth_token', data.token);
+        return data.token;
+      }
+    }
+  } catch (e) {
+    console.warn('initAuthToken: failed to fetch token, will retry on next request', e);
+  }
+  return null;
+}
+
+// Auto-init on first load
+initAuthToken();
+
+/**
  * 底层 axios 实例。
  * 响应拦截器会自动 unwrap response.data，
  * 因此实际返回的是后端 JSON payload，而非 AxiosResponse。

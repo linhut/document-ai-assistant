@@ -897,3 +897,44 @@ async def get_template(template_id: str):
             "exists": False,
             "error": str(e)
         }
+
+
+class SaveTemplateRulesRequest(BaseModel):
+    """Request body for saving template rules."""
+    check_rules: list[dict] = []
+    fix_rules: list[dict] = []
+
+
+@router.put("/{template_id}/rules")
+async def save_template_rules(template_id: str, body: SaveTemplateRulesRequest):
+    """Save (update) the check and fix rules for a template.
+
+    Rules are saved to the user_rules directory.
+    """
+    from config import USER_RULES_DIR
+    from core.rules.manager import load_rules_merged
+
+    # Load existing merged rules as a base
+    try:
+        existing = load_rules_merged(template_id)
+    except Exception:
+        existing = {}
+
+    # Update with new check/fix rules
+    if body.check_rules:
+        existing["check_rules"] = body.check_rules
+    if body.fix_rules:
+        existing["fix_rules"] = body.fix_rules
+
+    # Save to user_rules directory
+    USER_RULES_DIR.mkdir(parents=True, exist_ok=True)
+    file_path = USER_RULES_DIR / f"{template_id}.yaml"
+
+    try:
+        with open(file_path, "w", encoding="utf-8") as f:
+            yaml.dump(existing, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+        logger.info(f"Saved template rules for {template_id} to {file_path}")
+        return {"success": True, "message": f"模板规则已保存 ({len(body.check_rules)} 条检查规则)", "template_id": template_id}
+    except Exception as e:
+        logger.error(f"Failed to save template rules for {template_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"保存规则失败：{e}")

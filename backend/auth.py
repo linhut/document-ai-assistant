@@ -25,6 +25,7 @@ _TOKEN_FILE = APP_DATA_DIR / ".auth_token"
 # Public paths that do NOT require authentication
 _PUBLIC_PATHS: set[str] = {
     "/api/health",
+    "/api/auth/token",
     "/api/office/health",
     "/api/office/check",
     "/api/office/fix",
