@@ -215,12 +215,22 @@ jobs:
       - name: Create portable package
         shell: bash
         run: |
+          echo "=== Contents of dist/ ==="
+          find dist/ -type f -name "*.exe" 2>/dev/null || ls -laR dist/ | head -30
           mkdir -p portable/doc-optimizer
-          cp dist/backend/dist/backend_server.exe portable/doc-optimizer/
+          if [ -f "dist/backend/dist/backend_server.exe" ]; then
+            cp dist/backend/dist/backend_server.exe portable/doc-optimizer/
+          elif [ -f "dist/backend_server.exe" ]; then
+            cp dist/backend_server.exe portable/doc-optimizer/
+          fi
           cp -r frontend/dist portable/doc-optimizer/frontend
           cp -r rules portable/doc-optimizer/rules
           cp -r templates portable/doc-optimizer/templates
-          cp dist/backend/dist/doc-optimizer-cli.exe portable/doc-optimizer/
+          if [ -f "dist/backend/dist/doc-optimizer-cli.exe" ]; then
+            cp dist/backend/dist/doc-optimizer-cli.exe portable/doc-optimizer/
+          elif [ -f "dist/doc-optimizer-cli.exe" ]; then
+            cp dist/doc-optimizer-cli.exe portable/doc-optimizer/
+          fi
           cd portable
           python -c "import shutil; shutil.make_archive('../doc-optimizer-portable', 'zip', '.', 'doc-optimizer')"
 
