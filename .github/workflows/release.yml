@@ -125,21 +125,29 @@ jobs:
         run: |
           pip install pyinstaller
           cd backend
-          # 使用 onedir 模式 + .spec 文件（自动分析全部模块依赖）
-          pyinstaller backend_server.spec --clean --noconfirm \
-            --distpath ./dist
+          # onedir 模式 + 显式 add-data 所有模块目录 + 根级模块
+          pyinstaller --onedir --name backend_server \
+            --add-data "core${{ matrix.pyinstaller_sep }}core" \
+            --add-data "api${{ matrix.pyinstaller_sep }}api" \
+            --add-data "ai${{ matrix.pyinstaller_sep }}ai" \
+            --add-data "db${{ matrix.pyinstaller_sep }}db" \
+            --add-data "services${{ matrix.pyinstaller_sep }}services" \
+            --add-data "utils${{ matrix.pyinstaller_sep }}utils" \
+            --add-data "config.py${{ matrix.pyinstaller_sep }}." \
+            --add-data "auth.py${{ matrix.pyinstaller_sep }}." \
+            --add-data "main.py${{ matrix.pyinstaller_sep }}." \
+            --hidden-import uvicorn --hidden-import fastapi --hidden-import sqlalchemy \
+            --hidden-import pydantic --hidden-import httpx --hidden-import docx \
+            --hidden-import cryptography --hidden-import yaml --hidden-import aiofiles \
+            --hidden-import multipart --hidden-import lxml --hidden-import websockets \
+            --hidden-import core.document.models --hidden-import config \
+            frozen_main.py
           echo "=== backend/dist/ contents ==="
-          ls -la ./dist/backend_server/ 2>/dev/null || echo "(directory listing failed)"
+          ls -la ./dist/backend_server/ 2>/dev/null || echo "(no dist)"
           echo "=== backend_server binary exists? ==="
-          if [ -f ./dist/backend_server/backend_server.exe ]; then
-            echo "YES (.exe)"
-          elif [ -f ./dist/backend_server/backend_server ]; then
-            echo "YES (no extension)"
-          else
-            echo "NO - binary not found"
-            ls -la ./dist/ 2>/dev/null || true
-            exit 1
-          fi
+          if [ -f ./dist/backend_server/backend_server.exe ]; then echo "YES (.exe)"
+          elif [ -f ./dist/backend_server/backend_server ]; then echo "YES (no ext)"
+          else echo "NO"; ls -la ./dist/ 2>/dev/null || true; exit 1; fi
 
       - name: Prepare dist-resources
         shell: bash
