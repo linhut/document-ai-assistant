@@ -141,8 +141,17 @@ jobs:
       - name: Prepare dist-resources
         shell: bash
         run: |
-          mkdir -p frontend/dist-resources/backend
-          cp backend/dist/backend_server frontend/dist-resources/backend/
+          mkdir -p frontend/dist-resources/backend/backend_server
+          # 处理平台差异：Windows 产 backend_server.exe，Linux/macOS 产 backend_server
+          if [ -f "backend/dist/backend_server.exe" ]; then
+            cp backend/dist/backend_server.exe frontend/dist-resources/backend/backend_server/
+          elif [ -f "backend/dist/backend_server" ]; then
+            cp backend/dist/backend_server frontend/dist-resources/backend/backend_server/
+          else
+            echo "ERROR: backend_server not found in backend/dist/"
+            ls -la backend/dist/
+            exit 1
+          fi
           cp -r rules frontend/dist-resources/backend/rules
           cp -r templates frontend/dist-resources/backend/templates
           mkdir -p frontend/dist-resources/backend/TTF
