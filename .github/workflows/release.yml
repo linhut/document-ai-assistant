@@ -141,6 +141,15 @@ jobs:
             --hidden-import cryptography --hidden-import yaml --hidden-import aiofiles \
             --hidden-import multipart --hidden-import lxml --hidden-import websockets \
             --hidden-import core.document.models --hidden-import config \
+            --hidden-import fastapi.middleware.cors --hidden-import uvicorn.logging \
+            --hidden-import uvicorn.loops.auto --hidden-import uvicorn.protocols.http.auto \
+            --hidden-import uvicorn.protocols.websockets.auto --hidden-import uvicorn.lifespan.on \
+            --hidden-import sqlalchemy.dialects.sqlite --hidden-import pydantic.deprecated.decorator \
+            --hidden-import cryptography.fernet --hidden-import cryptography.hazmat.backends \
+            --hidden-import multipart.multipart --hidden-import httpx._transports.default \
+            --hidden-import docx.oxml --hidden-import docx.oxml.ns --hidden-import docx.oxml.parser \
+            --hidden-import docx.oxml.text.paragraph --hidden-import docx.opc.constants \
+            --hidden-import docx.opc.part --hidden-import docx.enum.text --hidden-import docx.shared \
             frozen_main.py
           echo "=== backend/dist/ contents ==="
           ls -la ./dist/backend_server/ 2>/dev/null || echo "(no dist)"
