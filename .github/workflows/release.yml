@@ -156,6 +156,13 @@ jobs:
             --hidden-import api.routes.template_download --hidden-import api.routes.rules \
             --hidden-import api.routes.office --hidden-import api.routes.auth \
             --hidden-import api.schemas.api_models \
+            --hidden-import cryptography --hidden-import cryptography.fernet \
+            --hidden-import cryptography.hazmat --hidden-import cryptography.hazmat.backends \
+            --hidden-import cryptography.hazmat.primitives --hidden-import cryptography.hazmat.primitives.ciphers \
+            --hidden-import yaml --hidden-import aiofiles --hidden-import multipart \
+            --hidden-import lxml --hidden-import lxml.etree --hidden-import lxml.objectify \
+            --hidden-import websockets --hidden-import anyio \
+            --hidden-import email.mime.text --hidden-import email.mime.multipart \
             main.py
 
       - name: Prepare dist-resources
