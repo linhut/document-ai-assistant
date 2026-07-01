@@ -49,6 +49,7 @@ _ACTION_MAP = {
     "fix_bold_range": lambda model, _target, _value, _rules: fix_bold_range(model),
     "normalize_punctuation": lambda model, _target, _value, _rules: normalize_punctuation(model),
     "normalize_headings": lambda model, _target, _value, _rules: normalize_heading_content(model),
+    "set_page_number": lambda model, target, value, _rules: _apply_page_number(model, target, value),
 }
 
 
@@ -114,3 +115,65 @@ def apply_fixes(model: DocumentModel, rules: dict[str, Any], selected_rule_ids: 
 
     logger.info(f"Fixes applied: {applied} succeeded, {skipped} skipped")
     return fixed
+
+
+def _apply_page_number(model: DocumentModel, target: str, value: dict) -> None:
+    """
+    Apply page number formatting to the document footer.
+    
+    value format:
+        {
+            "font": "宋体",
+            "size": "14pt",
+            "alignment": "center",
+            "format": "- {PAGE} -"
+        }
+    """
+    if not isinstance(value, dict):
+        logger.warning(f"set_page_number: value must be a dict, got {type(value)}")
+        return
+
+    font = value.get("font", "宋体")
+    size_pt = _parse_pt_value(value.get("size", "14pt"))
+    alignment = value.get("alignment", "center")
+    fmt = value.get("format", "{PAGE}")
+
+    # 更新所有 footer 段落：设置字体、对齐，并将文本替换为页码格式
+    for footer in model.footers:
+        for para in footer.paragraphs:
+            # Set alignment
+            para.format.alignment = alignment
+            # Set font on each run
+            for run in para.runs:
+                run.format.font_name = font
+                run.format.font_size_pt = size_pt
+            # 【关键】将段落文本替换为页码格式（含 {PAGE} 占位符）
+            # 这样 _add_page_number_field 才能在生成时识别并写入域代码
+            para.text = fmt
+            if para.runs:
+                para.runs[0].text = fmt
+        # Mark as having page number
+        footer.has_page_number = True
+
+    # 如果没有 footer 段落，创建一个新的
+    if not model.footers:
+        from core.document.models import HeaderFooter, Paragraph, Run, RunFormat
+        hf = HeaderFooter(
+            section_index=0,
+            type="footer",
+            text=fmt,
+            has_page_number=True,
+            paragraphs=[
+                Paragraph(
+                    index=0,
+                    text=fmt,
+                    runs=[Run(index=0, text=fmt, format=RunFormat(
+                        font_name=font, font_size_pt=size_pt,
+                    ))],
+                    format=__import__('core.document.models', fromlist=['ParagraphFormat']).ParagraphFormat(
+                        alignment=alignment,
+                    ),
+                )
+            ],
+        )
+        model.footers.append(hf)

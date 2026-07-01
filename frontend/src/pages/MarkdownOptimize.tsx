@@ -192,7 +192,7 @@ export default function MarkdownOptimize() {
       const resp = await apiClient.post<{ success: boolean; text?: string; message?: string }>('/api/optimize/ai-polish', {
         text: markdownText,
         doc_type: markdownDocType,
-      }, { timeout: 20000 });
+      }, { timeout: 120000 });
       if (resp.success && resp.text) {
         setMarkdownText(resp.text);
       } else if (resp.message) {

@@ -1,0 +1,690 @@
+{
+  "metadata": {
+    "title": "",
+    "author": "python-docx",
+    "subject": "",
+    "created": "2013-12-23 23:15:00+00:00",
+    "modified": "2013-12-23 23:15:00+00:00",
+    "category": ""
+  },
+  "page_setup": {
+    "paper_width_mm": 210.01,
+    "paper_height_mm": 297.0,
+    "margin_top_mm": 37.01,
+    "margin_bottom_mm": 35.0,
+    "margin_left_mm": 27.99,
+    "margin_right_mm": 26.0,
+    "orientation": "portrait"
+  },
+  "paragraphs": [
+    {
+      "index": 0,
+      "text": "关于XXX工作的通知",
+      "style_name": "Heading 1",
+      "is_heading": true,
+      "heading_level": 0,
+      "role": "title",
+      "runs": [
+        {
+          "index": 0,
+          "text": "关于XXX工作的通知",
+          "format": {
+            "font_name": "方正小标宋简体",
+            "font_size_pt": 22.0,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": null
+          }
+        }
+      ],
+      "format": {
+        "alignment": "center",
+        "first_line_indent_pt": null,
+        "left_indent_pt": null,
+        "right_indent_pt": null,
+        "space_before_pt": 0.0,
+        "space_after_pt": 0.0,
+        "line_spacing_pt": null,
+        "line_spacing_rule": null
+      }
+    },
+    {
+      "index": 1,
+      "text": "各部门、各单位：",
+      "style_name": "Normal",
+      "is_heading": false,
+      "heading_level": null,
+      "role": "recipient",
+      "runs": [
+        {
+          "index": 0,
+          "text": "各部门、各单位：",
+          "format": {
+            "font_name": "仿宋_GB2312",
+            "font_size_pt": 16.0,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": null
+          }
+        }
+      ],
+      "format": {
+        "alignment": "left",
+        "first_line_indent_pt": null,
+        "left_indent_pt": null,
+        "right_indent_pt": null,
+        "space_before_pt": 0.0,
+        "space_after_pt": 0.0,
+        "line_spacing_pt": null,
+        "line_spacing_rule": null
+      }
+    },
+    {
+      "index": 2,
+      "text": "根据上级有关文件精神，现就XXX工作通知如下：",
+      "style_name": "Normal",
+      "is_heading": false,
+      "heading_level": null,
+      "role": "body",
+      "runs": [
+        {
+          "index": 0,
+          "text": "根据上级有关文件精神，现就XXX工作通知如下：",
+          "format": {
+            "font_name": "仿宋_GB2312",
+            "font_size_pt": 16.0,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": null
+          }
+        }
+      ],
+      "format": {
+        "alignment": "left",
+        "first_line_indent_pt": null,
+        "left_indent_pt": null,
+        "right_indent_pt": null,
+        "space_before_pt": 0.0,
+        "space_after_pt": 0.0,
+        "line_spacing_pt": null,
+        "line_spacing_rule": null
+      }
+    },
+    {
+      "index": 3,
+      "text": "一、工作内容",
+      "style_name": "Normal",
+      "is_heading": true,
+      "heading_level": 1,
+      "role": "body",
+      "runs": [
+        {
+          "index": 0,
+          "text": "一、工作内容",
+          "format": {
+            "font_name": "仿宋_GB2312",
+            "font_size_pt": 16.0,
+            "bold": true,
+            "italic": false,
+            "underline": false,
+            "color": null
+          }
+        }
+      ],
+      "format": {
+        "alignment": "left",
+        "first_line_indent_pt": null,
+        "left_indent_pt": null,
+        "right_indent_pt": null,
+        "space_before_pt": 0.0,
+        "space_after_pt": 0.0,
+        "line_spacing_pt": null,
+        "line_spacing_rule": null
+      }
+    },
+    {
+      "index": 4,
+      "text": "请各单位认真做好相关工作，确保任务落实到位。",
+      "style_name": "Normal",
+      "is_heading": false,
+      "heading_level": null,
+      "role": "body",
+      "runs": [
+        {
+          "index": 0,
+          "text": "请各单位认真做好相关工作，确保任务落实到位。",
+          "format": {
+            "font_name": "仿宋_GB2312",
+            "font_size_pt": 16.0,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": null
+          }
+        }
+      ],
+      "format": {
+        "alignment": "left",
+        "first_line_indent_pt": null,
+        "left_indent_pt": null,
+        "right_indent_pt": null,
+        "space_before_pt": 0.0,
+        "space_after_pt": 0.0,
+        "line_spacing_pt": null,
+        "line_spacing_rule": null
+      }
+    },
+    {
+      "index": 5,
+      "text": "XXX单位",
+      "style_name": "Normal",
+      "is_heading": false,
+      "heading_level": null,
+      "role": "signature",
+      "runs": [
+        {
+          "index": 0,
+          "text": "XXX单位",
+          "format": {
+            "font_name": "仿宋_GB2312",
+            "font_size_pt": 16.0,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": null
+          }
+        }
+      ],
+      "format": {
+        "alignment": "right",
+        "first_line_indent_pt": null,
+        "left_indent_pt": null,
+        "right_indent_pt": null,
+        "space_before_pt": 0.0,
+        "space_after_pt": 0.0,
+        "line_spacing_pt": null,
+        "line_spacing_rule": null
+      }
+    },
+    {
+      "index": 6,
+      "text": "2026年6月23日",
+      "style_name": "Normal",
+      "is_heading": false,
+      "heading_level": null,
+      "role": "date",
+      "runs": [
+        {
+          "index": 0,
+          "text": "2026年6月23日",
+          "format": {
+            "font_name": "仿宋_GB2312",
+            "font_size_pt": 16.0,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "color": null
+          }
+        }
+      ],
+      "format": {
+        "alignment": "right",
+        "first_line_indent_pt": null,
+        "left_indent_pt": null,
+        "right_indent_pt": null,
+        "space_before_pt": 0.0,
+        "space_after_pt": 0.0,
+        "line_spacing_pt": null,
+        "line_spacing_rule": null
+      }
+    }
+  ],
+  "tables": [
+    {
+      "index": 0,
+      "rows": 3,
+      "cols": 3,
+      "cells": [
+        {
+          "row": 0,
+          "col": 0,
+          "text": "项目",
+          "paragraphs": [
+            {
+              "index": 0,
+              "text": "项目",
+              "style_name": "Normal",
+              "is_heading": true,
+              "heading_level": 3,
+              "role": null,
+              "runs": [
+                {
+                  "index": 0,
+                  "text": "项目",
+                  "format": {
+                    "font_name": "仿宋_GB2312",
+                    "font_size_pt": 14.0,
+                    "bold": true,
+                    "italic": false,
+                    "underline": false,
+                    "color": null
+                  }
+                }
+              ],
+              "format": {
+                "alignment": "left",
+                "first_line_indent_pt": null,
+                "left_indent_pt": null,
+                "right_indent_pt": null,
+                "space_before_pt": 0.0,
+                "space_after_pt": 0.0,
+                "line_spacing_pt": null,
+                "line_spacing_rule": null
+              }
+            }
+          ]
+        },
+        {
+          "row": 0,
+          "col": 1,
+          "text": "负责人",
+          "paragraphs": [
+            {
+              "index": 0,
+              "text": "负责人",
+              "style_name": "Normal",
+              "is_heading": true,
+              "heading_level": 3,
+              "role": null,
+              "runs": [
+                {
+                  "index": 0,
+                  "text": "负责人",
+                  "format": {
+                    "font_name": "仿宋_GB2312",
+                    "font_size_pt": 14.0,
+                    "bold": true,
+                    "italic": false,
+                    "underline": false,
+                    "color": null
+                  }
+                }
+              ],
+              "format": {
+                "alignment": "left",
+                "first_line_indent_pt": null,
+                "left_indent_pt": null,
+                "right_indent_pt": null,
+                "space_before_pt": 0.0,
+                "space_after_pt": 0.0,
+                "line_spacing_pt": null,
+                "line_spacing_rule": null
+              }
+            }
+          ]
+        },
+        {
+          "row": 0,
+          "col": 2,
+          "text": "完成时间",
+          "paragraphs": [
+            {
+              "index": 0,
+              "text": "完成时间",
+              "style_name": "Normal",
+              "is_heading": true,
+              "heading_level": 3,
+              "role": null,
+              "runs": [
+                {
+                  "index": 0,
+                  "text": "完成时间",
+                  "format": {
+                    "font_name": "仿宋_GB2312",
+                    "font_size_pt": 14.0,
+                    "bold": true,
+                    "italic": false,
+                    "underline": false,
+                    "color": null
+                  }
+                }
+              ],
+              "format": {
+                "alignment": "left",
+                "first_line_indent_pt": null,
+                "left_indent_pt": null,
+                "right_indent_pt": null,
+                "space_before_pt": 0.0,
+                "space_after_pt": 0.0,
+                "line_spacing_pt": null,
+                "line_spacing_rule": null
+              }
+            }
+          ]
+        },
+        {
+          "row": 1,
+          "col": 0,
+          "text": "任务1",
+          "paragraphs": [
+            {
+              "index": 0,
+              "text": "任务1",
+              "style_name": "Normal",
+              "is_heading": false,
+              "heading_level": null,
+              "role": null,
+              "runs": [
+                {
+                  "index": 0,
+                  "text": "任务1",
+                  "format": {
+                    "font_name": null,
+                    "font_size_pt": null,
+                    "bold": false,
+                    "italic": false,
+                    "underline": false,
+                    "color": null
+                  }
+                }
+              ],
+              "format": {
+                "alignment": "left",
+                "first_line_indent_pt": null,
+                "left_indent_pt": null,
+                "right_indent_pt": null,
+                "space_before_pt": 0.0,
+                "space_after_pt": 0.0,
+                "line_spacing_pt": null,
+                "line_spacing_rule": null
+              }
+            }
+          ]
+        },
+        {
+          "row": 1,
+          "col": 1,
+          "text": "张三",
+          "paragraphs": [
+            {
+              "index": 0,
+              "text": "张三",
+              "style_name": "Normal",
+              "is_heading": false,
+              "heading_level": null,
+              "role": null,
+              "runs": [
+                {
+                  "index": 0,
+                  "text": "张三",
+                  "format": {
+                    "font_name": null,
+                    "font_size_pt": null,
+                    "bold": false,
+                    "italic": false,
+                    "underline": false,
+                    "color": null
+                  }
+                }
+              ],
+              "format": {
+                "alignment": "left",
+                "first_line_indent_pt": null,
+                "left_indent_pt": null,
+                "right_indent_pt": null,
+                "space_before_pt": 0.0,
+                "space_after_pt": 0.0,
+                "line_spacing_pt": null,
+                "line_spacing_rule": null
+              }
+            }
+          ]
+        },
+        {
+          "row": 1,
+          "col": 2,
+          "text": "7月1日",
+          "paragraphs": [
+            {
+              "index": 0,
+              "text": "7月1日",
+              "style_name": "Normal",
+              "is_heading": false,
+              "heading_level": null,
+              "role": null,
+              "runs": [
+                {
+                  "index": 0,
+                  "text": "7月1日",
+                  "format": {
+                    "font_name": null,
+                    "font_size_pt": null,
+                    "bold": false,
+                    "italic": false,
+                    "underline": false,
+                    "color": null
+                  }
+                }
+              ],
+              "format": {
+                "alignment": "left",
+                "first_line_indent_pt": null,
+                "left_indent_pt": null,
+                "right_indent_pt": null,
+                "space_before_pt": 0.0,
+                "space_after_pt": 0.0,
+                "line_spacing_pt": null,
+                "line_spacing_rule": null
+              }
+            }
+          ]
+        },
+        {
+          "row": 2,
+          "col": 0,
+          "text": "任务2",
+          "paragraphs": [
+            {
+              "index": 0,
+              "text": "任务2",
+              "style_name": "Normal",
+              "is_heading": false,
+              "heading_level": null,
+              "role": null,
+              "runs": [
+                {
+                  "index": 0,
+                  "text": "任务2",
+                  "format": {
+                    "font_name": null,
+                    "font_size_pt": null,
+                    "bold": false,
+                    "italic": false,
+                    "underline": false,
+                    "color": null
+                  }
+                }
+              ],
+              "format": {
+                "alignment": "left",
+                "first_line_indent_pt": null,
+                "left_indent_pt": null,
+                "right_indent_pt": null,
+                "space_before_pt": 0.0,
+                "space_after_pt": 0.0,
+                "line_spacing_pt": null,
+                "line_spacing_rule": null
+              }
+            }
+          ]
+        },
+        {
+          "row": 2,
+          "col": 1,
+          "text": "李四",
+          "paragraphs": [
+            {
+              "index": 0,
+              "text": "李四",
+              "style_name": "Normal",
+              "is_heading": false,
+              "heading_level": null,
+              "role": null,
+              "runs": [
+                {
+                  "index": 0,
+                  "text": "李四",
+                  "format": {
+                    "font_name": null,
+                    "font_size_pt": null,
+                    "bold": false,
+                    "italic": false,
+                    "underline": false,
+                    "color": null
+                  }
+                }
+              ],
+              "format": {
+                "alignment": "left",
+                "first_line_indent_pt": null,
+                "left_indent_pt": null,
+                "right_indent_pt": null,
+                "space_before_pt": 0.0,
+                "space_after_pt": 0.0,
+                "line_spacing_pt": null,
+                "line_spacing_rule": null
+              }
+            }
+          ]
+        },
+        {
+          "row": 2,
+          "col": 2,
+          "text": "7月15日",
+          "paragraphs": [
+            {
+              "index": 0,
+              "text": "7月15日",
+              "style_name": "Normal",
+              "is_heading": false,
+              "heading_level": null,
+              "role": null,
+              "runs": [
+                {
+                  "index": 0,
+                  "text": "7月15日",
+                  "format": {
+                    "font_name": null,
+                    "font_size_pt": null,
+                    "bold": false,
+                    "italic": false,
+                    "underline": false,
+                    "color": null
+                  }
+                }
+              ],
+              "format": {
+                "alignment": "left",
+                "first_line_indent_pt": null,
+                "left_indent_pt": null,
+                "right_indent_pt": null,
+                "space_before_pt": 0.0,
+                "space_after_pt": 0.0,
+                "line_spacing_pt": null,
+                "line_spacing_rule": null
+              }
+            }
+          ]
+        }
+      ],
+      "insert_after_index": 6
+    }
+  ],
+  "headers": [
+    {
+      "section_index": 0,
+      "type": "header",
+      "text": "XXX单位文件",
+      "paragraphs": [
+        {
+          "index": 0,
+          "text": "XXX单位文件",
+          "style_name": "Header",
+          "is_heading": true,
+          "heading_level": 0,
+          "role": null,
+          "runs": [
+            {
+              "index": 0,
+              "text": "XXX单位文件",
+              "format": {
+                "font_name": "仿宋_GB2312",
+                "font_size_pt": 14.0,
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "color": null
+              }
+            }
+          ],
+          "format": {
+            "alignment": "center",
+            "first_line_indent_pt": null,
+            "left_indent_pt": null,
+            "right_indent_pt": null,
+            "space_before_pt": 0.0,
+            "space_after_pt": 0.0,
+            "line_spacing_pt": 16.0,
+            "line_spacing_rule": null
+          }
+        }
+      ],
+      "has_page_number": false
+    }
+  ],
+  "footers": [
+    {
+      "section_index": 0,
+      "type": "footer",
+      "text": "第 1 页 共 1 页",
+      "paragraphs": [
+        {
+          "index": 0,
+          "text": "第 1 页 共 1 页",
+          "style_name": "Footer",
+          "is_heading": true,
+          "heading_level": 0,
+          "role": null,
+          "runs": [
+            {
+              "index": 0,
+              "text": "第 1 页 共 1 页",
+              "format": {
+                "font_name": "仿宋_GB2312",
+                "font_size_pt": 12.0,
+                "bold": false,
+                "italic": false,
+                "underline": false,
+                "color": null
+              }
+            }
+          ],
+          "format": {
+            "alignment": "center",
+            "first_line_indent_pt": null,
+            "left_indent_pt": null,
+            "right_indent_pt": null,
+            "space_before_pt": 0.0,
+            "space_after_pt": 0.0,
+            "line_spacing_pt": 16.0,
+            "line_spacing_rule": null
+          }
+        }
+      ],
+      "has_page_number": false
+    }
+  ]
+}

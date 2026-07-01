@@ -17,12 +17,11 @@ router = APIRouter()
 
 @router.get("/token")
 async def get_token():
-    """Return the current auth token (masked only, never expose full token via API)."""
+    """Return the current auth token for frontend initialization."""
     token = get_auth_token()
-    masked = token[:4] + "****" + token[-4:] if len(token) > 8 else "****"
     return {
-        "masked": masked,
-        "message": "Token is stored locally. Use the console output on first startup.",
+        "token": token,
+        "masked": token[:4] + "****" + token[-4:] if len(token) > 8 else "****",
     }
 
 

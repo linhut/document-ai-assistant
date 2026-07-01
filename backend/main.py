@@ -27,6 +27,7 @@ from api.routes import auth as auth_route
 from auth import AuthMiddleware, init_auth
 from db.database import init_db
 from utils.logger import logger
+from utils.db_backup import ensure_startup_backup
 
 HOST = "127.0.0.1"
 DEFAULT_PORT = 8765
@@ -122,7 +123,7 @@ def _setup_signal_handlers() -> None:
 app = FastAPI(
     title="Official Document AI Assistant",
     description="AI 公文智能优化助手核心引擎 API",
-    version="1.4.9",
+    version="1.5.0",
 )
 
 app.add_middleware(
@@ -160,6 +161,7 @@ async def startup():
 
     init_db()
     _init_default_ai_config()
+    ensure_startup_backup()
     _log_directory_status()
     # 启动 AI 模型可用性定时检测（每 60 秒）
     from services.model_health import start_health_checker
