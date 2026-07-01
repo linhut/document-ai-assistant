@@ -7,7 +7,7 @@
  * About - 关于页面（优化宽度布局）
  */
 import { useState, useEffect } from 'react';
-import { FileText, Mail, ExternalLink, Download, FileType } from 'lucide-react';
+import { FileText, Mail, ExternalLink, Download, FileType, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,8 +21,55 @@ interface FontInfo {
   description: string;
 }
 
+function parseVersion(ver: string): number[] {
+  return ver.replace(/^v/, '').split('.').map(Number);
+}
+
+function isNewer(latest: string, current: string): boolean {
+  const lv = parseVersion(latest);
+  const cv = parseVersion(current);
+  for (let i = 0; i < Math.max(lv.length, cv.length); i++) {
+    const a = lv[i] || 0;
+    const b = cv[i] || 0;
+    if (a > b) return true;
+    if (a < b) return false;
+  }
+  return false;
+}
+
 export default function About() {
   const [fonts, setFonts] = useState<FontInfo[]>([]);
+  const [latestVersion, setLatestVersion] = useState<string | null>(null);
+  const [checking, setChecking] = useState(true);
+  const [checkError, setCheckError] = useState(false);
+
+  useEffect(() => {
+    loadFonts();
+    checkNewVersion();
+  }, []);
+
+  const checkNewVersion = async () => {
+    setChecking(true);
+    setCheckError(false);
+    try {
+      const resp = await fetch(
+        'https://api.github.com/repos/linhut/document-ai-assistant/releases/latest',
+        { signal: AbortSignal.timeout(8000) }
+      );
+      if (resp.ok) {
+        const data = await resp.json();
+        setLatestVersion(data.tag_name || '');
+      } else {
+        setCheckError(true);
+      }
+    } catch {
+      setCheckError(true);
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const hasNewVersion = latestVersion && isNewer(latestVersion, __APP_VERSION__);
 
   useEffect(() => {
     loadFonts();
@@ -79,6 +126,27 @@ export default function About() {
             <CardDescription>一款专业的本地化公文格式检测与优化工具</CardDescription>
             <div className="flex gap-2 justify-center mt-4">
               <Badge variant="default">版本 {__APP_VERSION__}</Badge>
+              {checking ? (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <RefreshCw className="h-3 w-3 animate-spin" />
+                  检查更新…
+                </Badge>
+              ) : checkError ? (
+                <Badge variant="outline" className="flex items-center gap-1 text-primary-400">
+                  <AlertTriangle className="h-3 w-3" />
+                  检查失败
+                </Badge>
+              ) : hasNewVersion ? (
+                <Badge variant="destructive" className="flex items-center gap-1 cursor-pointer" onClick={() => window.open('https://github.com/linhut/document-ai-assistant/releases/latest', '_blank')}>
+                  <Download className="h-3 w-3" />
+                  新版本 {latestVersion}
+                </Badge>
+              ) : (
+                <Badge className="bg-status-success/15 text-status-success flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3" />
+                  已是最新
+                </Badge>
+              )}
               <Badge variant="secondary">{new Date().toLocaleDateString('zh-CN')}</Badge>
             </div>
           </CardHeader>
