@@ -129,9 +129,9 @@ jobs:
           pyinstaller backend_server.spec --clean --noconfirm \
             --distpath ./dist
           echo "=== backend/dist/ contents ==="
-          ls -la ../dist/backend_server/
+          ls -la ./dist/backend_server/
           echo "=== backend_server.exe exists? ==="
-          test -f ../dist/backend_server/backend_server.exe && echo "YES" || echo "NO"
+          test -f ./dist/backend_server/backend_server.exe && echo "YES" || echo "NO"
 
       - name: Prepare dist-resources
         shell: bash
