@@ -129,13 +129,22 @@ jobs:
           pyinstaller backend_server.spec --clean --noconfirm \
             --distpath ./dist
           echo "=== backend/dist/ contents ==="
-          ls -la ./dist/backend_server/
-          echo "=== backend_server.exe exists? ==="
-          test -f ./dist/backend_server/backend_server.exe && echo "YES" || echo "NO"
+          ls -la ./dist/backend_server/ 2>/dev/null || echo "(directory listing failed)"
+          echo "=== backend_server binary exists? ==="
+          if [ -f ./dist/backend_server/backend_server.exe ]; then
+            echo "YES (.exe)"
+          elif [ -f ./dist/backend_server/backend_server ]; then
+            echo "YES (no extension)"
+          else
+            echo "NO - binary not found"
+            ls -la ./dist/ 2>/dev/null || true
+            exit 1
+          fi
 
       - name: Prepare dist-resources
         shell: bash
         run: |
+          mkdir -p frontend/dist-resources/backend
           # onedir 模式产出 backend/dist/backend_server/ 目录
           echo "=== dist/backend_server/ contents ==="
           ls -la backend/dist/backend_server/ | head -20
