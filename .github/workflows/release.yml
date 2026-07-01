@@ -170,6 +170,10 @@ jobs:
           cp -r rules frontend/dist-resources/backend/rules
           cp -r templates frontend/dist-resources/backend/templates
           mkdir -p frontend/dist-resources/backend/TTF
+          # 复制公文字体（构建流程特有，本地 build_backend.py 同理）
+          if [ -d "TTF" ]; then
+            cp -r TTF/*.ttf TTF/*.TTF TTF/*.otf frontend/dist-resources/backend/TTF/ 2>/dev/null || true
+          fi
           mkdir -p frontend/dist-resources/backend/data
 
       - name: Build frontend + Electron
