@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-  <a href="https://doc.linhut.cn">
+  <a href="https://doc.linhut.cn" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/项目介绍-doc.linhut.cn-blue?style=for-the-badge&logo=google-chrome&logoColor=white" alt="项目介绍" />
   </a>
 </p>
@@ -118,8 +118,8 @@ npm run electron:dev
 
 | 依赖 | 版本 | 说明 |
 |------|------|------|
-| Python | >= 3.12 | [下载地址](https://python.org) |
-| Node.js | >= 20 | [下载地址](https://nodejs.org) |
+| Python | >= 3.12 | <a href="https://python.org" target="_blank" rel="noopener noreferrer">下载地址</a> |
+| Node.js | >= 20 | <a href="https://nodejs.org" target="_blank" rel="noopener noreferrer">下载地址</a> |
 
 ### 构建桌面安装包
 
@@ -424,37 +424,37 @@ A: 支持 `.docx`、`.doc`、`.wps` 三种格式。`.doc` 和 `.wps` 文件会�
   <em>感谢以下开源项目和社区对本项目的支持与启发</em>
 </p>
 <p align="center">
-  <a href="https://linux.do/">
+  <a href="https://linux.do/" target="_blank" rel="noopener noreferrer">
     <img src="assets/LinuxDo.png" alt="LinuxDo" width="120" />
   </a>
 </p>
 <p align="center">
-  <a href="https://linux.do/">
+  <a href="https://linux.do/" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/LinuxDo-感谢社区的支持与关注-orange?style=for-the-badge&logo=linux&logoColor=white" alt="LinuxDo" />
   </a>
 </p>
 
 <p align="center">
-  <a href="https://python-docx.readthedocs.io/">
+  <a href="https://python-docx.readthedocs.io/" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/python--docx-文档处理引擎-blue?style=for-the-badge&logo=python&logoColor=white" alt="python-docx" />
   </a>
-  <a href="https://fastapi.tiangolo.com/">
+  <a href="https://fastapi.tiangolo.com/" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/FastAPI-后端框架-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   </a>
-  <a href="https://www.electronjs.org/">
+  <a href="https://www.electronjs.org/" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/Electron-桌面壳-47848F?style=for-the-badge&logo=electron&logoColor=white" alt="Electron" />
   </a>
-  <a href="https://react.dev/">
+  <a href="https://react.dev/" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/React-前端框架-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" />
   </a>
 </p>
 
 <p align="center">
 
-  <a href="https://www.mohurd.gov.cn/">
+  <a href="https://www.mohurd.gov.cn/" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/GB%2FT%209704-党政机关公文格式-red?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEyIDJMMyA3djEwbDkgNSA5LTVIN0wxMiAyeiIgZmlsbD0iI2ZmZiIvPjwvc3ZnPg==" alt="GB/T 9704" />
   </a>
-  <a href="https://github.com/linhut/document-ai-assistant/stargazers">
+  <a href="https://github.com/linhut/document-ai-assistant/stargazers" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/Star-支持本项目-yellow?style=for-the-badge&logo=github&logoColor=white" alt="Star" />
   </a>
 </p>
