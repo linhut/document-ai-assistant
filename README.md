@@ -424,7 +424,6 @@ A: 支持 `.docx`、`.doc`、`.wps` 三种格式。`.doc` 和 `.wps` 文件会�
   <em>感谢以下开源项目和社区对本项目的支持与启发</em>
 </p>
 
-> 🔗 **[gongwen-skill](https://github.com/linhut/gongwen-skill)** — 本项目的 AI Agent 独立发行版，将公文格式引擎打包为可被 Claude Code 等 Agent 直接调用的 Skill。克隆即用，无需桌面端/数据库，支持格式检查、自动修复、模板生成、版头版记页码注入、内容优化差异对比。适合命令行自动化和 AI 工作流场景。
 <p align="center">
   <a href="https://linux.do/" target="_blank" rel="noopener noreferrer">
     <img src="assets/LinuxDo.png" alt="LinuxDo" width="120" />
@@ -449,9 +448,6 @@ A: 支持 `.docx`、`.doc`、`.wps` 三种格式。`.doc` 和 `.wps` 文件会�
   <a href="https://react.dev/" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/React-前端框架-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" />
   </a>
-  <a href="https://github.com/linhut/gongwen-skill" target="_blank" rel="noopener noreferrer">
-    <img src="https://img.shields.io/badge/gongwen--skill-AI%20Agent%20公文技能-red?style=for-the-badge&logo=claude&logoColor=white" alt="gongwen-skill" />
-  </a>
 </p>
 
 <p align="center">
@@ -463,6 +459,10 @@ A: 支持 `.docx`、`.doc`、`.wps` 三种格式。`.doc` 和 `.wps` 文件会�
     <img src="https://img.shields.io/badge/Star-支持本项目-yellow?style=for-the-badge&logo=github&logoColor=white" alt="Star" />
   </a>
 </p>
+
+<br>
+
+> **[gongwen-skill](https://github.com/linhut/gongwen-skill)** — 本项目的 AI Agent 独立发行版，将公文格式引擎打包为可被 Claude Code 等 Agent 直接调用的 Skill。克隆即用，无需桌面端/数据库，支持格式检查、自动修复、模板生成、版头版记页码注入、内容优化差异对比。适合命令行自动化和 AI 工作流场景。
 
 ---
 
