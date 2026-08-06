@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.4.7-blue" alt="version">
+  <img src="https://img.shields.io/badge/version-1.5.1-blue" alt="version">
   <img src="https://img.shields.io/badge/python-3.12+-green" alt="python">
   <img src="https://img.shields.io/badge/node-20+-green" alt="node">
   <img src="https://img.shields.io/badge/electron-35-blue" alt="electron">
@@ -33,11 +33,20 @@
   <a href="#-快速开始">快速开始</a> ·
   <a href="#-技术架构">技术架构</a> ·
   <a href="#-ai-配置">AI 配置</a> ·
+  <a href="#-gongwen-skill">gongwen-skill</a> ·
   <a href="#-项目结构">项目结构</a> ·
   <a href="#-社区与友链">社区与友链</a> ·
   <a href="#-开发日志">开发日志</a>
 </p>
  
+---
+
+## 🧩 gongwen-skill
+
+> **[gongwen-skill](https://github.com/linhut/gongwen-skill)** — 本项目的 AI Agent 独立发行版，将公文格式引擎打包为可被 Claude Code 等 Agent 直接调用的 Skill。克隆即用，无需桌面端/数据库，支持格式检查、自动修复、模板生成、版头版记页码注入、内容优化差异对比。适合命令行自动化和 AI 工作流场景。
+>
+> 🚀 **[立即体验 gongwen-skill →](https://github.com/linhut/gongwen-skill)** — 桌面端用户也可在应用内使用全部功能
+
 ---
 
 ## 🖥 功能界面
@@ -459,10 +468,6 @@ A: 支持 `.docx`、`.doc`、`.wps` 三种格式。`.doc` 和 `.wps` 文件会�
     <img src="https://img.shields.io/badge/Star-支持本项目-yellow?style=for-the-badge&logo=github&logoColor=white" alt="Star" />
   </a>
 </p>
-
-<br>
-
-> **[gongwen-skill](https://github.com/linhut/gongwen-skill)** — 本项目的 AI Agent 独立发行版，将公文格式引擎打包为可被 Claude Code 等 Agent 直接调用的 Skill。克隆即用，无需桌面端/数据库，支持格式检查、自动修复、模板生成、版头版记页码注入、内容优化差异对比。适合命令行自动化和 AI 工作流场景。
 
 ---
 

@@ -33,6 +33,7 @@ _PUBLIC_PATHS: set[str] = {
     "/api/office/templates",
     "/api/office/apply-template",
     "/api/office/generate-template",
+    "/api/workspace/files",
     "/docs",
     "/openapi.json",
     "/redoc",

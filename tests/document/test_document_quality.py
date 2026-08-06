@@ -153,7 +153,7 @@ class TestTemplateGeneration:
                 continue
 
             assert rules, f"No rules found for {dtype}"
-            assert "title" in rules, f"No title config for {dtype}"
+            assert "doc_title" in rules, f"No doc_title config for {dtype}"
             assert "body" in rules, f"No body config for {dtype}"
 
 
@@ -286,13 +286,9 @@ class TestFormatRules:
                 assert "severity" in rule, f"Missing severity in {dtype} rule {rule['id']}"
 
     def test_fix_rules_use_supported_actions(self):
-        """所有 fix_rules 的 action 是受支持的。"""
-        supported_actions = {
-            "set_font", "set_size", "set_alignment", "set_align",
-            "set_line_spacing", "set_first_line_indent", "set_indent",
-            "set_margins", "set_page_margins",
-            "remove_extra_spaces", "remove_extra_blank_lines",
-        }
+        """所有 fix_rules 的 action 是受支持的（以 fixer._ACTION_MAP 为准）。"""
+        from core.rules.fixer import _ACTION_MAP
+        supported_actions = set(_ACTION_MAP.keys())
         for dtype in ["notice", "request", "report", "letter", "meeting",
                        "decision", "announcement", "notice_public"]:
             rules = load_rules_for_type(dtype)

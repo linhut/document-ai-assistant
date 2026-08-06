@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>使用指南 — 文枢 · 文档中心</title>
+  <meta name="description" content="文枢完整使用指南：格式检查、AI 润色、模板管理、A4 预览等全部功能详解。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%232563eb'/%3E%3Cstop offset='100%25' stop-color='%231a56db'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='256' height='256' rx='42' fill='url(%23bg)'/%3E%3Cg transform='translate(56,28)'%3E%3Cpath d='M0,0 L105,0 L144,39 L144,180 Q144,192 132,192 L12,192 Q0,192 0,180 Z' fill='white' fill-opacity='0.94'/%3E%3Cpath d='M105,0 L105,39 L144,39 Z' fill='%23c8d7f0'/%3E%3Crect x='24' y='64' width='96' height='5' rx='2.5' fill='%231e40af' fill-opacity='0.6'/%3E%3Crect x='24' y='84' width='96' height='5' rx='2.5' fill='%231e40af' fill-opacity='0.6'/%3E%3Crect x='24' y='104' width='96' height='5' rx='2.5' fill='%231e40af' fill-opacity='0.6'/%3E%3Crect x='24' y='124' width='64' height='5' rx='2.5' fill='%231e40af' fill-opacity='0.6'/%3E%3Ccircle cx='120' cy='155' r='26' fill='%23dc2626' fill-opacity='0.78'/%3E%3Ctext x='120' y='163' text-anchor='middle' font-family='sans-serif' font-size='24' font-weight='bold' fill='%23dc2626' fill-opacity='0.9'%3E文%3C/text%3E%3C/g%3E%3C/svg%3E">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue-50: #eff6ff; --blue-100: #dbeafe; --blue-200: #bfdbfe;
+      --blue-300: #93c5fd; --blue-400: #60a5fa; --blue-500: #3b82f6;
+      --blue-600: #2563eb; --blue-700: #1d4ed8; --blue-800: #1e40af;
+      --red-500: #ef4444; --red-600: #dc2626;
+      --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+      --gray-300: #d1d5db; --gray-400: #9ca3af; --gray-500: #6b7280;
+      --gray-600: #4b5563; --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
+      --radius: 10px; --max-w: 900px;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",Helvetica,Arial,sans-serif;
+      color: var(--gray-800); background: #fff; line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--blue-600); text-decoration: none; }
+    a:hover { color: var(--blue-800); text-decoration: underline; }
+    .container { max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
+
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,.88); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--gray-100);
+    }
+    nav .container { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+    .nav-brand { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--gray-900); }
+    .nav-brand svg { width: 28px; height: 28px; }
+    .nav-links { display: flex; align-items: center; gap: 24px; }
+    .nav-links a { color: var(--gray-600); font-size: .875rem; font-weight: 500; }
+    .nav-links a:hover { color: var(--blue-600); }
+    .nav-links a.active { color: var(--blue-600); }
+
+    .page-header {
+      padding: 56px 0 40px;
+      background: linear-gradient(160deg, var(--blue-50), #fff);
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .page-header h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+    .page-header p { color: var(--gray-500); font-size: 1.05rem; max-width: 600px; }
+
+    .layout { display: flex; gap: 40px; max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    .sidebar {
+      width: 220px; flex-shrink: 0; position: sticky; top: 76px;
+      align-self: flex-start; padding-top: 48px;
+    }
+    .sidebar h5 { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em;
+      color: var(--gray-400); margin-bottom: 12px; }
+    .sidebar a { display: block; padding: 6px 0; font-size: .875rem; color: var(--gray-500); }
+    .sidebar a:hover, .sidebar a.active { color: var(--blue-600); text-decoration: none; }
+    .main-content { flex: 1; min-width: 0; }
+
+    .content { padding: 48px 0 80px; }
+    .content h2 {
+      font-size: 1.5rem; font-weight: 700; margin: 48px 0 12px;
+      padding-bottom: 8px; border-bottom: 1px solid var(--gray-100);
+    }
+    .content h2:first-of-type { margin-top: 0; }
+    .content h3 { font-size: 1.15rem; font-weight: 700; margin: 28px 0 8px; }
+    .content h4 { font-size: 1rem; font-weight: 600; margin: 20px 0 6px; }
+    .content p { margin-bottom: 16px; color: var(--gray-600); }
+    .content ul, .content ol { margin: 0 0 16px 20px; color: var(--gray-600); }
+    .content li { margin-bottom: 6px; }
+    .content code {
+      background: var(--gray-100); padding: 2px 8px; border-radius: 4px;
+      font-size: .875rem; font-family: "SF Mono","Fira Code","Consolas",monospace;
+    }
+    .content pre {
+      background: var(--gray-900); color: #e5e7eb; border-radius: var(--radius);
+      padding: 20px 24px; overflow-x: auto; margin: 16px 0 24px;
+      font-size: .875rem; line-height: 1.6;
+    }
+    .content pre code { background: none; padding: 0; color: inherit; }
+    .content blockquote {
+      border-left: 3px solid var(--blue-300);
+      background: var(--blue-50); padding: 12px 20px; margin: 16px 0 24px;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      color: var(--gray-700); font-size: .9375rem;
+    }
+    .content table {
+      width: 100%; border-collapse: collapse; margin: 16px 0 24px;
+      font-size: .9rem;
+    }
+    .content th, .content td {
+      border: 1px solid var(--gray-200); padding: 10px 14px; text-align: left;
+    }
+    .content th { background: var(--gray-50); font-weight: 600; }
+    .content .feature-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0 24px;
+    }
+    .content .feature-item {
+      border: 1px solid var(--gray-100); border-radius: var(--radius);
+      padding: 20px; background: var(--gray-50);
+    }
+    .content .feature-item h4 { margin: 0 0 4px; font-size: .9375rem; }
+    .content .feature-item p { margin: 0; font-size: .85rem; color: var(--gray-500); }
+
+    footer {
+      background: var(--gray-900); color: var(--gray-400); padding: 40px 0 28px;
+    }
+    footer .container { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 24px; }
+    footer .footer-brand h4 { color: #fff; font-size: 1rem; margin-bottom: 4px; }
+    footer .footer-brand p { font-size: .8125rem; line-height: 1.6; }
+    footer .footer-links h5 { color: #fff; font-size: .8125rem; margin-bottom: 8px; }
+    footer .footer-links a { display: block; font-size: .8125rem; margin-bottom: 4px; color: var(--gray-400); }
+    footer .footer-links a:hover { color: #fff; }
+    .footer-bottom {
+      margin-top: 28px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.08);
+      text-align: center; font-size: .8125rem; color: var(--gray-500);
+    }
+    .footer-bottom a { color: var(--gray-400); }
+    .footer-bottom a:hover { color: #fff; }
+
+    @media (max-width: 768px) {
+      .layout { flex-direction: column; }
+      .sidebar { width: 100%; position: static; padding-top: 24px; }
+      .sidebar .nav-links-side { display: flex; gap: 12px; flex-wrap: wrap; }
+      .content .feature-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <a href="../" class="nav-brand">
+      <svg viewBox="0 0 256 256" width="28" height="28">
+        <defs><linearGradient id="nbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2563eb"/><stop offset="100%" stop-color="#1a56db"/></linearGradient></defs>
+        <rect width="256" height="256" rx="42" fill="url(#nbg)"/>
+        <g transform="translate(56,28)">
+          <path d="M0,0 L105,0 L144,39 L144,180 Q144,192 132,192 L12,192 Q0,192 0,180 Z" fill="white" fill-opacity="0.94"/>
+          <path d="M105,0 L105,39 L144,39 Z" fill="#c8d7f0"/>
+          <rect x="24" y="64" width="96" height="5" rx="2.5" fill="#1e40af" fill-opacity="0.6"/>
+          <rect x="24" y="84" width="96" height="5" rx="2.5" fill="#1e40af" fill-opacity="0.6"/>
+          <rect x="24" y="104" width="96" height="5" rx="2.5" fill="#1e40af" fill-opacity="0.6"/>
+          <rect x="24" y="124" width="64" height="5" rx="2.5" fill="#1e40af" fill-opacity="0.6"/>
+          <circle cx="120" cy="155" r="26" fill="#dc2626" fill-opacity="0.78"/>
+          <text x="120" y="163" text-anchor="middle" font-family="sans-serif" font-size="24" font-weight="bold" fill="#dc2626" fill-opacity="0.9">文</text>
+        </g>
+      </svg>
+      文枢
+    </a>
+    <div class="nav-links">
+      <a href="../">首页</a>
+      <a href="quick-start.html">快速开始</a>
+      <a href="guide.html" class="active">使用指南</a>
+      <a href="../changelog/">更新日志</a>
+    </div>
+  </div>
+</nav>
+
+<section class="page-header">
+  <div class="container">
+    <h1>使用指南</h1>
+    <p>深入了解文枢的全部功能特性、配置选项和技术细节。</p>
+  </div>
+</section>
+
+<div class="layout">
+  <aside class="sidebar">
+    <h5>目录</h5>
+    <div class="nav-links-side">
+      <a href="#workspace">工作台</a>
+      <a href="#check-center">校审中心</a>
+      <a href="#ai">AI 配置</a>
+      <a href="#preview">A4 实时预览</a>
+      <a href="#templates">模板中心</a>
+      <a href="#rules">规则管理</a>
+      <a href="#architecture">技术架构</a>
+      <a href="#standards">国标规范</a>
+    </div>
+  </aside>
+
+  <main class="main-content content">
+
+    <h2 id="workspace">工作台</h2>
+    <p>工作台是文枢的首页，提供全局概览和快速操作入口：</p>
+    <ul>
+      <li><strong>快速操作</strong> — 一键开启/关闭局域网访问、打开文档处理、进入校审中心</li>
+      <li><strong>最近文档</strong> — 最近处理的文档列表，可快速回看</li>
+      <li><strong>系统状态</strong> — 后端运行状态、AI 模型可用性一览</li>
+    </ul>
+    <blockquote>💡 工作台目前基于 Mock 数据展示，后续版本将接入真实 API。</blockquote>
+
+    <h2 id="check-center">校审中心</h2>
+    <p>校审中心是格式检查与修复的核心页面，展示所有发现的问题。</p>
+
+    <h3>规则引擎</h3>
+    <p>基于三层 YAML 规则的格式检查引擎：</p>
+    <ul>
+      <li><strong>Official</strong> — 官方标准规则（190 条检查规则 + 180 条修复规则）</li>
+      <li><strong>Custom</strong> — 组织自定义规则</li>
+      <li><strong>User</strong> — 个人用户规则</li>
+      <li>三层深度合并（user &gt; custom &gt; official），列表合并、字典递归覆盖</li>
+    </ul>
+
+    <h3>严重级别</h3>
+    <table>
+      <tr><th>级别</th><th>说明</th><th>示例</th></tr>
+      <tr><td>P0</td><td>格式错误，必须修复</td><td>标题字体不是方正小标宋简体</td></tr>
+      <tr><td>P1</td><td>轻微问题，建议修复</td><td>行距偏离标准值 1pt 以内</td></tr>
+      <tr><td>P2</td><td>优化建议</td><td>推荐使用更规范的措辞</td></tr>
+    </table>
+
+    <h3>同类型合并</h3>
+    <p>相同规则 ID 的问题自动合并显示，如"正文应两端对齐 · 5 处"，可展开查看每一条详情。</p>
+
+    <h2 id="ai">AI 配置</h2>
+    <p>文枢支持接入多种 AI 大模型进行语义级公文优化分析。</p>
+
+    <h3>支持的服务商</h3>
+    <div class="feature-grid">
+      <div class="feature-item"><h4>🟢 OpenAI</h4><p>GPT-4o / GPT-4o-mini 等</p></div>
+      <div class="feature-item"><h4>🔵 DeepSeek</h4><p>deepseek-chat / deepseek-reasoner</p></div>
+      <div class="feature-item"><h4>🟣 Claude</h4><p>claude-sonnet-4-20250514 等</p></div>
+      <div class="feature-item"><h4>🟠 Ollama</h4><p>Qwen2.5、Llama 3 等本地模型</p></div>
+      <div class="feature-item"><h4>🔴 通义千问</h4><p>Qwen-Max / Qwen-Plus</p></div>
+      <div class="feature-item"><h4>🟤 智谱 GLM</h4><p>GLM-4 / GLM-4-Flash</p></div>
+      <div class="feature-item"><h4>⚪ Moonshot</h4><p>moonshot-v1</p></div>
+      <div class="feature-item"><h4>🟡 MiniMax</h4><p>MiniMax-Max / MiniMax-Turbo</p></div>
+      <div class="feature-item"><h4>🔵 腾讯混元</h4><p>hunyuan-turbo</p></div>
+      <div class="feature-item"><h4>🟣 豆包</h4><p>doubao-pro</p></div>
+      <div class="feature-item"><h4>⚪ 零一万物</h4><p>Yi-Lightning</p></div>
+      <div class="feature-item"><h4>🟠 商汤</h4><p>SenseNova 系列</p></div>
+    </div>
+
+    <h3>模型健康监控</h3>
+    <p>系统每 60 秒自动检测所有已配置 AI provider 的可用性，在 AI 配置页面实时显示：</p>
+    <ul>
+      <li>在线 / 离线状态指示灯</li>
+      <li>响应延迟（毫秒）</li>
+      <li>支持一键测试连接</li>
+    </ul>
+
+    <h3>安全存储</h3>
+    <p>API Key 使用 <strong>Fernet 加密</strong> 存储于本机 <code>data/.encryption_key</code> 文件中。前端显示脱敏后的密钥（如 <code>sk-xxxx****xxxx</code>）。</p>
+
+    <h2 id="preview">A4 实时预览</h2>
+    <p>文档优化的核心功能，提供所见即所得的排版预览体验：</p>
+
+    <h3>左右分栏布局</h3>
+    <ul>
+      <li>左侧：格式设置面板（页边距、标题字体字号、正文字体字号行距缩进等）</li>
+      <li>右侧：A4 实时预览，设置改动即时反映</li>
+      <li>支持版头版记可视化配置</li>
+    </ul>
+
+    <h3>版头版记渲染</h3>
+    <p>严格按 GB/T 9704-2012 标准渲染：</p>
+    <ul>
+      <li><strong>发文机关标志</strong> — 30pt 方正小标宋简体，红色 #E00000，居中</li>
+      <li><strong>发文字号</strong> — 自动检测 X发〔YYYY〕N号 格式</li>
+      <li><strong>签发人</strong> — 签发人三字仿宋 + 姓名楷体，右空一字</li>
+      <li><strong>红色反线</strong> — #E00000，版头下空二行</li>
+      <li><strong>抄送</strong> — 左空一字</li>
+      <li><strong>印发机关/日期</strong> — 左侧 paddingLeft 1em，右侧 paddingRight 1em</li>
+    </ul>
+
+    <h3>Markdown 转公文</h3>
+    <p>识别 12 种 Markdown 语法并自动转为公文格式：</p>
+    <ul>
+      <li><code># ~ ######</code> 标题 → 对应公文标题级别</li>
+      <li><code>**加粗**</code> → 公文强调格式</li>
+      <li><code>| 表格 |</code> → Word 表格对象</li>
+      <li>列表、缩进、引用等</li>
+    </ul>
+
+    <h2 id="templates">模板中心</h2>
+    <p>管理公文样式模板，确保单位内部格式统一。</p>
+
+    <h3>三级模板体系</h3>
+    <table>
+      <tr><th>层级</th><th>目录</th><th>说明</th></tr>
+      <tr><td>Official</td><td><code>templates/official/</code></td><td>内置官方标准模板（8 种文种）</td></tr>
+      <tr><td>Custom</td><td><code>templates/custom/</code></td><td>组织自定义模板</td></tr>
+      <tr><td>User</td><td><code>data/templates/user/</code></td><td>个人用户模板</td></tr>
+    </table>
+    <p>深度合并逻辑：列表合并、字典递归覆盖。</p>
+
+    <h3>模板操作</h3>
+    <ul>
+      <li><strong>查看</strong> — A4 预览弹窗展示排版效果</li>
+      <li><strong>下载 .docx</strong> — 生成可编辑的 Word 文档</li>
+      <li><strong>下载 .dotx</strong> — 生成可安装的 Word 模板</li>
+      <li><strong>导入</strong> — 从已有文档自动提取格式信息生成模板</li>
+      <li><strong>分类筛选</strong> — 全部 / 政府 / 国企</li>
+    </ul>
+
+    <h2 id="rules">规则管理</h2>
+    <p>管理公文格式检查与修复的 YAML 规则：</p>
+    <ul>
+      <li><strong>官方规则</strong> — 22 个文种各有一个 YAML 文件，继承自 <code>_common.yaml</code></li>
+      <li><strong>自定义规则</strong> — 组织可添加私有规则</li>
+      <li><strong>用户规则</strong> — 导入生成的规则归入用户分类</li>
+      <li><strong>规则缓存</strong> — 增删改操作自动清除引擎缓存</li>
+    </ul>
+
+    <h3>规则结构示例</h3>
+    <pre>document_type: "notice"
+check_rules:
+  - id: CHK-N001
+    severity: P0
+    field: "title.font"
+    expected: "方正小标宋简体"
+fix_rules:
+  - id: FIX-N001
+    action: set_font
+    target: title
+    value: "方正小标宋简体"</pre>
+
+    <h2 id="architecture">技术架构</h2>
+
+    <h3>整体架构</h3>
+    <pre>Electron Shell (main.ts)
+  ├── Spawns Python 后端 (python main.py / backend_server.exe)
+  ├── Health-checks http://127.0.0.1:8765/api/health
+  └── React UI → Axios → REST API (8765) → FastAPI → Core Engine → SQLite</pre>
+
+    <h3>核心流水线</h3>
+    <p>所有文档处理经过统一的 DocumentModel（Pydantic 中间表示）：</p>
+    <pre>.docx 文件
+  → Parser (解析)       → DocumentModel
+  → RuleEngine (检查修复) → DocumentModel (已修复)
+  → Generator (生成)     → 输出 .docx</pre>
+
+    <h3>后端模块</h3>
+    <table>
+      <tr><th>模块</th><th>职责</th></tr>
+      <tr><td>core/document/</td><td>Parser, Generator, Modifier, Validator, FontUtils, StructureAnalyzer</td></tr>
+      <tr><td>core/rules/</td><td>Loader, Manager, Checker, Fixer, Engine（三层合并）</td></tr>
+      <tr><td>core/template/</td><td>StyleManager (三级), Generator (.docx/.dotx)</td></tr>
+      <tr><td>ai/</td><td>AIProvider ABC → OpenAI/DeepSeek/Ollama/Claude/Custom</td></tr>
+      <tr><td>db/</td><td>SQLAlchemy: Document, CheckResult, AIConfig, Rule</td></tr>
+      <tr><td>services/</td><td>DocumentService 编排 check/optimize 流程</td></tr>
+    </table>
+
+    <h3>前端模块</h3>
+    <table>
+      <tr><th>目录</th><th>职责</th></tr>
+      <tr><td>electron/</td><td>main.ts（后端生命周期、窗口、托盘）、preload.ts</td></tr>
+      <tr><td>src/pages/</td><td>Workspace, DocumentProcess, CheckCenter, Templates, Rules, AISettings, About</td></tr>
+      <tr><td>src/api/</td><td>Axios 封装 + 响应解包拦截器</td></tr>
+    </table>
+
+    <h2 id="standards">GB/T 9704 标准规范</h2>
+    <p>文枢遵循 <strong>GB/T 9704-2012《党政机关公文格式》</strong>，以下为关键规范：</p>
+
+    <h3>页面设置</h3>
+    <table>
+      <tr><th>参数</th><th>标准值</th></tr>
+      <tr><td>纸张</td><td>A4（210mm × 297mm）</td></tr>
+      <tr><td>上页边距</td><td>37mm ± 1mm</td></tr>
+      <tr><td>下页边距</td><td>35mm ± 1mm</td></tr>
+      <tr><td>左页边距</td><td>28mm ± 1mm</td></tr>
+      <tr><td>右页边距</td><td>26mm ± 1mm</td></tr>
+      <tr><td>页脚距离</td><td>25mm</td></tr>
+    </table>
+
+    <h3>字体与字号</h3>
+    <table>
+      <tr><th>元素</th><th>字体</th><th>字号</th></tr>
+      <tr><td>标题</td><td>方正小标宋简体</td><td>一号（26pt）</td></tr>
+      <tr><td>正文</td><td>仿宋_GB2312</td><td>三号（16pt）</td></tr>
+      <tr><td>英文/数字</td><td>Times New Roman</td><td>随上下文</td></tr>
+      <tr><td>发文机关标志</td><td>方正小标宋简体</td><td>30pt（红色 #E00000）</td></tr>
+      <tr><td>签发人</td><td>仿宋_GB2312</td><td>三号</td></tr>
+      <tr><td>签发人姓名</td><td>楷体</td><td>三号</td></tr>
+      <tr><td>页码</td><td>宋体</td><td>四号（14pt）</td></tr>
+    </table>
+    <blockquote>💡 所有字体操作均设置 Word XML 全部 4 个字体属性（<code>w:ascii</code>、<code>w:hAnsi</code>、<code>w:eastAsia</code>、<code>w:cs</code>），避免 MS Gothic / MS Mincho 回退。</blockquote>
+
+    <h3>段落格式</h3>
+    <table>
+      <tr><th>元素</th><th>行距</th><th>缩进</th><th>对齐</th></tr>
+      <tr><td>标题</td><td>33pt</td><td>居中</td><td>居中</td></tr>
+      <tr><td>正文</td><td>28.95pt</td><td>首行缩进 2 字符</td><td>两端对齐</td></tr>
+      <tr><td>一级标题</td><td>33pt</td><td>左空二字</td><td>左对齐</td></tr>
+      <tr><td>版记</td><td>—</td><td>左空一字</td><td>左对齐</td></tr>
+    </table>
+
+    <p style="margin-top:48px;padding-top:24px;border-top:1px solid var(--gray-200);">
+      📖 初次使用？先看 <a href="quick-start.html">快速开始</a> ·
+      🐛 遇到问题？<a href="https://github.com/linhut/document-ai-assistant/issues" target="_blank">提交 Issue</a>
+    </p>
+  </main>
+</div>
+
+<footer>
+  <div class="container">
+    <div class="footer-brand">
+      <h4>文枢 · AI 公文智能优化助手</h4>
+      <p>基于 GB/T 9704 标准的桌面端公文格式优化工具。</p>
+    </div>
+    <div class="footer-links">
+      <h5>文档</h5>
+      <a href="quick-start.html">快速开始</a>
+      <a href="guide.html">使用指南</a>
+      <a href="../changelog/">更新日志</a>
+    </div>
+    <div class="footer-links">
+      <h5>相关链接</h5>
+      <a href="../">项目首页</a>
+      <a href="https://github.com/linhut/document-ai-assistant" target="_blank">GitHub</a>
+      <a href="https://github.com/linhut/document-ai-assistant/releases" target="_blank">下载页面</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="container">
+      Copyright &copy; 2025-2026 <a href="https://www.linhut.cn" style="color:var(--gray-400);">Jose AI</a>.
+      All rights reserved. 基于 GB/T 9704 标准构建.
+      <a href="https://doc.linhut.cn" style="color:var(--gray-400);">doc.linhut.cn</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

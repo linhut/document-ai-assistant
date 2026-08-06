@@ -151,6 +151,15 @@ def _resolve_api_key(api_key: str, provider: str, db: Session) -> str:
     """解析 API Key：__saved__ 占位符从数据库读取已保存的密钥。"""
     if api_key == "__saved__":
         config = db.query(AIConfig).filter(AIConfig.provider == provider).first()
+        # custom 服务以 "custom:<服务名>" 形式存储（如 custom:aliyun_qwen），
+        # 前端测试/获取模型传的是 "custom"，需宽松匹配，优先取已启用的配置
+        if not config and provider == "custom":
+            config = (
+                db.query(AIConfig)
+                .filter(AIConfig.provider.like("custom:%"))
+                .order_by(AIConfig.is_active.desc())
+                .first()
+            )
         if config and config.api_key_encrypted:
             try:
                 resolved = decrypt_value(config.api_key_encrypted)

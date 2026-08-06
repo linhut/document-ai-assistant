@@ -3,20 +3,30 @@
 # Licensed under the MIT License. See the LICENSE file for details.
 """
 Test AI integration with real API.
+
+默认跳过（需要真实 API Key 与网络），通过环境变量启用：
+    RUN_REAL_AI_TESTS=1 ANYROUTER_API_KEY=sk-xxx pytest tests/backend/test_real_ai.py
 """
 import asyncio
-import sys
 import os
+import sys
+
+import pytest
 
 # Add backend to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'backend'))
 
 from ai.manager import create_provider
 
+pytestmark = pytest.mark.skipif(
+    os.environ.get("RUN_REAL_AI_TESTS") != "1",
+    reason="真实 API 测试，需设置 RUN_REAL_AI_TESTS=1 和 ANYROUTER_API_KEY 环境变量",
+)
+
 
 async def test_anyrouter_api():
     """Test AnyRouter API with real credentials."""
-    api_key = "sk-REDACTED-OPENROUTER"
+    api_key = os.environ.get("ANYROUTER_API_KEY", "")
     base_url = "https://anyrouter.top/v1"
 
     print("Testing AnyRouter API...")
