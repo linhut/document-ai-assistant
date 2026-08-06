@@ -21,7 +21,7 @@ class TestOpenAIProviderRetry:
         )
         assert provider.name == "openai"
         assert provider.model == "test-model"
-        assert provider.max_retries == 3
+        assert provider.max_retries == 5
         assert provider.timeout == 60.0
 
     def test_provider_custom_retry_config(self):
@@ -57,9 +57,10 @@ class TestOpenAIProviderRetry:
         """注册的 Provider 列表完整。"""
         from ai.manager import available_providers
         providers = available_providers()
-        assert "openai" in providers
-        assert "deepseek" in providers
-        assert "custom" in providers
+        names = {p["name"] for p in providers}
+        assert "openai" in names
+        assert "deepseek" in names
+        assert "custom" in names
 
     def test_create_unknown_provider_raises(self):
         """创建未知 Provider 应抛出 ValueError。"""

@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文枢 · AI 公文智能优化助手</title>
+  <meta name="description" content="基于 GB/T 9704 标准的 AI 公文智能优化助手，让每一份公文都符合规范。支持格式检查、自动修复、AI 润色，兼容多款 AI 大模型。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%232563eb'/%3E%3Cstop offset='100%25' stop-color='%231a56db'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='256' height='256' rx='42' fill='url(%23bg)'/%3E%3Cg transform='translate(56,28)'%3E%3Cpath d='M0,0 L105,0 L144,39 L144,180 Q144,192 132,192 L12,192 Q0,192 0,180 Z' fill='white' fill-opacity='0.94'/%3E%3Cpath d='M105,0 L105,39 L144,39 Z' fill='%23c8d7f0'/%3E%3Crect x='24' y='64' width='96' height='5' rx='2.5' fill='%231e40af' fill-opacity='0.6'/%3E%3Crect x='24' y='84' width='96' height='5' rx='2.5' fill='%231e40af' fill-opacity='0.6'/%3E%3Crect x='24' y='104' width='96' height='5' rx='2.5' fill='%231e40af' fill-opacity='0.6'/%3E%3Crect x='24' y='124' width='64' height='5' rx='2.5' fill='%231e40af' fill-opacity='0.6'/%3E%3Ccircle cx='120' cy='155' r='26' fill='%23dc2626' fill-opacity='0.78'/%3E%3Ctext x='120' y='163' text-anchor='middle' font-family='sans-serif' font-size='24' font-weight='bold' fill='%23dc2626' fill-opacity='0.9'%3E文%3C/text%3E%3C/g%3E%3C/svg%3E">
+  <style>
+    /* ===== Reset & Base ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue-50: #eff6ff;
+      --blue-100: #dbeafe;
+      --blue-200: #bfdbfe;
+      --blue-300: #93c5fd;
+      --blue-400: #60a5fa;
+      --blue-500: #3b82f6;
+      --blue-600: #2563eb;
+      --blue-700: #1d4ed8;
+      --blue-800: #1e40af;
+      --blue-900: #1e3a8a;
+      --red-500: #ef4444;
+      --red-600: #dc2626;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --gray-800: #1f2937;
+      --gray-900: #111827;
+      --radius: 12px;
+      --radius-lg: 16px;
+      --max-w: 1200px;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: var(--gray-800);
+      background: #fff;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--blue-600); text-decoration: none; transition: color .2s; }
+    a:hover { color: var(--blue-800); }
+    img { max-width: 100%; height: auto; }
+    .container { max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
+    .section { padding: 96px 0; }
+    .section-title {
+      font-size: 2rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 12px;
+      color: var(--gray-900);
+    }
+    .section-subtitle {
+      font-size: 1.1rem;
+      text-align: center;
+      color: var(--gray-500);
+      margin-bottom: 64px;
+      max-width: 640px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ===== Button ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all .25s;
+      text-decoration: none;
+    }
+    .btn-primary {
+      background: var(--blue-600);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, .35);
+    }
+    .btn-primary:hover {
+      background: var(--blue-700);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, .45);
+      transform: translateY(-1px);
+      color: #fff;
+    }
+    .btn-secondary {
+      background: #fff;
+      color: var(--gray-700);
+      border: 1.5px solid var(--gray-200);
+    }
+    .btn-secondary:hover {
+      border-color: var(--blue-300);
+      color: var(--blue-600);
+      background: var(--blue-50);
+    }
+    .btn-download {
+      background: var(--gray-800);
+      color: #fff;
+      padding: 10px 20px;
+      font-size: .875rem;
+    }
+    .btn-download:hover { background: #000; color: #fff; }
+
+    /* ===== Navbar ===== */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255,255,255,.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--gray-100);
+    }
+    nav .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--gray-900);
+    }
+    .nav-brand svg { width: 32px; height: 32px; }
+    .nav-links { display: flex; align-items: center; gap: 32px; }
+    .nav-links a {
+      color: var(--gray-600);
+      font-size: .9375rem;
+      font-weight: 500;
+    }
+    .nav-links a:hover { color: var(--blue-600); }
+
+    /* ===== Hero ===== */
+    .hero {
+      position: relative;
+      padding: 120px 0 100px;
+      background: linear-gradient(160deg, var(--blue-50) 0%, #fff 50%, var(--blue-50) 100%);
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -240px;
+      right: -200px;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(37,99,235,.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -200px;
+      left: -200px;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(220,38,38,.05) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero .container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 80px;
+    }
+    .hero-content { flex: 1 1 55%; }
+    .hero-visual { flex: 1 1 45%; }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 14px;
+      border-radius: 20px;
+      background: rgba(37,99,235,.1);
+      color: var(--blue-700);
+      font-size: .8125rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: 3.2rem;
+      font-weight: 800;
+      line-height: 1.2;
+      letter-spacing: -.02em;
+      color: var(--gray-900);
+      margin-bottom: 12px;
+    }
+    .hero h1 .highlight {
+      background: linear-gradient(135deg, var(--blue-600), var(--blue-400));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero h1 .highlight-red {
+      color: var(--red-600);
+      -webkit-text-fill-color: var(--red-600);
+    }
+    .hero-subtitle {
+      font-size: 1.2rem;
+      color: var(--gray-500);
+      margin-bottom: 32px;
+      max-width: 540px;
+    }
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      color: var(--gray-400);
+      font-size: .875rem;
+    }
+    .hero-meta span { display: flex; align-items: center; gap: 4px; }
+
+    /* Hero download row (nyaterm-style) */
+    .hero-download-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .hero-download-row .dl-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: .8125rem;
+      font-weight: 600;
+      background: var(--gray-50);
+      border: 1.5px solid var(--gray-200);
+      color: var(--gray-700);
+      text-decoration: none;
+      transition: all .2s;
+    }
+    .hero-download-row .dl-btn:hover {
+      background: var(--blue-600);
+      border-color: var(--blue-600);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+    .hero-download-row .dl-btn-primary {
+      background: var(--blue-600);
+      border-color: var(--blue-600);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(37,99,235,.35);
+    }
+    .hero-download-row .dl-btn-primary:hover {
+      background: var(--blue-700);
+      box-shadow: 0 6px 20px rgba(37,99,235,.45);
+    }
+
+    /* Hero visual — document mockup */
+    .hero-mockup {
+      position: relative;
+      background: #fff;
+      border-radius: var(--radius-lg);
+      box-shadow: 0 20px 60px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.04);
+      padding: 32px 28px;
+      border: 1px solid var(--gray-100);
+    }
+    .hero-mockup .doc-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid var(--gray-100);
+    }
+    .hero-mockup .doc-title {
+      font-size: .9375rem;
+      font-weight: 600;
+      color: var(--gray-800);
+    }
+    .hero-mockup .doc-status {
+      padding: 3px 12px;
+      border-radius: 12px;
+      font-size: .75rem;
+      font-weight: 600;
+      background: #dcfce7;
+      color: #16a34a;
+    }
+    .hero-mockup .doc-line {
+      height: 6px;
+      background: var(--gray-100);
+      border-radius: 3px;
+      margin-bottom: 10px;
+    }
+    .hero-mockup .doc-line:nth-child(2) { width: 90%; }
+    .hero-mockup .doc-line:nth-child(3) { width: 75%; }
+    .hero-mockup .doc-line:nth-child(4) { width: 85%; }
+    .hero-mockup .doc-line:nth-child(5) { width: 40%; }
+    .hero-mockup .doc-line.check-pass {
+      background: #bbf7d0;
+      position: relative;
+    }
+    .hero-mockup .doc-line.check-pass::after {
+      content: '✓ 格式正确';
+      position: absolute;
+      right: 10px;
+      top: -2px;
+      font-size: .6875rem;
+      color: #16a34a;
+      font-weight: 600;
+    }
+    .hero-mockup .doc-line.check-fail {
+      background: #fecaca;
+      position: relative;
+    }
+    .hero-mockup .doc-line.check-fail::after {
+      content: '✗ 字体不符';
+      position: absolute;
+      right: 10px;
+      top: -2px;
+      font-size: .6875rem;
+      color: #dc2626;
+      font-weight: 600;
+    }
+    .hero-mockup .doc-line.fixed {
+      background: #bbf7d0;
+      position: relative;
+    }
+    .hero-mockup .doc-line.fixed::after {
+      content: '✓ 已修复';
+      position: absolute;
+      right: 10px;
+      top: -2px;
+      font-size: .6875rem;
+      color: #16a34a;
+      font-weight: 600;
+    }
+    .hero-mockup .doc-ai-line {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px dashed var(--gray-200);
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .hero-mockup .doc-ai-line .ai-icon {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(135deg, var(--blue-500), var(--blue-600));
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .625rem;
+      color: #fff;
+      font-weight: 700;
+    }
+    .hero-mockup .doc-ai-line .ai-text {
+      font-size: .8125rem;
+      color: var(--gray-600);
+      background: var(--blue-50);
+      padding: 4px 10px;
+      border-radius: 6px;
+      flex: 1;
+    }
+
+    /* ===== Features Grid ===== */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .feature-card {
+      background: #fff;
+      border: 1px solid var(--gray-100);
+      border-radius: var(--radius);
+      padding: 32px 24px;
+      transition: all .3s;
+    }
+    .feature-card:hover {
+      border-color: var(--blue-200);
+      box-shadow: 0 8px 30px rgba(37,99,235,.08);
+      transform: translateY(-2px);
+    }
+    .feature-card .num {
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--blue-500);
+      letter-spacing: .08em;
+      margin-bottom: 16px;
+      display: block;
+    }
+    .feature-card .icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 1.4rem;
+    }
+    .feature-card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--gray-900);
+    }
+    .feature-card p {
+      font-size: .9375rem;
+      color: var(--gray-500);
+      line-height: 1.7;
+    }
+
+    /* icon colors */
+    .icon-blue { background: var(--blue-50); color: var(--blue-600); }
+    .icon-red { background: #fef2f2; color: var(--red-600); }
+    .icon-green { background: #f0fdf4; color: #16a34a; }
+    .icon-purple { background: #f5f3ff; color: #7c3aed; }
+    .icon-amber { background: #fffbeb; color: #d97706; }
+    .icon-teal { background: #f0fdfa; color: #14b8a6; }
+
+    /* ===== Detail Features ===== */
+    .detail-section { background: var(--gray-50); }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+    }
+    .detail-card {
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 40px 36px;
+      border: 1px solid var(--gray-100);
+    }
+    .detail-card .icon-lg {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      margin-bottom: 20px;
+    }
+    .detail-card h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--gray-900);
+    }
+    .detail-card .desc {
+      color: var(--gray-500);
+      font-size: .9375rem;
+      margin-bottom: 20px;
+      line-height: 1.7;
+    }
+    .detail-card ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .detail-card ul li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: .9rem;
+      color: var(--gray-600);
+    }
+    .detail-card ul li::before {
+      content: '→';
+      color: var(--blue-500);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* detail-visual / right side */
+    .detail-visual {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .detail-visual-card {
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      border: 1px solid var(--gray-100);
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .detail-visual-card .dvc-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+    .detail-visual-card h4 {
+      font-size: .9375rem;
+      font-weight: 600;
+      margin-bottom: 2px;
+      color: var(--gray-900);
+    }
+    .detail-visual-card p {
+      font-size: .8125rem;
+      color: var(--gray-500);
+    }
+
+    /* ===== Workflow ===== */
+    .workflow-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      position: relative;
+    }
+    .workflow-steps::after {
+      content: '';
+      position: absolute;
+      top: 28px;
+      left: 10%;
+      right: 10%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--blue-200), var(--blue-300), var(--blue-200));
+      z-index: 0;
+    }
+    .step {
+      text-align: center;
+      position: relative;
+      z-index: 1;
+      padding: 0 16px;
+    }
+    .step-circle {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid var(--blue-200);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--blue-600);
+      margin: 0 auto 16px;
+      transition: all .3s;
+    }
+    .step:hover .step-circle {
+      background: var(--blue-600);
+      color: #fff;
+      border-color: var(--blue-600);
+      box-shadow: 0 4px 14px rgba(37,99,235,.3);
+    }
+    .step h4 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: var(--gray-900);
+    }
+    .step p {
+      font-size: .85rem;
+      color: var(--gray-500);
+    }
+
+    /* ===== Download ===== */
+    .download-section {
+      background: linear-gradient(160deg, var(--gray-900), #111827);
+      color: #fff;
+      text-align: center;
+    }
+    .download-section .section-title { color: #fff; }
+    .download-section .section-subtitle { color: var(--gray-400); }
+    .download-platforms {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      margin-top: 40px;
+    }
+    .download-card {
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: var(--radius);
+      padding: 24px 32px;
+      min-width: 160px;
+      text-align: center;
+      transition: all .3s;
+    }
+    .download-card:hover {
+      background: rgba(255,255,255,.1);
+      border-color: rgba(255,255,255,.2);
+      transform: translateY(-2px);
+    }
+    .download-card .os-icon { font-size: 2rem; margin-bottom: 10px; }
+    .download-card h4 { font-size: .9375rem; font-weight: 600; margin-bottom: 4px; }
+    .download-card .os-arch {
+      font-size: .75rem;
+      color: var(--gray-400);
+      margin-bottom: 12px;
+    }
+    .download-card .btn {
+      font-size: .8125rem;
+      padding: 8px 20px;
+    }
+
+    /* ===== Footer ===== */
+    footer {
+      background: var(--gray-900);
+      color: var(--gray-400);
+      padding: 48px 0 32px;
+    }
+    footer .container {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 32px;
+    }
+    footer .footer-brand { max-width: 280px; }
+    footer .footer-brand h4 {
+      color: #fff;
+      font-size: 1.1rem;
+      margin-bottom: 6px;
+    }
+    footer .footer-brand p { font-size: .85rem; line-height: 1.7; }
+    footer .footer-links h5 {
+      color: #fff;
+      font-size: .875rem;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    footer .footer-links a {
+      display: block;
+      color: var(--gray-400);
+      font-size: .85rem;
+      margin-bottom: 6px;
+    }
+    footer .footer-links a:hover { color: #fff; }
+    .footer-bottom {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      text-align: center;
+      font-size: .8125rem;
+      color: var(--gray-500);
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 900px) {
+      .hero .container { flex-direction: column; gap: 48px; }
+      .hero h1 { font-size: 2.4rem; }
+      .features-grid { grid-template-columns: 1fr 1fr; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .workflow-steps { grid-template-columns: repeat(2, 1fr); gap: 32px; }
+      .workflow-steps::after { display: none; }
+      .nav-links { gap: 16px; }
+      .download-platforms { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .section { padding: 64px 0; }
+      .hero { padding: 80px 0 64px; }
+      .hero h1 { font-size: 1.8rem; }
+      .features-grid { grid-template-columns: 1fr; }
+      .workflow-steps { grid-template-columns: 1fr; gap: 24px; }
+      .nav-links a:not(.btn) { display: none; }
+      footer .container { flex-direction: column; gap: 24px; }
+      .footer-links-row { flex-direction: column; gap: 24px; }
+      .download-platforms { grid-template-columns: 1fr 1fr; }
+      .hero-download-row { gap: 6px; }
+      .hero-download-row .dl-btn { font-size: .75rem; padding: 5px 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== Navbar ===== -->
+<nav>
+  <div class="container">
+    <a href="#" class="nav-brand">
+      <svg viewBox="0 0 256 256" width="32" height="32">
+        <defs><linearGradient id="nbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2563eb"/><stop offset="100%" stop-color="#1a56db"/></linearGradient></defs>
+        <rect width="256" height="256" rx="42" fill="url(#nbg)"/>
+        <g transform="translate(56,28)">
+          <path d="M0,0 L105,0 L144,39 L144,180 Q144,192 132,192 L12,192 Q0,192 0,180 Z" fill="white" fill-opacity="0.94"/>
+          <path d="M105,0 L105,39 L144,39 Z" fill="#c8d7f0"/>
+          <rect x="24" y="64" width="96" height="5" rx="2.5" fill="#1e40af" fill-opacity="0.6"/>
+          <rect x="24" y="84" width="96" height="5" rx="2.5" fill="#1e40af" fill-opacity="0.6"/>
+          <rect x="24" y="104" width="96" height="5" rx="2.5" fill="#1e40af" fill-opacity="0.6"/>
+          <rect x="24" y="124" width="64" height="5" rx="2.5" fill="#1e40af" fill-opacity="0.6"/>
+          <circle cx="120" cy="155" r="26" fill="#dc2626" fill-opacity="0.78"/>
+          <text x="120" y="163" text-anchor="middle" font-family="sans-serif" font-size="24" font-weight="bold" fill="#dc2626" fill-opacity="0.9">文</text>
+        </g>
+      </svg>
+      文枢
+    </a>
+    <div class="nav-links">
+      <a href="docs/quick-start.html">快速开始</a>
+      <a href="docs/guide.html">使用指南</a>
+      <a href="workspace/">工作台</a>
+      <a href="changelog/">更新日志</a>
+      <a href="#download">下载</a>
+      <a href="https://github.com/linhut/document-ai-assistant" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== Hero ===== -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span>v1.5.1</span>
+        <span>·</span>
+        <span>基于 GB/T 9704 标准</span>
+      </div>
+      <h1>
+        <span class="highlight">AI 公文</span>
+        <span class="highlight-red">智能优化</span>助手
+      </h1>
+      <p class="hero-subtitle">
+        上传 .docx 文件，系统自动检查格式、修复排版问题，<br>
+        并支持 AI 润色。让每一份公文都符合国家标准。
+      </p>
+      <div class="hero-actions">
+        <a href="https://github.com/linhut/document-ai-assistant/releases" target="_blank" rel="noopener" class="btn btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          免费下载
+        </a>
+        <a href="#features" class="btn btn-secondary">了解功能</a>
+      </div>
+      <div class="hero-download-row">
+        <a href="https://github.com/linhut/document-ai-assistant/releases/latest" target="_blank" rel="noopener" class="dl-btn dl-btn-primary">Windows x86_64</a>
+        <a href="https://github.com/linhut/document-ai-assistant/releases/latest" target="_blank" rel="noopener" class="dl-btn">macOS Intel</a>
+        <a href="https://github.com/linhut/document-ai-assistant/releases/latest" target="_blank" rel="noopener" class="dl-btn">macOS Apple Silicon</a>
+        <a href="https://github.com/linhut/document-ai-assistant/releases/latest" target="_blank" rel="noopener" class="dl-btn">Linux x86_64</a>
+        <a href="https://github.com/linhut/document-ai-assistant/releases/latest" target="_blank" rel="noopener" class="dl-btn">Linux ARM64</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-mockup">
+        <div class="doc-header">
+          <span class="doc-title">关于 2025 年度工作总结的报告.docx</span>
+          <span class="doc-status">已检查</span>
+        </div>
+        <div class="doc-line check-fail"></div>
+        <div class="doc-line check-pass"></div>
+        <div class="doc-line check-fail"></div>
+        <div class="doc-line fixed"></div>
+        <div class="doc-line" style="width:55%"></div>
+        <div class="doc-ai-line">
+          <span class="ai-icon">AI</span>
+          <span class="ai-text">已优化文风，精简冗余表述，建议将"经过认真研究"修改为"经研究"</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== gongwen-skill Banner ===== -->
+<section style="padding:8px 0 0;background:var(--gray-50);">
+  <div class="container">
+    <a href="https://github.com/linhut/gongwen-skill" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:linear-gradient(120deg,#2563eb,#1a56db);border-radius:var(--radius-lg);padding:20px 28px;text-decoration:none;box-shadow:0 8px 24px rgba(37,99,235,.25);transition:transform .25s,box-shadow .25s;">
+      <span style="display:flex;align-items:center;gap:14px;">
+        <span style="width:42px;height:42px;border-radius:10px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">🧩</span>
+        <span>
+          <span style="display:block;color:#fff;font-weight:700;font-size:1.05rem;">gongwen-skill · AI Agent 独立发行版</span>
+          <span style="display:block;color:rgba(255,255,255,.85);font-size:.875rem;line-height:1.6;">将公文格式引擎打包为可被 Claude Code 等 Agent 直接调用的 Skill：克隆即用，支持格式检查、自动修复、模板生成、版头版记页码注入、内容优化差异对比，适合命令行与 AI 工作流场景。</span>
+        </span>
+      </span>
+      <span style="display:inline-flex;align-items:center;gap:6px;background:#fff;color:#1d4ed8;font-weight:600;font-size:.875rem;padding:9px 18px;border-radius:8px;flex-shrink:0;">立即体验 →</span>
+    </a>
+  </div>
+</section>
+
+<!-- ===== Features Grid ===== -->
+<section class="section" id="features">
+  <div class="container">
+    <h2 class="section-title">核心功能</h2>
+    <p class="section-subtitle">覆盖公文处理全流程，从格式检查到 AI 润色，一站式完成。</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="num">01</span>
+        <div class="icon icon-blue">📄</div>
+        <h3>格式智能检测</h3>
+        <p>基于 GB/T 9704 标准，自动检查标题字体、正文字号、行距、页边距等数十项格式规范。</p>
+      </div>
+      <div class="feature-card">
+        <span class="num">02</span>
+        <div class="icon icon-red">🛠️</div>
+        <h3>一键自动修复</h3>
+        <p>发现问题后一键修复：字体替换、段落调整、间距修正，所有修改均可追溯还原。</p>
+      </div>
+      <div class="feature-card">
+        <span class="num">03</span>
+        <div class="icon icon-green">🤖</div>
+        <h3>AI 智能润色</h3>
+        <p>接入 OpenAI、DeepSeek、Claude 等大模型，优化公文措辞、精简冗余、提升专业度。</p>
+      </div>
+      <div class="feature-card">
+        <span class="num">04</span>
+        <div class="icon icon-purple">📋</div>
+        <h3>模板管理</h3>
+        <p>内置官方模板库，支持自定义模板。三级模板体系：官方 → 自定义 → 用户，灵活覆盖。</p>
+      </div>
+      <div class="feature-card">
+        <span class="num">05</span>
+        <div class="icon icon-amber">📊</div>
+        <h3>批量处理</h3>
+        <p>支持多文档批量导入、批量检查和修复，大幅提升公文处理效率，适合单位集中使用。</p>
+      </div>
+      <div class="feature-card">
+        <span class="num">06</span>
+        <div class="icon icon-teal">🔒</div>
+        <h3>本地安全运行</h3>
+        <p>核心引擎本地运行，文档不离开您的电脑。AI 密钥加密存储，数据主权可控。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Workflow ===== -->
+<section class="section" id="workflow" style="background:var(--gray-50)">
+  <div class="container">
+    <h2 class="section-title">使用流程</h2>
+    <p class="section-subtitle">三步完成公文优化，上手即用，无需学习。</p>
+    <div class="workflow-steps">
+      <div class="step">
+        <div class="step-circle">1</div>
+        <h4>上传文档</h4>
+        <p>拖拽或选择 .docx 文件，支持批量导入</p>
+      </div>
+      <div class="step">
+        <div class="step-circle">2</div>
+        <h4>一键检查</h4>
+        <p>AI 引擎自动扫描格式与内容问题</p>
+      </div>
+      <div class="step">
+        <div class="step-circle">3</div>
+        <h4>自动修复</h4>
+        <p>一键修复所有格式问题，可选择 AI 润色</p>
+      </div>
+      <div class="step">
+        <div class="step-circle">4</div>
+        <h4>导出成稿</h4>
+        <p>导出符合国家标准的 .docx 正式文档</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Detail Features ===== -->
+<section class="section detail-section" id="details">
+  <div class="container">
+    <h2 class="section-title">深入了解更多</h2>
+    <p class="section-subtitle">从排版规范到 AI 能力，全方位掌握公文优化能力。</p>
+    <div class="detail-grid">
+      <!-- Left: Feature detail card -->
+      <div class="detail-card">
+        <div class="icon-lg icon-blue">⚙️</div>
+        <h3>严格按照国家标准</h3>
+        <p class="desc">基于 GB/T 9704-2012《党政机关公文格式》标准实现，覆盖标题、正文、附件、落款等全部格式要素。</p>
+        <ul>
+          <li>标题自动设为一号，方正小标宋简体</li>
+          <li>正文设为三号，仿宋_GB2312 字体</li>
+          <li>英文与数字使用 Times New Roman</li>
+          <li>全面设置字体 XML 四维属性（ascii / hAnsi / eastAsia / cs）</li>
+          <li>页边距、行距、段落缩进等自动校对</li>
+        </ul>
+      </div>
+      <!-- Right: Visual cards -->
+      <div class="detail-visual">
+        <div class="detail-visual-card">
+          <div class="dvc-icon icon-green">🧠</div>
+          <div>
+            <h4>多 AI 模型支持</h4>
+            <p>兼容 OpenAI、DeepSeek、Claude、Ollama 等主流大模型，自由选择 AI 引擎</p>
+          </div>
+        </div>
+        <div class="detail-visual-card">
+          <div class="dvc-icon icon-purple">📁</div>
+          <div>
+            <h4>三级模板体系</h4>
+            <p>official &lt; custom &lt; user 三层深度合并，灵活覆盖官方与自定义风格</p>
+          </div>
+        </div>
+        <div class="detail-visual-card">
+          <div class="dvc-icon icon-amber">📐</div>
+          <div>
+            <h4>Parser → Model → Generator</h4>
+            <p>文档通过 DocumentModel 中间表示流转，各模块职责清晰，解析精准</p>
+          </div>
+        </div>
+        <div class="detail-visual-card">
+          <div class="dvc-icon icon-red">🔄</div>
+          <div>
+            <h4>可追溯的修复记录</h4>
+            <p>每一次检查与修复均有记录，支持版本历史回溯，随时还原到任意版本</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Download ===== -->
+<section class="section download-section" id="download">
+  <div class="container">
+    <h2 class="section-title">下载最新版本</h2>
+    <p class="section-subtitle">跨平台桌面应用，基于 Electron 构建，支持 Windows、macOS 和 Linux。</p>
+    <div class="download-platforms">
+      <div class="download-card" data-os="win" data-arch="x64">
+        <div class="os-icon">🪟</div>
+        <h4>Windows</h4>
+        <div class="os-arch">x86_64 · NSIS 安装包</div>
+        <a href="https://github.com/linhut/document-ai-assistant/releases/latest" target="_blank" rel="noopener" class="btn btn-download">下载 v1.5.1</a>
+      </div>
+      <div class="download-card" data-os="mac" data-arch="x64">
+        <div class="os-icon">🍎</div>
+        <h4>macOS Intel</h4>
+        <div class="os-arch">x86_64 · DMG</div>
+        <a href="https://github.com/linhut/document-ai-assistant/releases/latest" target="_blank" rel="noopener" class="btn btn-download">下载 v1.5.1</a>
+      </div>
+      <div class="download-card" data-os="mac" data-arch="arm64">
+        <div class="os-icon">🍎</div>
+        <h4>macOS Apple Silicon</h4>
+        <div class="os-arch">ARM64 · DMG</div>
+        <a href="https://github.com/linhut/document-ai-assistant/releases/latest" target="_blank" rel="noopener" class="btn btn-download">下载 v1.5.1</a>
+      </div>
+      <div class="download-card" data-os="linux" data-arch="x64">
+        <div class="os-icon">🐧</div>
+        <h4>Linux</h4>
+        <div class="os-arch">x86_64 · AppImage / deb</div>
+        <a href="https://github.com/linhut/document-ai-assistant/releases/latest" target="_blank" rel="noopener" class="btn btn-download">下载 v1.5.1</a>
+      </div>
+      <div class="download-card" data-os="linux" data-arch="arm64">
+        <div class="os-icon">🐧</div>
+        <h4>Linux ARM64</h4>
+        <div class="os-arch">ARM64 · AppImage</div>
+        <a href="https://github.com/linhut/document-ai-assistant/releases/latest" target="_blank" rel="noopener" class="btn btn-download">下载 v1.5.1</a>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:32px;color:var(--gray-400);font-size:.85rem;">
+      💡 所有版本均发布在
+      <a href="https://github.com/linhut/document-ai-assistant/releases" target="_blank" rel="noopener" style="color:var(--blue-400);text-decoration:underline;">GitHub Releases</a>
+      · 查看 <a href="https://github.com/linhut/document-ai-assistant/releases" target="_blank" rel="noopener" style="color:var(--blue-400);text-decoration:underline;">更新日志</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Footer ===== -->
+<footer>
+  <div class="container">
+    <div class="footer-brand">
+      <h4>📄 文枢 · AI 公文智能优化助手</h4>
+      <p>基于 GB/T 9704 标准的桌面端公文格式优化工具。<br>Electron + FastAPI + Python 技术栈构建。</p>
+    </div>
+    <div class="footer-links-row" style="display:flex;flex-wrap:wrap;gap:40px;">
+      <div class="footer-links">
+        <h5>文档</h5>
+        <a href="docs/quick-start.html">快速开始</a>
+        <a href="docs/guide.html">使用指南</a>
+        <a href="changelog/">更新日志</a>
+      </div>
+      <div class="footer-links">
+        <h5>功能</h5>
+        <a href="#features">格式检查</a>
+        <a href="#features">自动修复</a>
+        <a href="#features">AI 润色</a>
+        <a href="#details">模板管理</a>
+      </div>
+      <div class="footer-links">
+        <h5>资源</h5>
+        <a href="docs/guide.html">使用文档</a>
+        <a href="changelog/">更新日志</a>
+        <a href="https://github.com/linhut/document-ai-assistant/issues" target="_blank">常见问题</a>
+        <a href="https://github.com/linhut/document-ai-assistant" target="_blank">GitHub</a>
+      </div>
+      <div class="footer-links">
+        <h5>关于</h5>
+        <a href="https://github.com/linhut/document-ai-assistant" target="_blank">项目介绍</a>
+        <a href="docs/guide.html#architecture">技术架构</a>
+        <a href="changelog/">版本 v1.5.1</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="container">
+      Copyright &copy; 2025-2026 <a href="https://www.linhut.cn" style="color:var(--gray-400);">Jose AI</a>.
+      基于 GB/T 9704-2012 标准构建. All rights reserved.
+      <a href="https://doc.linhut.cn" style="color:var(--gray-400);">doc.linhut.cn</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  // GitHub release asset name patterns (matching electron-builder artifactName)
+  var ASSET_PATTERNS = {
+    'win-x64': /doc-optimizer-v[\d.]+-win-x64\.exe$/,
+    'mac-x64': /doc-optimizer-v[\d.]+-x64\.dmg$/,
+    'mac-arm64': /doc-optimizer-v[\d.]+-arm64\.dmg$/,
+    'linux-x64': /doc-optimizer-v[\d.]+-x86_64\.AppImage$/,
+    'linux-arm64': /doc-optimizer-v[\d.]+-arm64\.AppImage$/
+  };
+
+  var REPO = 'linhut/document-ai-assistant';
+  var API_URL = 'https://api.github.com/repos/' + REPO + '/releases/latest';
+  var RELEASES_URL = 'https://github.com/' + REPO + '/releases';
+
+  function updateLinks(release) {
+    var version = release.tag_name || 'latest';
+    // Update version badges throughout
+    document.querySelectorAll('.version-badge').forEach(function(el) {
+      el.textContent = version;
+    });
+
+    // Update download card buttons
+    var assets = release.assets || [];
+    document.querySelectorAll('.download-card').forEach(function(card) {
+      var os = card.getAttribute('data-os');
+      var arch = card.getAttribute('data-arch');
+      var key = os + '-' + arch;
+      var pattern = ASSET_PATTERNS[key];
+      if (!pattern) return;
+
+      var matched = null;
+      for (var i = 0; i < assets.length; i++) {
+        if (pattern.test(assets[i].name)) {
+          matched = assets[i];
+          break;
+        }
+      }
+
+      var btn = card.querySelector('.btn');
+      if (!btn) return;
+
+      if (matched) {
+        btn.href = matched.browser_download_url;
+        btn.textContent = '\u4e0b\u8f7d ' + version;
+      } else {
+        btn.href = RELEASES_URL + '/latest';
+      }
+    });
+
+    // Update hero download row buttons
+    var heroPatterns = {
+      'win-x64': /doc-optimizer-v[\d.]+-win-x64\.exe$/,
+      'mac-x64': /doc-optimizer-v[\d.]+-x64\.dmg$/,
+      'mac-arm64': /doc-optimizer-v[\d.]+-arm64\.dmg$/,
+      'linux-x64': /doc-optimizer-v[\d.]+-x86_64\.AppImage$/,
+      'linux-arm64': /doc-optimizer-v[\d.]+-arm64\.AppImage$/
+    };
+    var heroKeys = ['win-x64', 'mac-x64', 'mac-arm64', 'linux-x64', 'linux-arm64'];
+    var heroBtns = document.querySelectorAll('.hero-download-row .dl-btn');
+    heroBtns.forEach(function(btn, idx) {
+      if (idx >= heroKeys.length) return;
+      var key = heroKeys[idx];
+      var pattern = heroPatterns[key];
+      if (!pattern) return;
+      var matched = null;
+      for (var i = 0; i < assets.length; i++) {
+        if (pattern.test(assets[i].name)) {
+          matched = assets[i];
+          break;
+        }
+      }
+      if (matched) {
+        btn.href = matched.browser_download_url;
+      }
+    });
+  }
+
+  // Try fetching from GitHub API
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', API_URL, true);
+  xhr.setRequestHeader('Accept', 'application/vnd.github.v3+json');
+  xhr.onload = function() {
+    if (xhr.status === 200) {
+      try {
+        var data = JSON.parse(xhr.responseText);
+        updateLinks(data);
+      } catch(e) {}
+    }
+  };
+  xhr.onerror = function() {
+    // API failed (rate limited, etc) — links already point to /releases/latest as fallback
+  };
+  xhr.send();
+})();
+</script>
+</body>
+</html>

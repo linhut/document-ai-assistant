@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>岳麓蓝天 · 广西贵港洪水救援 · 总结报告</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f2f6fc;
+            padding: 30px 20px;
+            color: #1a2a44;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 28px 32px;
+            margin-bottom: 28px;
+            box-shadow: 0 8px 28px rgba(0, 20, 50, 0.08);
+            border: 1px solid #e9eef4;
+        }
+        .header {
+            background: linear-gradient(145deg, #0b2b5c, #1b4a8b);
+            color: #fff;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .header-icon {
+            width: 56px;
+            height: 56px;
+            flex-shrink: 0;
+        }
+        .header-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.15);
+            padding: 4px;
+        }
+        .header-text {
+            flex: 1;
+            min-width: 200px;
+        }
+        .header-text h1 {
+            font-size: 30px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .header-text .subtitle {
+            font-size: 18px;
+            font-weight: 300;
+            margin-top: 2px;
+            opacity: 0.9;
+        }
+        .header .badge {
+            display: inline-block;
+            background: #ffb347;
+            color: #0b2b5c;
+            padding: 4px 20px;
+            border-radius: 40px;
+            font-size: 15px;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+        .header .meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            margin-top: 10px;
+            font-size: 15px;
+            opacity: 0.85;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 10px;
+        }
+        .stat-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 18px 12px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            border-left: 6px solid #1b4a8b;
+        }
+        .stat-card .num {
+            font-size: 34px;
+            font-weight: 700;
+            color: #0b2b5c;
+        }
+        .stat-card .label {
+            font-size: 14px;
+            color: #4a5a7a;
+            margin-top: 4px;
+        }
+        .section-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #0b2b5c;
+            border-bottom: 3px solid #dce5f2;
+            padding-bottom: 12px;
+            margin-bottom: 22px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .chart-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            gap: 30px;
+            align-items: flex-start;
+        }
+        .chart-box {
+            background: #fafcff;
+            padding: 20px 20px 10px;
+            border-radius: 18px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            flex: 1 1 300px;
+            min-width: 280px;
+        }
+        .chart-box h4 {
+            text-align: center;
+            color: #0b2b5c;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin: 8px 0;
+        }
+        th, td {
+            border: 1px solid #dce3ed;
+            padding: 10px 14px;
+            text-align: left;
+        }
+        th {
+            background: #e9eff7;
+            color: #0b2b5c;
+            font-weight: 600;
+        }
+        .equip-list {
+            columns: 2 220px;
+            column-gap: 30px;
+            list-style: none;
+            padding: 0;
+        }
+        .equip-list li {
+            padding: 6px 0 6px 28px;
+            border-bottom: 1px dashed #e2e8f0;
+            position: relative;
+        }
+        .equip-list li::before {
+            content: "▹";
+            position: absolute;
+            left: 4px;
+            color: #1b4a8b;
+            font-weight: bold;
+        }
+        .phase-block {
+            border-left: 6px solid #2a7de1;
+            padding-left: 22px;
+            margin-bottom: 28px;
+        }
+        .phase-block h3 {
+            font-size: 19px;
+            font-weight: 600;
+            color: #0b2b5c;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+        }
+        .phase-block .time {
+            font-weight: 400;
+            font-size: 15px;
+            color: #5e6f8d;
+            background: #edf2f9;
+            padding: 2px 14px;
+            border-radius: 30px;
+        }
+        .phase-block .detail {
+            margin-top: 8px;
+            color: #1e2a44;
+            line-height: 1.9;
+        }
+        .phase-block .detail ul {
+            margin-top: 6px;
+            padding-left: 22px;
+        }
+        .phase-block .detail ul li {
+            margin-bottom: 4px;
+        }
+        .log-full {
+            font-size: 13.5px;
+            line-height: 1.8;
+            background: #f8faff;
+            padding: 16px 22px;
+            border-radius: 16px;
+            border: 1px solid #dce3ed;
+        }
+        .log-full p {
+            padding: 3px 0;
+            border-bottom: 1px dashed #eef3fa;
+            margin: 0;
+        }
+        .footer {
+            text-align: center;
+            color: #4a5a7a;
+            font-size: 14px;
+            border-top: 1px solid #d0dae8;
+            padding-top: 24px;
+            margin-top: 20px;
+        }
+        @media (max-width: 600px) {
+            .header-text h1 { font-size: 22px; }
+            .equip-list { columns: 1; }
+            .chart-box { flex: 1 1 100%; }
+            .header-icon { width: 40px; height: 40px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- 头部 -->
+    <div class="card header">
+        <div class="header-icon">
+            <img src="https://23647782.s21i.faiusr.com/4/ABUIABAEGAAg-bOp9gUoh8S7tAcwmwE4lgE.png" alt="队徽" onerror="this.style.display='none'">
+        </div>
+        <div class="header-text">
+            <h1>🚤 广西贵港·三里镇洪水救援</h1>
+            <div class="subtitle">—— 抗洪抢险实战任务（应急管理部A类响应）</div>
+            <span class="badge">2026.07.07 – 07.09</span>
+            <div class="meta">
+                <span>📍 贵港市三里镇 · 东流小学 · 物流学院</span>
+                <span>📅 任务周期 3 天</span>
+                <span>👥 总参与约 40 人</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 关键数据 -->
+    <div class="stats-grid">
+        <div class="stat-card"><div class="num">1041</div><div class="label">总转运人数</div></div>
+        <div class="stat-card"><div class="num">870</div><div class="label">7月8日转运</div></div>
+        <div class="stat-card"><div class="num">171</div><div class="label">7月9日转运</div></div>
+        <div class="stat-card"><div class="num">5</div><div class="label">出动车辆</div></div>
+        <div class="stat-card"><div class="num">8</div><div class="label">充气皮艇</div></div>
+        <div class="stat-card"><div class="num">6</div><div class="label">发动机台数</div></div>
+    </div>
+
+    <!-- 图表 -->
+    <div class="card">
+        <div class="section-title">📊 数据图表</div>
+        <div class="chart-row">
+            <div class="chart-box">
+                <h4>📆 每日转运人数</h4>
+                <canvas id="barChart" width="300" height="220"></canvas>
+            </div>
+            <div class="chart-box">
+                <h4>📍 各任务地点救出人数</h4>
+                <canvas id="pieChart" width="300" height="220"></canvas>
+            </div>
+        </div>
+        <div style="margin-top:20px; display:flex; flex-wrap:wrap; gap:20px 40px; justify-content:center; font-size:14px; color:#1e2a44;">
+            <div><span style="display:inline-block; width:14px; height:14px; background:#1b4a8b; border-radius:4px; vertical-align:middle;"></span> 物流学院 约 620 人</div>
+            <div><span style="display:inline-block; width:14px; height:14px; background:#2a7de1; border-radius:4px; vertical-align:middle;"></span> 贵港高中 约 330 人</div>
+            <div><span style="display:inline-block; width:14px; height:14px; background:#e68a2e; border-radius:4px; vertical-align:middle;"></span> 桢楠居A座 约 76 人</div>
+            <div><span style="display:inline-block; width:14px; height:14px; background:#8b5cf6; border-radius:4px; vertical-align:middle;"></span> 其他区域 约 15 人</div>
+        </div>
+    </div>
+
+    <!-- 人员分组 -->
+    <div class="card">
+        <div class="section-title">👥 一线参战人员（17人）</div>
+        <table>
+            <tr><th>姓名</th><th>车辆</th><th>备注</th></tr>
+            <tr><td>谭章</td><td>湘AD54681</td><td>指挥官</td></tr>
+            <tr><td>邱明星</td><td>湘A70U1S</td><td>一线队员</td></tr>
+            <tr><td>彭壮</td><td>—</td><td>一线队员</td></tr>
+            <tr><td>郑豆</td><td>—</td><td>一线队员</td></tr>
+            <tr><td>刘勇</td><td>—</td><td>一线队员</td></tr>
+            <tr><td>洪波</td><td rowspan="5">湘AE2612</td><td>一线队员</td></tr>
+            <tr><td>稂阳长</td><td>一线队员</td></tr>
+            <tr><td>李盛民</td><td>一线队员</td></tr>
+            <tr><td>肖翔</td><td>一线队员</td></tr>
+            <tr><td>夏杨军（女）</td><td>一线队员</td></tr>
+            <tr><td>李栋</td><td rowspan="2">湘AW615Z（货车）</td><td>一线队员</td></tr>
+            <tr><td>莫志华</td><td>一线队员</td></tr>
+            <tr><td>罗布多吉</td><td>—</td><td>一线队员</td></tr>
+            <tr><td>任恺</td><td rowspan="4">湘A567XZ</td><td>一线队员</td></tr>
+            <tr><td>杨佳（女）</td><td>一线队员</td></tr>
+            <tr><td>李佩（女）</td><td>一线队员</td></tr>
+            <tr><td>曹骥</td><td>一线队员</td></tr>
+        </table>
+        <p style="margin-top:8px; font-size:14px; color:#4a5a7a;">* 另有宣传组、秘书组、后方平台、外联组等共计约23人参与保障</p>
+    </div>
+
+    <!-- 装备 -->
+    <div class="card">
+        <div class="section-title">📦 装备清单（货车湘AW615Z）</div>
+        <ul class="equip-list">
+            <li>充气皮艇 8 个</li><li>发动机 6 台</li><li>铁油桶 4 个</li><li>红油桶 7 个</li>
+            <li>12V气泵 2 个</li><li>220V气泵 1 个</li><li>脚踩式气泵 6 个</li><li>补艇工具 1 套</li>
+            <li>浆板 12 个</li><li>激流救生衣 20 件</li><li>绳包 10 个</li><li>灾民救生衣 55 件</li>
+            <li>火花塞 10 个</li><li>二冲程机油 10 瓶</li><li>单绳装备 2 套</li><li>无人机 2 台（M400 / 4T）</li>
+            <li>油锯 4 个</li><li>对讲机 20 台</li><li>螺旋桨 4 个</li><li>汽油发电机 2 台</li>
+            <li>照明无人机 1 台</li><li>维修工具 6 套</li><li>海能达中继 1 台</li><li>维德基站 1 台</li>
+            <li>自动帐篷 2 个</li>
+        </ul>
+    </div>
+
+    <!-- 分阶段任务（细化） -->
+    <div class="card">
+        <div class="section-title">📋 分阶段任务详情</div>
+
+        <div class="phase-block">
+            <h3>🚚 第一阶段 · 集结与机动 <span class="time">7月7日 12:55 – 23:45</span></h3>
+            <div class="detail">
+                <ul>
+                    <li><strong>12:55</strong> 李栋（司机）、莫志华、罗布多吉3人驾驶货车湘AW615Z从洋湖队部出发。</li>
+                    <li><strong>13:30</strong> 指挥官谭章1车（湘AD54681）出发；邱明星、彭壮、郑豆、刘勇4人1车（湘A70U1S）出发；洪波、稂阳长、李盛民、肖翔、夏杨军5人1车（湘AE2612）出发。</li>
+                    <li><strong>13:36</strong> 任恺、杨佳、李佩、曹骥4人1车（湘A567XZ）出发。</li>
+                    <li>途中各车分别在邵阳服务区（15:58）、永州服务区（16:10）、回龙寺服务区（16:20）、中峰服务区（17:55）、波赛服务区（20:10）休整加油。</li>
+                    <li><strong>17:30</strong> 接到广西贵港三里镇镇长电话求救，我队5车明确目标为三里镇。</li>
+                    <li><strong>22:25-22:35</strong> 各车陆续抵达贵港东收费站。</li>
+                    <li><strong>22:40-22:42</strong> 各车从贵港东收费站出发前往东流小学。</li>
+                    <li><strong>23:21-23:45</strong> 各车陆续抵达东流小学，全员集结完毕。</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="phase-block" style="border-left-color:#e68a2e;">
+            <h3>🚤 第二阶段 · 大规模师生转运 <span class="time">7月8日 04:24 – 19:30</span></h3>
+            <div class="detail">
+                <ul>
+                    <li><strong>04:24</strong> 接当地教育局求助，约1万名学生需要转移。谭章1人1车前往迎宾大道附近核实情况。</li>
+                    <li><strong>06:00</strong> 各艇组从东流小学出发，前往广西物流职业技术学院、贵港市高级中学等受灾区。</li>
+                    <li><strong>06:46</strong> 任恺组在迎宾大道入口途中遇一被困孕妇，将其及家人送到目的地（转运2人）。</li>
+                    <li><strong>07:25起</strong> 各艇组陆续投入转运：</li>
+                    <ul>
+                        <li>任恺、曹骥、刘勇（3人1艇）</li>
+                        <li>莫志华、李盛民（2人1艇，14号艇）</li>
+                        <li>邱明星、罗布多吉（2人1艇，9号艇）</li>
+                        <li>洪波、郑豆（2人1艇，0号艇）</li>
+                        <li>李佩、彭壮（2人1艇，08号艇）</li>
+                        <li>后续增加洪波、李栋，肖翔、稂阳长等组合</li>
+                    </ul>
+                    <li><strong>转运数据节点：</strong></li>
+                    <ul>
+                        <li>08:32 首批两艇各转运7人（累计14人）</li>
+                        <li>11:05 累计193人</li>
+                        <li>13:00 累计304人</li>
+                        <li>15:00 累计490人</li>
+                        <li>17:00 累计600人（贵港高级中学尚德园二栋清空）</li>
+                        <li>17:40 累计680人</li>
+                        <li>19:29 全队当日转运 <strong>870人</strong>（含途中帮助的孕妇及家人2名）</li>
+                    </ul>
+                    <li><strong>19:30</strong> 谭队指令转场至贵港市委党校休整。各车分批次出发，20:10全员到达党校。</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="phase-block" style="border-left-color:#2ba150;">
+            <h3>✅ 第三阶段 · 收尾转运与任务结束 <span class="time">7月9日 10:00 – 15:30</span></h3>
+            <div class="detail">
+                <ul>
+                    <li><strong>10:00 – 12:00</strong> 任恺、曹骥协助安能转运38人。</li>
+                    <li><strong>10:47</strong> 李盛民、莫志华从桢楠居A座转运8人。</li>
+                    <li><strong>10:59 / 11:25</strong> 物流学校五艇分两批次转运80人，并派老师返校检查遗漏学生。</li>
+                    <li><strong>12:00</strong> 邱明星、肖翔载4名老师检查各宿舍楼，发现棕楠居A座约60-70名学生需救生衣，曹骥、任恺协调运送。</li>
+                    <li><strong>12:28</strong> 5艘艇完成第三批40人转运后，部分队员休整。</li>
+                    <li><strong>13:00</strong> 任恺、洪波、郑豆、曹骥、彭壮、李佩、李盛民、莫志华8人休整完毕继续转运；邱明星、肖翔无休整持续工作。</li>
+                    <li><strong>13:15</strong> 邱明星、肖翔转运最后5人。</li>
+                    <li><strong>15:33</strong> 当日累计转运 <strong>171人</strong>，全队累计转运 <strong>1041人</strong>。指挥部宣布任务结束，全体回宾馆休整。</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 全部信息审核（无滚动，完整显示） -->
+    <div class="card">
+        <div class="section-title">📜 全部信息审核详情（135条）</div>
+        <div class="log-full" id="logList"></div>
+    </div>
+
+    <!-- 后方平台值班 -->
+    <div class="card">
+        <div class="section-title">📞 后方平台值班表（部分）</div>
+        <table>
+            <tr><th>日期</th><th>班次</th><th>信息收集</th><th>信息审核</th><th>信息发布</th></tr>
+            <tr><td>07.07</td><td>白班</td><td>伍艺辉</td><td>王莉莉</td><td>欧金花</td></tr>
+            <tr><td>07.07</td><td>晚班</td><td>张帆</td><td>王莉莉</td><td>李明起</td></tr>
+            <tr><td>07.08</td><td>白班</td><td>黄新胜</td><td>王莉莉</td><td>欧金花</td></tr>
+            <tr><td>07.08</td><td>晚班</td><td>张帆</td><td>黄新胜</td><td>李明起</td></tr>
+            <tr><td>07.09</td><td>白班</td><td>伍艺辉</td><td>张帆</td><td>欧金花</td></tr>
+            <tr><td>07.09</td><td>晚班</td><td>黄新胜</td><td>李明起</td><td>毛琳</td></tr>
+        </table>
+    </div>
+
+    <div class="footer">
+        岳麓蓝天救援队 · 2026年7月7-9日 · 广西贵港洪水救援任务总结<br>
+        数据基于后方平台信息汇总，仅供参考
+    </div>
+</div>
+
+<script>
+    // 全部135条信息审核（完整列表）
+    const logs = [
+        "0707-1【信息审核】12:55 李栋（司机）、莫志华、罗布多吉3人1车（货车湘AW615Z）从洋湖出发广西贵港。",
+        "0707-2【信息审核】13:30 谭章1人1车（湘AD54681）从洋湖队部出发广西贵港。",
+        "0707-3【信息审核】13:30 邱明星（驾驶员）、彭壮、郑豆、刘勇4人1车（湘A70U1S）从洋湖队部出发广西贵港。",
+        "0707-4【信息审核】13:30 洪波（驾驶员）、稂阳长、李盛民、肖翔、夏杨军（女）5人1车（湘AE2612）从洋湖队部出发广西贵港。",
+        "0707-5【信息审核】13:36 任恺（驾驶员）、杨佳（女）、李佩（女）、曹骥4人1车（湘A567XZ）从洋湖队部出发广西贵港。",
+        "0707-6【信息审核】15:58 谭章1人1车（湘AD54681）到达邵阳服务区充电休整。",
+        "0707-7【信息审核】16:10 李栋（司机）、莫志华、罗布多吉3人1车（货车湘AW615Z）到达永州服务区加油休整。",
+        "0707-8【信息审核】16:20 邱明星（驾驶员）、彭壮、郑豆、刘勇4人1车（湘A70U1S）到达回龙寺服务区休整。",
+        "0707-9【信息审核】16:20 任恺（驾驶员）、杨佳（女）、李佩（女）、曹骥4人1车（湘A567XZ）到达回龙寺服务区休整。",
+        "0707-10【信息审核】16:35 邱明星（驾驶员）、彭壮、郑豆、刘勇4人1车（湘A70U1S）回龙寺服务区出发广西贵港。",
+        "0707-11【信息审核】16:35 稂阳长（驾驶员）、洪波、李盛民、肖翔、夏杨军（女）5人1车（湘AE2612）回龙寺服务区出发广西贵港。",
+        "0707-12【信息审核】16:38 任恺（驾驶员）、杨佳（女）、李佩（女）、曹骥4人1车（湘A567XZ）回龙寺服务区出发广西贵港。",
+        "0707-13【信息审核】17:30 接到广西贵港三里镇镇长电话求救，我队5车前往广西贵港三里镇。",
+        "0707-14【信息审核】17:55 稂阳长（驾驶员）、洪波、彭壮、肖翔、夏杨军（女）5人1车（湘AE2612）中峰服务区出发前往广西贵港三里镇。",
+        "0707-15【信息审核】20:10 莫志华（驾驶员）李栋2人1车（湘AW615Z）从波赛服务区出发前往广西贵港。",
+        "0707-16【信息审核】20:15 稂阳长（驾驶员）、洪波、彭壮、肖翔、夏杨军（女）5人1车（湘AE2612）波赛服务区出发前往广西贵港。",
+        "0707-17【信息审核】20:19 邱明星（驾驶员）、李盛民、郑豆、刘勇、罗布多吉5人1车（湘A70U1S）波赛服务区出发前往广西贵港。",
+        "0707-18【信息审核】20:19 任恺（驾驶员）、杨佳（女）、李佩（女）、曹骥4人1车（湘A567XZ）从波赛服务区前往广西贵港。",
+        "0707-19【信息审核】22:25 任恺（驾驶员）、杨佳（女）、李佩（女）、曹骥4人1车（湘A567XZ）已抵达贵港东收费站。",
+        "0707-20【信息审核】22:26 稂阳长（驾驶员）、洪波、彭壮、肖翔、夏杨军（女）5人1车（湘AE2612）已抵达贵港东收费站。",
+        "0707-21【信息审核】22:29 邱明星（驾驶员）、李盛民、郑豆、刘勇、罗布多吉5人1车（湘A70U1S）已到达广西贵港东收费站。",
+        "0707-22【信息审核】22:35 莫志华（驾驶员）、李栋2人1车（湘AW615Z）到达贵港东收费站。",
+        "0707-23【信息审核】22:40 李栋（驾驶员）、莫志华2人1车（湘AW615Z）从贵港东收费站前往东流小学。",
+        "0707-24【信息审核】22:42 稂阳长（驾驶员）、洪波、彭壮、肖翔、夏杨军（女）5人1车（湘AE2612）从广西贵港东高速收费站前往东流小学。",
+        "0707-25【信息审核】22:42 邱明星（驾驶员）、李盛民、郑豆、刘勇、罗布多吉5人1车（湘A70U1S）从贵港东收费站前往东流小学。",
+        "0707-26【信息审核】22:42 任恺（驾驶员）、杨佳（女）、李佩（女）、曹骥4人1车（湘A567XZ）从贵港东收费站前往东流小学。",
+        "0707-27【信息审核】23:21 任恺（驾驶员）、杨佳（女）、李佩（女）、曹骥4人1车（湘A567XZ）已抵达东流小学。",
+        "0707-28【信息审核】23:25 任恺（驾驶员）、杨佳（女）2人1车（湘A567XZ）前往总指挥部与当地政府对接；李佩（女）、曹骥2人在东流小学协助安排队友今晚入住小学教室。",
+        "0707-29【信息审核】23:34 李佩（女）、曹骥2人抵达三楼教室今晚休息位置，两人合力收拾现场。",
+        "0707-30【信息审核】23:40 邱明星（驾驶员）、李盛民、郑豆、刘勇、罗布多吉5人1车（湘A70U1S）已抵达东流小学。",
+        "0707-31【信息审核】23:43 稂阳长（驾驶员）、洪波、彭壮、肖翔、夏杨军（女）5人1车（湘AE2612）已抵达东流小学。",
+        "0707-32【信息审核】23:45 李栋（驾驶员）、莫志华2人1车（湘AW615Z）已抵达东流小学。",
+        "0708-1【信息审核】04:24 接当地教育局求助，约1万名学生需要转移，谭章1人1车（湘AD54681）从修整地到达东流小学，前往迎宾大道核实情况。",
+        "0708-2【信息审核】06:00 任恺（驾驶员）、杨佳（女）、李佩（女）、曹骥4人1车（湘A567XZ）已从东流小学前往迎宾大道入口。",
+        "0708-3【信息审核】06:00 李栋、莫志华2人1车（湘AW615Z）从东流小学出发前往广西物流职业技术学院。",
+        "0708-4【信息审核】06:00 稂阳长（驾驶员）、洪波、彭壮、肖翔、夏杨军（女）5人1车（湘AE2612）从东流小学出发前往广西物流职业技术学院。",
+        "0708-5【信息审核】06:00 郑豆（驾驶员）、李盛民、邱明星、刘勇、罗布多吉5人1车（湘A70U1S）从东流小学出发前往广西物流职业技术学院。",
+        "0708-6【信息审核】06:46 任恺（驾驶员）、杨佳（女）、李佩（女）3人1车（湘A567XZ）已抵达迎宾大道入口，途中遇一被困孕妇并将她及家人送到目的地。转运2人。",
+        "0708-7【信息审核】06:48 稂阳长（驾驶员）、洪波、彭壮、肖翔、夏杨军（女）5人1车（湘AE2612）已抵达迎宾大道入口。",
+        "0708-8【信息审核】07:25 任恺、曹骥、刘勇3人1艇前往贵港市高级中学送物资，并转运师生。",
+        "0708-9【信息审核】07:39 莫志华、李盛民2人一组驾驶14号艇开始转运师生。",
+        "0708-10【信息审核】07:40 邱明星、罗布多吉2人一组驾驶9号艇开始转运师生。",
+        "0708-11【信息审核】07:40 洪波、郑豆2人一组带1名老师驾驶0号艇开始转运师生。",
+        "0708-12【信息审核】08:00 李佩、彭壮2人一组带1名老师驾驶08号艇开始转运师生。",
+        "0708-13【信息审核】08:32 邱明星、罗布多吉驾驶9号艇转运师生7人。",
+        "0708-14【信息审核】08:32 洪波、郑豆驾驶0号艇转运师生7人。",
+        "0708-15【信息审核】08:39 莫志华、李盛民驾驶14号艇转运师生7人。",
+        "0708-16【信息审核】08:41 莫志华、李盛民驾驶14号艇接师生和记者3人前往贵港市高级中学转运师生。",
+        "0708-17【信息审核】08:43 任恺、曹骥、刘勇3人1艇转运师生8人。",
+        "0708-18【信息审核】09:00 邱明星、罗布多吉驾驶9号艇转运师生8人。",
+        "0708-19【信息审核】09:00 李佩、彭壮驾驶08号艇转运师生7人。",
+        "0708-20【信息审核】09:09 莫志华、李盛民驾驶14号艇转运师生8人。",
+        "0708-21【信息审核】09:09 任恺1人留在贵港市高级中学宿舍指挥学生撤离，被困师生约1000名。",
+        "0708-22【信息审核】09:19 洪波、郑豆2人1艇转运师生10人。",
+        "0708-23【信息审核】09:36 李佩、彭壮2人一组转运师生6人。",
+        "0708-24【信息审核】09:36 莫志华、李盛民2人一组转运师生8人。",
+        "0708-25【信息审核】09:49 邱明星、罗布多吉2人1艇转运师生10人。",
+        "0708-26【信息审核】10:08 莫志华、李盛民2人一组转运师生8人。",
+        "0708-27【信息审核】10:08 李佩、彭壮2人1艇转运师生8人。",
+        "0708-28【信息审核】10:12 曹骥、刘勇2人1艇转运师生8人。",
+        "0708-29【信息审核】10:14 邱明星、罗布多吉2人1艇转运师生8人。",
+        "0708-30【信息审核】10:20 洪波、郑豆2人1艇转运师生10人。",
+        "0708-31【信息审核】10:35 李佩、彭壮2人1艇转运师生6人。",
+        "0708-32【信息审核】10:35 邱明星、罗布多吉2人1艇转运师生8人。",
+        "0708-33【信息审核】10:49 曹骥、刘勇2人1艇转运师生8人。",
+        "0708-34【信息审核】10:49 洪波、郑豆2人1艇转运师生9人。",
+        "0708-35【信息审核】10:56 邱明星、罗布多吉2人1艇转运师生8人。",
+        "0708-36【信息审核】10:56 莫志华、李盛民2人1艇转运师生8人。",
+        "0708-37【信息审核】11:05 李佩、彭壮2人1艇转运师生6人。",
+        "0708-38【信息审核】11:05 洪波、郑豆2人1艇转运师生10人。累计193人。",
+        "0708-39【信息审核】11:14 曹骥、刘勇2人1艇转运师生9人。",
+        "0708-40【信息审核】11:14 邱明星、罗布多吉2人1艇转运师生8人。",
+        "0708-41【信息审核】11:14 莫志华、李盛民2人1艇转运师生8人。",
+        "0708-42【信息审核】11:30 邱明星、罗布多吉2人1艇转运师生8人。",
+        "0708-43【信息审核】11:45 曹骥、刘勇2人1艇转运师生10人。",
+        "0708-44【信息审核】12:13 洪波、郑豆2人1艇给物流学院转运一趟食品物资。",
+        "0708-45【信息审核】12:13 曹骥、刘勇2人1艇转运师生8人。",
+        "0708-46【信息审核】12:13 李佩、彭壮2人1艇转运师生6人。",
+        "0708-47【信息审核】12:24 莫志华、李盛民2人1艇转运师生10人。",
+        "0708-48【信息审核】12:31 李佩、彭壮2人1艇转运师生6人。",
+        "0708-49【信息审核】12:40 邱明星、罗布多吉2人1艇转运师生8人。",
+        "0708-50【信息审核】12:46 莫志华、李盛民2人1艇转运师生8人。",
+        "0708-51【信息审核】12:46 曹骥、刘勇2人1艇转运师生8人。",
+        "0708-52【信息审核】12:51 李佩、彭壮2人1艇转运师生6人。",
+        "0708-53【信息审核】12:57 邱明星、罗布多吉2人1艇转运师生8人。累计304人。",
+        "0708-54【信息审核】13:08 莫志华、李盛民2人1艇转运师生8人。",
+        "0708-55【信息审核】13:11 洪波、郑豆2人1艇转运师生9人。",
+        "0708-56【信息审核】13:18 曹骥、刘勇2人1艇转运师生8人。",
+        "0708-57【信息审核】13:23 李佩、彭壮2人1艇转运师生8人。",
+        "0708-58【信息审核】13:25 莫志华、李盛民2人1艇转运师生8人。",
+        "0708-59【信息审核】13:34 洪波、李栋2人1艇转运师生10人。",
+        "0708-60【信息审核】13:44 肖翔、稂阳长2人1艇转运师生8人。",
+        "0708-61【信息审核】13:44 李佩、彭壮2人1艇转运师生6人。",
+        "0708-62【信息审核】13:47 莫志华、李盛民2人1艇转运师生8人。",
+        "0708-63【信息审核】13:55 洪波、李栋2人1艇转运师生10人。",
+        "0708-64【信息审核】13:55 曹骥、刘勇2人1艇转运师生8人。",
+        "0708-65【信息审核】14:06 肖翔、稂阳长2人1艇转运师生8人。",
+        "0708-66【信息审核】14:06 李佩、彭壮2人1艇转运师生8人。",
+        "0708-67【信息审核】14:06 莫志华、李盛民2人1艇转运师生8人。",
+        "0708-68【信息审核】14:27 洪波、李栋2人1艇转运师生10人。",
+        "0708-69【信息审核】14:27 肖翔、稂阳长2人1艇转运师生8人。",
+        "0708-70【信息审核】14:27 曹骥、刘勇2人1艇转运师生10人。",
+        "0708-71【信息审核】14:33 李佩、彭壮2人1艇转运师生10人。",
+        "0708-72【信息审核】14:41 莫志华、李盛民2人1艇转运师生10人。",
+        "0708-73【信息审核】14:53 任恺、洪波、李栋3人1艇转运师生9人。",
+        "0708-74【信息审核】14:55 肖翔、稂阳长2人1艇转运师生8人。",
+        "0708-75【信息审核】14:55 李佩、彭壮2人1艇转运师生6人。累计490人。",
+        "0708-76【信息审核】15:45 党员突击队任恺、刘勇、洪波、彭壮4人率领其他队友前往贵港高级中学转运学生。",
+        "0708-77【信息审核】16:17 李佩、彭壮2人1艇转运师生10人。",
+        "0708-78【信息审核】16:17 邱明星、郑豆2人1艇转运师生10人。",
+        "0708-79【信息审核】16:17 曹骥、刘勇2人1艇转运师生10人。",
+        "0708-80【信息审核】16:17 莫志华、李盛民2人1艇转运师生10人。",
+        "0708-81【信息审核】16:17 洪波、肖翔2人1艇转运师生10人。累计540人。",
+        "0708-82【信息审核】16:40 洪波、郑豆2人1艇转运师生10人。",
+        "0708-83【信息审核】16:40 邱明星、肖翔2人1艇转运师生10人。",
+        "0708-84【信息审核】16:40 稂阳长、夏杨军2人1艇转运师生10人。",
+        "0708-85【信息审核】16:40 李盛民、莫志华2人1艇转运师生10人。",
+        "0708-86【信息审核】16:59 洪波、郑豆2人1艇转运师生10人。",
+        "0708-87【信息审核】16:59 邱明星、肖翔2人1艇转运师生10人。",
+        "0708-88【信息审核】17:00 贵港市高级中学宿舍楼尚德园二栋所有师生转运完毕，累计600人。",
+        "0708-89【信息审核】17:23 稂阳长、夏杨军2人1艇转运师生10人。",
+        "0708-90【信息审核】17:29 郑豆、洪波2人1艇转运师生10人。",
+        "0708-91【信息审核】17:29 邱明星、肖翔2人1艇转运师生10人。",
+        "0708-92【信息审核】17:29 李盛民、莫志华2人1艇转运师生10人。",
+        "0708-93【信息审核】17:35 任恺、曹骥、刘勇3人1艇转运师生10人。",
+        "0708-94【信息审核】17:40 曹骥、刘勇2人1艇转运师生10人。",
+        "0708-95【信息审核】17:40 郑豆、肖翔2人1艇转运师生10人。",
+        "0708-96【信息审核】17:40 稂阳长、夏杨军2人1艇转运师生10人。累计680人。",
+        "0708-97【信息审核】17:40-19:29 全队继续转运师生共190人，当日合计870人（含孕妇及家人2名）。",
+        "0708-98【信息审核】19:15 稂阳长（司机）、彭壮、莫志华、洪波、李佩5人1车前往市委党校。",
+        "0708-99【信息审核】19:20 任恺、杨佳、曹骥3人1车前往市委党校。",
+        "0708-100【信息审核】19:30 谭队指令赴贵港市委党校集结。邱明星（司机）、李栋、郑豆、夏杨军、李盛民、肖翔、刘勇、罗布多吉8人出发市委党校。",
+        "0708-101【信息审核】20:10 邱明星（司机）等8人到达市委党校。",
+        "0709-1【信息审核】10:47 李盛民、莫志华两人一艇从桢楠居A座转运师生8人。",
+        "0709-2【信息审核】10:59和11:25，在物流学校五艇分别转运共二批次师生80人，同时协带三位老师返校检查是否遗留学生。",
+        "0709-3【信息审核】10:00-12:00 任恺、曹骥协助安能转运38人。",
+        "0709-4【信息审核】12:00 邱明星、肖翔2人1艇载4名物流学校老师检查各宿舍楼是否有遗漏学生。",
+        "0709-5【信息审核】12:00 发现棕楠居A座有60-70左右学生需要救生衣，于12:20曹骥、任恺协调救生衣一批前往运送。",
+        "0709-6【信息审核】12:28 5艘艇完成第三批40人师生转运后，部分队友暂上岸休整。",
+        "0709-7【信息审核】13:00 任恺、洪波、郑豆、曹骥、彭壮、李佩、李盛民、莫志华8人整休完毕继续转运。",
+        "0709-8【信息审核】13:00 邱明星、肖翔2人无休整继续转运。",
+        "0709-9【信息审核】13:15 邱明星、肖翔转运5人。",
+        "0709-10【信息审核】15:33 7月9日共转运171人，累计1041人，今天任务结束全体回宾馆休整。"
+    ];
+
+    // 渲染全部日志（无滚动）
+    const logDiv = document.getElementById('logList');
+    logs.forEach(log => {
+        const p = document.createElement('p');
+        p.textContent = log;
+        logDiv.appendChild(p);
+    });
+
+    // 图表绘制
+    window.onload = function() {
+        // 柱状图
+        const barCtx = document.getElementById('barChart').getContext('2d');
+        new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: ['7月8日', '7月9日'],
+                datasets: [{
+                    label: '转运人数',
+                    data: [870, 171],
+                    backgroundColor: ['#1b4a8b', '#2a7de1'],
+                    borderRadius: 8,
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y + ' 人';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 100 }
+                    }
+                }
+            }
+        });
+
+        // 饼状图：按任务地点展示救出人数
+        const pieCtx = document.getElementById('pieChart').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+                labels: ['物流学院', '贵港高中', '桢楠居A座', '其他区域'],
+                datasets: [{
+                    data: [620, 330, 76, 15],
+                    backgroundColor: ['#1b4a8b', '#2a7de1', '#e68a2e', '#8b5cf6'],
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: { size: 13 },
+                            color: '#0b2b5c'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let total = context.dataset.data.reduce((a,b) => a+b, 0);
+                                let percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return context.label + ': ' + context.parsed + '人 (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    };
+</script>
+</body>
+</html>

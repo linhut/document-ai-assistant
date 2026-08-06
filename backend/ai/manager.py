@@ -48,6 +48,20 @@ def register_provider(name: str, cls: type[AIProvider]):
     _PROVIDER_REGISTRY[name] = cls
 
 
+def _normalize_provider_name(provider_name: str) -> str:
+    """将 DB 中存储的 provider 键名归一化为注册表类型名。
+
+    前端保存 custom 服务时以 "custom:<服务名>"（如 custom:aliyun_qwen）作为
+    DB 唯一键，而注册表只认 "custom"。这里统一归一化，保证 analyze、
+    ai-polish、结构分析等所有调用点都能正确实例化 provider。
+    """
+    if ":" in provider_name:
+        base = provider_name.split(":", 1)[0]
+        if base in _PROVIDER_REGISTRY:
+            return base
+    return provider_name
+
+
 def create_provider(
     provider_name: str,
     api_key: str,
@@ -56,6 +70,7 @@ def create_provider(
     **kwargs,
 ) -> AIProvider:
     """Instantiate a provider by name."""
+    provider_name = _normalize_provider_name(provider_name)
     cls = _PROVIDER_REGISTRY.get(provider_name)
     if cls is None:
         raise ValueError(f"Unknown AI provider: {provider_name}. Available: {list(_PROVIDER_REGISTRY)}")

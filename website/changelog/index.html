@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>更新日志 — 文枢 · 文档中心</title>
+  <meta name="description" content="文枢 AI 公文智能优化助手版本发布历史与变更记录。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%232563eb'/%3E%3Cstop offset='100%25' stop-color='%231a56db'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='256' height='256' rx='42' fill='url(%23bg)'/%3E%3Cg transform='translate(56,28)'%3E%3Cpath d='M0,0 L105,0 L144,39 L144,180 Q144,192 132,192 L12,192 Q0,192 0,180 Z' fill='white' fill-opacity='0.94'/%3E%3Cpath d='M105,0 L105,39 L144,39 Z' fill='%23c8d7f0'/%3E%3Crect x='24' y='64' width='96' height='5' rx='2.5' fill='%231e40af' fill-opacity='0.6'/%3E%3Crect x='24' y='84' width='96' height='5' rx='2.5' fill='%231e40af' fill-opacity='0.6'/%3E%3Crect x='24' y='104' width='96' height='5' rx='2.5' fill='%231e40af' fill-opacity='0.6'/%3E%3Crect x='24' y='124' width='64' height='5' rx='2.5' fill='%231e40af' fill-opacity='0.6'/%3E%3Ccircle cx='120' cy='155' r='26' fill='%23dc2626' fill-opacity='0.78'/%3E%3Ctext x='120' y='163' text-anchor='middle' font-family='sans-serif' font-size='24' font-weight='bold' fill='%23dc2626' fill-opacity='0.9'%3E文%3C/text%3E%3C/g%3E%3C/svg%3E">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue-50: #eff6ff; --blue-100: #dbeafe; --blue-200: #bfdbfe;
+      --blue-300: #93c5fd; --blue-400: #60a5fa; --blue-500: #3b82f6;
+      --blue-600: #2563eb; --blue-700: #1d4ed8; --blue-800: #1e40af;
+      --green-50: #f0fdf4; --green-600: #16a34a;
+      --amber-50: #fffbeb; --amber-600: #d97706;
+      --red-50: #fef2f2; --red-600: #dc2626;
+      --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+      --gray-300: #d1d5db; --gray-400: #9ca3af; --gray-500: #6b7280;
+      --gray-600: #4b5563; --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
+      --radius: 10px; --max-w: 800px;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",Helvetica,Arial,sans-serif;
+      color: var(--gray-800); background: #fff; line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--blue-600); text-decoration: none; }
+    a:hover { color: var(--blue-800); text-decoration: underline; }
+    .container { max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
+
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,.88); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--gray-100);
+    }
+    nav .container { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+    .nav-brand { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--gray-900); }
+    .nav-brand svg { width: 28px; height: 28px; }
+    .nav-links { display: flex; align-items: center; gap: 24px; }
+    .nav-links a { color: var(--gray-600); font-size: .875rem; font-weight: 500; }
+    .nav-links a:hover { color: var(--blue-600); }
+    .nav-links a.active { color: var(--blue-600); }
+
+    .page-header {
+      padding: 56px 0 40px;
+      background: linear-gradient(160deg, var(--blue-50), #fff);
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .page-header h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+    .page-header p { color: var(--gray-500); font-size: 1.05rem; max-width: 600px; }
+
+    /* Changelog timeline */
+    .changelog { padding: 48px 0 80px; }
+
+    .version-entry {
+      position: relative;
+      padding: 32px 0 32px 40px;
+      border-left: 2px solid var(--gray-200);
+      margin-left: 0;
+    }
+    .version-entry:first-child { padding-top: 0; }
+    .version-entry:last-child { border-left-color: transparent; padding-bottom: 0; }
+
+    .version-marker {
+      position: absolute;
+      left: -10px;
+      top: 36px;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--blue-600);
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 2px var(--blue-200);
+    }
+    .version-entry:first-child .version-marker {
+      background: var(--green-600);
+      box-shadow: 0 0 0 2px #bbf7d0;
+      width: 20px; height: 20px; left: -11px; top: 4px;
+    }
+    .version-entry.prerelease .version-marker {
+      background: var(--amber-600);
+      box-shadow: 0 0 0 2px #fde68a;
+    }
+
+    .version-header {
+      display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .version-header h2 { font-size: 1.3rem; font-weight: 700; color: var(--gray-900); }
+    .version-date {
+      font-size: .8125rem; color: var(--gray-400);
+      background: var(--gray-50); padding: 2px 10px; border-radius: 10px;
+    }
+    .version-tag {
+      font-size: .6875rem; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .version-tag.latest {
+      background: #dcfce7; color: #16a34a;
+    }
+    .version-tag.prerelease-tag {
+      background: #fef3c7; color: #d97706;
+    }
+
+    .version-body { margin-top: 8px; }
+    .version-body h4 {
+      font-size: .8125rem; font-weight: 600; color: var(--gray-500);
+      text-transform: uppercase; letter-spacing: .04em;
+      margin: 16px 0 6px;
+    }
+    .version-body h4:first-child { margin-top: 8px; }
+    .version-body ul { margin: 0 0 4px 18px; list-style: none; }
+    .version-body li {
+      font-size: .9rem; color: var(--gray-600); margin-bottom: 4px;
+      display: flex; align-items: flex-start; gap: 6px;
+    }
+    .version-body li .emoji { flex-shrink: 0; }
+    .version-body li .label {
+      display: inline-block; font-size: .6875rem; font-weight: 600;
+      padding: 1px 6px; border-radius: 3px; margin-right: 4px; flex-shrink: 0;
+    }
+    .label-added { background: #dcfce7; color: #16a34a; }
+    .label-fixed { background: #fef2f2; color: #dc2626; }
+    .label-changed { background: #dbeafe; color: #2563eb; }
+    .label-security { background: #fef3c7; color: #d97706; }
+    .label-docs { background: var(--gray-100); color: var(--gray-600); }
+    .label-performance { background: #f0fdfa; color: #14b8a6; }
+    .label-deprecated { background: var(--gray-100); color: var(--gray-500); }
+
+    /* Footer */
+    footer {
+      background: var(--gray-900); color: var(--gray-400); padding: 40px 0 28px;
+    }
+    footer .container { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 24px; max-width: 900px; }
+    footer .footer-brand h4 { color: #fff; font-size: 1rem; margin-bottom: 4px; }
+    footer .footer-brand p { font-size: .8125rem; line-height: 1.6; }
+    footer .footer-links h5 { color: #fff; font-size: .8125rem; margin-bottom: 8px; }
+    footer .footer-links a { display: block; font-size: .8125rem; margin-bottom: 4px; color: var(--gray-400); }
+    footer .footer-links a:hover { color: #fff; }
+    .footer-bottom {
+      margin-top: 28px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.08);
+      text-align: center; font-size: .8125rem; color: var(--gray-500);
+    }
+    .footer-bottom a { color: var(--gray-400); }
+    .footer-bottom a:hover { color: #fff; }
+
+    @media (max-width: 600px) {
+      .version-entry { padding-left: 24px; }
+      .version-header h2 { font-size: 1.1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <a href="../" class="nav-brand">
+      <svg viewBox="0 0 256 256" width="28" height="28">
+        <defs><linearGradient id="nbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2563eb"/><stop offset="100%" stop-color="#1a56db"/></linearGradient></defs>
+        <rect width="256" height="256" rx="42" fill="url(#nbg)"/>
+        <g transform="translate(56,28)">
+          <path d="M0,0 L105,0 L144,39 L144,180 Q144,192 132,192 L12,192 Q0,192 0,180 Z" fill="white" fill-opacity="0.94"/>
+          <path d="M105,0 L105,39 L144,39 Z" fill="#c8d7f0"/>
+          <rect x="24" y="64" width="96" height="5" rx="2.5" fill="#1e40af" fill-opacity="0.6"/>
+          <rect x="24" y="84" width="96" height="5" rx="2.5" fill="#1e40af" fill-opacity="0.6"/>
+          <rect x="24" y="104" width="96" height="5" rx="2.5" fill="#1e40af" fill-opacity="0.6"/>
+          <rect x="24" y="124" width="64" height="5" rx="2.5" fill="#1e40af" fill-opacity="0.6"/>
+          <circle cx="120" cy="155" r="26" fill="#dc2626" fill-opacity="0.78"/>
+          <text x="120" y="163" text-anchor="middle" font-family="sans-serif" font-size="24" font-weight="bold" fill="#dc2626" fill-opacity="0.9">文</text>
+        </g>
+      </svg>
+      文枢
+    </a>
+    <div class="nav-links">
+      <a href="../">首页</a>
+      <a href="../docs/quick-start.html">快速开始</a>
+      <a href="../docs/guide.html">使用指南</a>
+      <a href="./" class="active">更新日志</a>
+    </div>
+  </div>
+</nav>
+
+<section class="page-header">
+  <div class="container">
+    <h1>更新日志</h1>
+    <p>文枢 · AI 公文智能优化助手 版本发布历史与详细变更记录。</p>
+    <p style="margin-top:8px;color:var(--gray-400);font-size:.875rem;">
+      完整变更记录见 <a href="https://github.com/linhut/document-ai-assistant/blob/master/CHANGELOG.md" target="_blank">GitHub CHANGELOG</a>
+    </p>
+  </div>
+</section>
+
+<main class="container changelog">
+
+  <!-- v1.5.1 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v1.5.1</h2>
+      <span class="version-date">2026-08-06</span>
+      <span class="version-tag latest">Latest</span>
+    </div>
+    <div class="version-body">
+      <h4>🐛 修复</h4>
+      <ul>
+        <li><span class="label label-fixed">修复</span> AI 配置启用失败：`custom:<服务名>` 键在 AI 调用时无法实例化 Provider，导致语义分析/润色/结构分析静默失败，现已统一归一化</li>
+        <li><span class="label label-fixed">修复</span> AI 结构分析仅在启用 openai 时触发，改用当前启用配置</li>
+        <li><span class="label label-fixed">修复</span> 测试连接/获取模型时已保存密钥无法解析</li>
+        <li><span class="label label-fixed">修复</span> 9 个遗留测试缺陷，全量测试 100 passed</li>
+      </ul>
+      <h4>🎯 优化</h4>
+      <ul>
+        <li><span class="label label-changed">优化</span> gongwen-skill 独立发行版介绍前置到项目介绍顶部并新增官网首页曝光</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v1.5.0 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v1.5.0</h2>
+      <span class="version-date">2026-07-06</span>
+    </div>
+    <div class="version-body">
+      <h4>🚀 新增</h4>
+      <ul>
+        <li><span class="label label-added">新增</span> 文档版本历史回溯，支持恢复到任意历史版本</li>
+        <li><span class="label label-added">新增</span> 批量导出功能，支持多文档一键下载</li>
+        <li><span class="label label-added">新增</span> 规则引擎模板变量支持，灵活适配单位内部编号规则</li>
+      </ul>
+      <h4>🔧 改进</h4>
+      <ul>
+        <li><span class="label label-changed">改进</span> 优化大文档（100页+）处理性能，内存占用降低 40%</li>
+        <li><span class="label label-changed">改进</span> 更新字体映射库，新增 8 个信创系统常用字体</li>
+      </ul>
+      <h4>🐛 修复</h4>
+      <ul>
+        <li><span class="label label-fixed">修复</span> 特定版式下版记位置偏移问题</li>
+        <li><span class="label label-fixed">修复</span> 连续多个表格的定位异常</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v1.4.9 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v1.4.9</h2>
+      <span class="version-date">2026-06-30</span>
+    </div>
+    <div class="version-body">
+      <h4>📦 项目优化</h4>
+      <ul>
+        <li><span class="label label-changed">改进</span> 统一包名为英文格式：<code>doc-optimizer-v{version}-{platform}-{arch}.{ext}</code></li>
+        <li><span class="label label-changed">改进</span> 移除 Git 仓库中的非必要文件，重命名中文目录</li>
+        <li><span class="label label-added">新增</span> <code>.gitignore</code> 规则和 pre-commit 钩子，新增 <code>CONTRIBUTING.md</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v1.4.8 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v1.4.8</h2>
+      <span class="version-date">2026-06-30</span>
+    </div>
+    <div class="version-body">
+      <h4>📐 编排功能全面修复</h4>
+      <ul>
+        <li><span class="label label-fixed">修复</span> 版头/版记注入路径修复，新增 <code>header_config</code>/<code>footer_note_config</code> 参数</li>
+        <li><span class="label label-fixed">修复</span> 表格位置保留，新增 <code>source_doc_id</code> 字段确保预览下载基础文档准确</li>
+        <li><span class="label label-fixed">修复</span> 下载按钮闭包问题，<code>config</code> → <code>configRef.current</code></li>
+      </ul>
+      <h4>📏 GB/T 9704 标准合规增强</h4>
+      <ul>
+        <li><span class="label label-changed">改进</span> 标题行距 28.95pt → 33pt（标题/一级/二级/三级标题）</li>
+        <li><span class="label label-changed">改进</span> 页脚距离添加 <code>section.footer_distance = Cm(2.5)</code></li>
+        <li><span class="label label-added">新增</span> 检查规则新增 8 条（CHK-C032~C040），总数 31→39</li>
+        <li><span class="label label-added">新增</span> 修复规则新增 8 条（FIX-C032~C039），总数 25→33</li>
+      </ul>
+      <h4>🛡️ 安全加固</h4>
+      <ul>
+        <li><span class="label label-security">安全</span> 新增 Bearer Token 认证中间件，公开路径白名单</li>
+        <li><span class="label label-security">安全</span> 路径遍历修复（office.py / manager.py / style_manager.py）</li>
+        <li><span class="label label-security">安全</span> 错误信息泄露修复，密钥文件权限加固</li>
+      </ul>
+      <h4>⚡ 前端优化</h4>
+      <ul>
+        <li><span class="label label-changed">改进</span> TypeScript strict 模式、AbortController 请求取消、日志轮转</li>
+        <li><span class="label label-changed">改进</span> 所有页面系统性添加请求取消和 ErrorBoundary 保护</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v1.4.7 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v1.4.7</h2>
+      <span class="version-date">2026-06-27</span>
+    </div>
+    <div class="version-body">
+      <h4>🖥️ 信创跨平台支持（Phase 1）</h4>
+      <ul>
+        <li><span class="label label-added">新增</span> <code>converter.py</code> 新增 <code>_try_libreoffice()</code> 函数，Linux/macOS 支持格式转换</li>
+        <li><span class="label label-changed">改进</span> Electron main.ts 平台分发重构，修复硬编码 <code>.exe</code></li>
+        <li><span class="label label-added">新增</span> <code>package.json</code> 新增 Linux 构建 target（AppImage + deb）和 macOS（dmg）</li>
+        <li><span class="label label-added">新增</span> 构建脚本跨平台适配</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v1.4.6 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v1.4.6</h2>
+      <span class="version-date">2026-06-26</span>
+    </div>
+    <div class="version-body">
+      <h4>📋 表格定位修复（端到端验证通过）</h4>
+      <ul>
+        <li><span class="label label-fixed">修复</span> generator 表格定位，按 <code>insert_after_index</code> 用 XML 操作精确插入</li>
+        <li><span class="label label-fixed">修复</span> parser 表格位置检测，计算每个表格在段落流中的精确位置</li>
+        <li><span class="label label-fixed">修复</span> 加粗范围修复执行顺序，避免被后续规则覆盖</li>
+      </ul>
+      <h4>🔍 预览 run 级别加粗渲染</h4>
+      <ul>
+        <li><span class="label label-added">新增</span> 后端 preview API 返回 <code>runs[]</code> 数组，每段每个 run 有独立 <code>bold</code> 状态</li>
+        <li><span class="label label-changed">改进</span> 校审中心同类型问题合并显示，按 <code>rule_id</code> 分组</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v1.4.5 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v1.4.5</h2>
+      <span class="version-date">2026-06-26</span>
+    </div>
+    <div class="version-body">
+      <ul>
+        <li><span class="label label-added">新增</span> 预览下载重构：新增 <code>POST /api/optimize/preview-download</code> 端点</li>
+        <li><span class="label label-added">新增</span> 页面设置传递，下载时传递前端配置的页边距</li>
+        <li><span class="label label-fixed">修复</span> Markdown 表格端到端修复，表格完整写入 docx</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v1.4.4 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v1.4.4</h2>
+      <span class="version-date">2026-06-26</span>
+    </div>
+    <div class="version-body">
+      <h4>🤖 AI 模型可用性定时检测</h4>
+      <ul>
+        <li><span class="label label-added">新增</span> 每 60 秒自动检测所有已配置 AI provider 的可用性</li>
+        <li><span class="label label-added">新增</span> 前端 AI 配置页面实时显示模型在线/离线状态和响应延迟</li>
+        <li><span class="label label-added">新增</span> 多 Provider 支持：OpenAI 兼容接口 + Anthropic Claude 专用检测</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v1.4.3 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v1.4.3</h2>
+      <span class="version-date">2026-06-26</span>
+    </div>
+    <div class="version-body">
+      <h4>📐 A4 预览版头格式与国标对齐</h4>
+      <ul>
+        <li><span class="label label-changed">改进</span> 发文机关标志字号 22pt → 30pt</li>
+        <li><span class="label label-changed">改进</span> 发文机关标志颜色 #CC0000 → #E00000</li>
+        <li><span class="label label-changed">改进</span> 字间距 3pt → 0，新增行高 1.4</li>
+      </ul>
+      <h4>🔖 页码格式修正</h4>
+      <ul>
+        <li><span class="label label-fixed">修复</span> 页码字号 10pt → 14pt（四号字，GB/T 9704 标准）</li>
+        <li><span class="label label-fixed">修复</span> 版记格式：抄送左空一字、印发机关/日期左右缩进</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v1.4.2 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v1.4.2</h2>
+      <span class="version-date">2026-06-26</span>
+    </div>
+    <div class="version-body">
+      <h4>🎨 A4 实时排版预览（核心功能）</h4>
+      <ul>
+        <li><span class="label label-added">新增</span> 左右分栏布局：左侧格式设置面板 + 右侧 A4 实时预览</li>
+        <li><span class="label label-added">新增</span> 版头版记可视化配置（发文机关标志、发文字号、签发人等）</li>
+        <li><span class="label label-added">新增</span> Markdown 转公文：识别 12 种语法并转为 Word 格式</li>
+        <li><span class="label label-added">新增</span> DocumentConfig Context：useReducer + localStorage 持久化</li>
+      </ul>
+      <h4>📋 22 个文种 YAML 规则清理</h4>
+      <ul>
+        <li><span class="label label-changed">改进</span> 所有规则文件 category:content / category:format 分类</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v1.4.1 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v1.4.1</h2>
+      <span class="version-date">2026-06-25</span>
+    </div>
+    <div class="version-body">
+      <h4>🔧 关键修复</h4>
+      <ul>
+        <li><span class="label label-fixed">修复</span> 预览空白问题（P0）</li>
+        <li><span class="label label-changed">改进</span> 规则引擎按文档类型优化，22 个 YAML 文件去重</li>
+        <li><span class="label label-security">安全</span> API Key 移除硬编码，CORS 配置收紧</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v1.0.5 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v1.0.5</h2>
+      <span class="version-date">2026-06-25</span>
+    </div>
+    <div class="version-body">
+      <ul>
+        <li><span class="label label-added">新增</span> AI prompt 按文种定制，22 种公文类型各有专属检查规则</li>
+        <li><span class="label label-added">新增</span> 23+ AI 服务商支持（MiniMax、腾讯混元、豆包等）</li>
+        <li><span class="label label-fixed">修复</span> 规则引擎 22/22 文种 body 格式全覆盖</li>
+        <li><span class="label label-changed">改进</span> 检查规则 154→190 条，修复规则 144→180 条</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v1.4.0-rc2 -->
+  <div class="version-entry prerelease">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v1.4.0-rc2</h2>
+      <span class="version-date">2026-06-24</span>
+      <span class="version-tag prerelease-tag">RC</span>
+    </div>
+    <div class="version-body">
+      <h4>🔧 P0 修复</h4>
+      <ul>
+        <li><span class="label label-changed">改进</span> 数据目录架构重构（APP_DATA_DIR / BASE_DIR 分离）</li>
+        <li><span class="label label-fixed">修复</span> 后端错误处理加固：optimize_document try/except</li>
+        <li><span class="label label-fixed">修复</span> 前端导航修复：window.location → useNavigate / useSearchParams</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v1.4.0-rc1 -->
+  <div class="version-entry prerelease">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v1.4.0-rc1</h2>
+      <span class="version-date">2026-06-23</span>
+      <span class="version-tag prerelease-tag">RC</span>
+    </div>
+    <div class="version-body">
+      <ul>
+        <li><span class="label label-added">新增</span> Claude Provider + Ollama Provider</li>
+        <li><span class="label label-added">新增</span> 获取模型按钮、API Key 脱敏显示、字体下载 API</li>
+        <li><span class="label label-fixed">修复</span> Electron 路径问题、API 路径统一化</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v1.4.0 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v1.4.0</h2>
+      <span class="version-date">2026-06-23</span>
+    </div>
+    <div class="version-body">
+      <ul>
+        <li><span class="label label-added">新增</span> 文档质量自动验证器（四维度：字体/样式/段落/页面）</li>
+        <li><span class="label label-added">新增</span> AI Provider 多模型升级，默认内置 AI 配置</li>
+        <li><span class="label label-added">新增</span> 错误分类系统（auth/permission/timeout/network/config）</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v1.3.0 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v1.3.0</h2>
+      <span class="version-date">2026-06-23</span>
+    </div>
+    <div class="version-body">
+      <ul>
+        <li><span class="label label-added">新增</span> 8 个官方样式模板 YAML + 样式模板中心</li>
+        <li><span class="label label-added">新增</span> StyleManager 三层模板管理（user &gt; custom &gt; official）</li>
+        <li><span class="label label-added">新增</span> .docx / .dotx 模板生成 + Office 插件 Bridge</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v1.2.0 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v1.2.0</h2>
+      <span class="version-date">2026-06-23</span>
+    </div>
+    <div class="version-body">
+      <ul>
+        <li><span class="label label-changed">改进</span> UI 自适应优化：侧边栏响应式、主布局自适应</li>
+        <li><span class="label label-changed">改进</span> 测试体系完善：新增 68 个测试用例全部通过</li>
+        <li><span class="label label-fixed">修复</span> 中文字体异常（P0）、Fixer 架构统一</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v1.1.0 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v1.1.0</h2>
+      <span class="version-date">2026-06-23</span>
+    </div>
+    <div class="version-body">
+      <h4>🔧 P0 修复：中文字体异常</h4>
+      <ul>
+        <li><span class="label label-fixed">修复</span> MS Gothic/MS Mincho 替代字体问题</li>
+        <li><span class="label label-changed">改进</span> font_utils.py 重构：set_run_font() 同时写入 4 个字体属性</li>
+      </ul>
+      <h4>🏗️ 架构改进</h4>
+      <ul>
+        <li><span class="label label-changed">改进</span> Fixer 架构统一：新增 DocumentModifier 单一点</li>
+        <li><span class="label label-added">新增</span> Electron 桌面壳：自动启动/停止 Python 后端</li>
+        <li><span class="label label-added">新增</span> AI Provider 指数退避重试 + 详细中文错误信息</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v0.9.0 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v0.9.0</h2>
+      <span class="version-date">2026-06-23</span>
+    </div>
+    <div class="version-body">
+      <ul>
+        <li><span class="label label-added">新增</span> 规则编辑独立页面 TemplateRules.tsx</li>
+        <li><span class="label label-changed">改进</span> 用户体验全面优化（12+ 交互优化、模板中心/工作台增强）</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v0.8.0 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v0.8.0</h2>
+      <span class="version-date">2026-06-23</span>
+    </div>
+    <div class="version-body">
+      <ul>
+        <li><span class="label label-added">新增</span> 4 个公文模板（意见/批复/纪要/指示）</li>
+        <li><span class="label label-added">新增</span> 模板创建 API + 优化文档下载功能</li>
+        <li><span class="label label-fixed">修复</span> Templates/Rules 数据显示、API 响应访问问题</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v0.6.1 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v0.6.1</h2>
+      <span class="version-date">2026-06-23</span>
+    </div>
+    <div class="version-body">
+      <ul>
+        <li><span class="label label-fixed">修复</span> 关键修复：所有页面的 API 响应访问问题（response.data 解包）</li>
+        <li><span class="label label-changed">改进</span> 优化所有页面布局宽度，适配 1366×768 ~ 2K 屏幕</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v0.6.0 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v0.6.0</h2>
+      <span class="version-date">2026-06-23</span>
+    </div>
+    <div class="version-body">
+      <ul>
+        <li><span class="label label-added">新增</span> AISettings 真实功能、Templates/Rules 前端页面连接真实 API</li>
+        <li><span class="label label-added">新增</span> 后端 API：templates、rules、AI config 全套端点</li>
+        <li><span class="label label-added">新增</span> Fernet 加密存储 API Key</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v0.5.0 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v0.5.0</h2>
+      <span class="version-date">2026-06-22</span>
+    </div>
+    <div class="version-body">
+      <ul>
+        <li><span class="label label-added">新增</span> Phase 5 - AI Integration 完成</li>
+        <li><span class="label label-added">新增</span> AI Provider 架构（OpenAI、DeepSeek、Custom）</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v0.4.0 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v0.4.0</h2>
+      <span class="version-date">2026-06-21</span>
+    </div>
+    <div class="version-body">
+      <ul>
+        <li><span class="label label-added">新增</span> Phase 4 - Rule Engine 完成</li>
+        <li><span class="label label-added">新增</span> Rule Checker + Rule Fixer + CheckCenter 真实功能</li>
+        <li><span class="label label-added">新增</span> 8 种公文模板 YAML 规则</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v0.3.0 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v0.3.0</h2>
+      <span class="version-date">2026-06-20</span>
+    </div>
+    <div class="version-body">
+      <ul>
+        <li><span class="label label-added">新增</span> Phase 3 - Document Engine 完成</li>
+        <li><span class="label label-added">新增</span> Document Parser/Generator/DocumentModel（Pydantic）</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v0.2.0 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v0.2.0</h2>
+      <span class="version-date">2026-06-19</span>
+    </div>
+    <div class="version-body">
+      <ul>
+        <li><span class="label label-added">新增</span> Phase 2 - 桌面 UI 完成（7 个页面、温暖大地色系设计）</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- v0.1.0 -->
+  <div class="version-entry" style="border-left-color:transparent;">
+    <div class="version-marker" style="background:var(--gray-400);box-shadow:0 0 0 2px var(--gray-200);"></div>
+    <div class="version-header">
+      <h2>v0.1.0</h2>
+      <span class="version-date">2026-06-18</span>
+    </div>
+    <div class="version-body">
+      <ul>
+        <li><span class="label label-added">新增</span> Phase 1 - 架构设计完成</li>
+        <li><span class="label label-added">新增</span> 项目架构设计报告、技术选型、目录结构设计、开发路线规划</li>
+      </ul>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <div class="container">
+    <div class="footer-brand">
+      <h4>文枢 · AI 公文智能优化助手</h4>
+      <p>基于 GB/T 9704 标准的桌面端公文格式优化工具。</p>
+    </div>
+    <div class="footer-links">
+      <h5>文档</h5>
+      <a href="../docs/quick-start.html">快速开始</a>
+      <a href="../docs/guide.html">使用指南</a>
+      <a href="./">更新日志</a>
+    </div>
+    <div class="footer-links">
+      <h5>相关链接</h5>
+      <a href="../">项目首页</a>
+      <a href="https://github.com/linhut/document-ai-assistant" target="_blank">GitHub</a>
+      <a href="https://github.com/linhut/document-ai-assistant/releases" target="_blank">下载页面</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="container">
+      Copyright &copy; 2025-2026 <a href="https://www.linhut.cn" style="color:var(--gray-400);">Jose AI</a>.
+      All rights reserved. 基于 GB/T 9704 标准构建.
+      <a href="https://doc.linhut.cn" style="color:var(--gray-400);">doc.linhut.cn</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

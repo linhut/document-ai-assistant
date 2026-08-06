@@ -7,11 +7,27 @@ Tests the complete workflow: upload -> check -> fix -> download
 """
 import time
 import requests
+import pytest
 from pathlib import Path
 
 
 BASE_URL = "http://127.0.0.1:8765"
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
+
+
+def _backend_available() -> bool:
+    """检查后端服务是否可用，避免无后端时全流程测试直接失败。"""
+    try:
+        resp = requests.get(f"{BASE_URL}/api/health", timeout=2)
+        return resp.status_code == 200
+    except Exception:
+        return False
+
+
+pytestmark = pytest.mark.skipif(
+    not _backend_available(),
+    reason="后端服务未运行（需先启动 python backend/main.py）",
+)
 
 
 def _get_auth_headers():

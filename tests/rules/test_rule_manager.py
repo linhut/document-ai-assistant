@@ -33,7 +33,7 @@ class TestRuleMerge:
     def test_load_merged_has_type_rules(self):
         """合并后的规则包含类型专属规则。"""
         merged = load_rules_merged("notice")
-        assert "title" in merged, "通知规则缺少 title 配置"
+        assert "doc_title" in merged, "通知规则缺少 doc_title 配置"
         assert "check_rules" in merged, "通知规则缺少 check_rules"
         assert "fix_rules" in merged, "通知规则缺少 fix_rules"
 

@@ -1,7 +1,7 @@
 {
   "name": "official-doc-ai-assistant",
   "private": true,
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "AI 公文智能优化助手 — 公文格式检测与优化桌面工具",
   "author": "Jose AI <admin@linhut.cn>",
   "homepage": "https://github.com/linhut/document-ai-assistant",
@@ -78,16 +78,23 @@
       "installerHeaderIcon": "build/icon.ico"
     },
     "linux": {
-      "target": ["AppImage", "deb"],
+      "target": [
+        "AppImage",
+        "deb"
+      ],
       "executableName": "ai-document-assistant",
       "artifactName": "doc-optimizer-v${version}-${arch}.${ext}",
       "category": "Office"
     },
     "deb": {
-      "depends": ["libreoffice-common"]
+      "depends": [
+        "libreoffice-common"
+      ]
     },
     "mac": {
-      "target": ["dmg"],
+      "target": [
+        "dmg"
+      ],
       "artifactName": "doc-optimizer-v${version}-${arch}.${ext}",
       "category": "public.app-category.productivity"
     },

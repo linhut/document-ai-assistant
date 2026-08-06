@@ -22,7 +22,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import documents, check, optimize, ai, settings, templates, rules, template_download, office
+from api.routes import documents, check, optimize, ai, settings, templates, rules, template_download, office, workspace
 from api.routes import auth as auth_route
 from auth import AuthMiddleware, init_auth
 from db.database import init_db
@@ -123,7 +123,7 @@ def _setup_signal_handlers() -> None:
 app = FastAPI(
     title="Official Document AI Assistant",
     description="AI 公文智能优化助手核心引擎 API",
-    version="1.5.0",
+    version="1.5.1",
 )
 
 app.add_middleware(
@@ -152,6 +152,7 @@ app.include_router(rules.router, prefix="/api/rules", tags=["rules"])
 app.include_router(template_download.router, prefix="/api/template", tags=["template_download"])
 app.include_router(office.router, prefix="/api/office", tags=["office"])
 app.include_router(auth_route.router, prefix="/api/auth", tags=["auth"])
+app.include_router(workspace.router, tags=["workspace"])
 
 
 @app.on_event("startup")

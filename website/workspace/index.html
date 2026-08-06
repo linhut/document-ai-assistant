@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jose暂存资料库</title>
+  <meta name="description" content="Jose暂存资料库 — 实时浏览 TMP 目录中的文档、报告与资源文件。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%232563eb'/%3E%3Cstop offset='100%25' stop-color='%231a56db'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='256' height='256' rx='42' fill='url(%23bg)'/%3E%3Cg transform='translate(56,28)'%3E%3Cpath d='M0,0 L105,0 L144,39 L144,180 Q144,192 132,192 L12,192 Q0,192 0,180 Z' fill='white' fill-opacity='0.94'/%3E%3Cpath d='M105,0 L105,39 L144,39 Z' fill='%23c8d7f0'/%3E%3Crect x='24' y='64' width='96' height='5' rx='2.5' fill='%231e40af' fill-opacity='0.6'/%3E%3Crect x='24' y='84' width='96' height='5' rx='2.5' fill='%231e40af' fill-opacity='0.6'/%3E%3Crect x='24' y='104' width='96' height='5' rx='2.5' fill='%231e40af' fill-opacity='0.6'/%3E%3Crect x='24' y='124' width='64' height='5' rx='2.5' fill='%231e40af' fill-opacity='0.6'/%3E%3Ccircle cx='120' cy='155' r='26' fill='%23dc2626' fill-opacity='0.78'/%3E%3Ctext x='120' y='163' text-anchor='middle' font-family='sans-serif' font-size='24' font-weight='bold' fill='%23dc2626' fill-opacity='0.9'%3E文%3C/text%3E%3C/g%3E%3C/svg%3E">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #4f6ef7;
+      --primary-light: #eef1ff;
+      --primary-bg: #f5f7ff;
+      --accent: #f9735c;
+      --accent-light: #fff0ed;
+      --green: #34d399;
+      --green-bg: #ecfdf5;
+      --orange: #fbbf24;
+      --orange-bg: #fffbeb;
+      --purple: #a78bfa;
+      --purple-bg: #f5f3ff;
+      --gray-50: #fafbfc;
+      --gray-100: #f0f2f5;
+      --gray-200: #e2e6ed;
+      --gray-300: #c4c9d4;
+      --gray-400: #939aa8;
+      --gray-500: #6b7383;
+      --gray-600: #4d5463;
+      --gray-700: #363b47;
+      --gray-800: #232730;
+      --gray-900: #12141a;
+      --radius-sm: 8px;
+      --radius: 12px;
+      --radius-lg: 16px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.06);
+      --shadow: 0 4px 16px rgba(0,0,0,.06), 0 2px 6px rgba(0,0,0,.04);
+      --shadow-lg: 0 12px 40px rgba(0,0,0,.08);
+      --max-w: 1040px;
+      --transition: .25s cubic-bezier(.4,0,.2,1);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",Helvetica,Arial,sans-serif;
+      color: var(--gray-700);
+      background: var(--gray-50);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+    a { color: var(--primary); text-decoration: none; transition: color var(--transition); }
+    a:hover { color: #3b56d9; }
+
+    /* ===== Navbar ===== */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,.82);
+      backdrop-filter: blur(16px) saturate(1.4);
+      border-bottom: 1px solid var(--gray-100);
+    }
+    nav .container {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 60px; max-width: var(--max-w); margin: 0 auto; padding: 0 28px;
+    }
+    .nav-brand {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 700; font-size: 1.05rem; color: var(--gray-800);
+    }
+    .nav-brand svg { width: 26px; height: 26px; flex-shrink: 0; }
+    .nav-links { display: flex; align-items: center; gap: 6px; }
+    .nav-links a {
+      padding: 6px 14px; border-radius: 8px;
+      color: var(--gray-500); font-size: .875rem; font-weight: 500;
+      transition: all var(--transition);
+    }
+    .nav-links a:hover { color: var(--primary); background: var(--primary-light); text-decoration: none; }
+    .nav-links a.active {
+      color: var(--primary); background: var(--primary-light);
+      font-weight: 600;
+    }
+
+    /* ===== Container ===== */
+    .container { max-width: var(--max-w); margin: 0 auto; padding: 0 28px; }
+
+    /* ===== Page Header ===== */
+    .page-header {
+      padding: 48px 0 32px;
+      position: relative;
+      overflow: hidden;
+    }
+    .page-header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(79,110,247,.06), transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .page-header .container { position: relative; }
+    .page-header .header-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .page-header .header-left { }
+    .page-header h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--gray-800);
+      letter-spacing: -.03em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .page-header h1 .title-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--primary-light), #e0e7ff);
+      border-radius: 10px;
+      font-size: 1.2rem;
+    }
+    .page-header .subtitle {
+      margin-top: 6px;
+      color: var(--gray-400);
+      font-size: .9rem;
+    }
+    .page-header .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 16px;
+      border-radius: 20px;
+      font-size: .82rem;
+      font-weight: 500;
+      background: #fff;
+      border: 1px solid var(--gray-200);
+      color: var(--gray-500);
+      box-shadow: var(--shadow-sm);
+    }
+    .page-header .header-badge .live-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      background: var(--gray-300);
+      transition: all var(--transition);
+    }
+    .page-header .header-badge .live-dot.online { background: var(--green); box-shadow: 0 0 6px rgba(52,211,153,.5); }
+    .page-header .header-badge .live-dot.offline { background: var(--gray-300); }
+
+    /* ===== Stats Bar ===== */
+    .stats-bar {
+      display: flex;
+      gap: 6px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    .stats-bar .stat-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 14px;
+      border-radius: 8px;
+      background: #fff;
+      border: 1px solid var(--gray-100);
+      font-size: .81rem;
+      color: var(--gray-400);
+    }
+    .stats-bar .stat-item strong {
+      font-weight: 600;
+      color: var(--gray-600);
+    }
+    .stats-bar .stat-item .pulse {
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .5; transform: scale(.75); }
+    }
+
+    /* ===== Toolbar ===== */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .search-wrap {
+      position: relative;
+      flex: 1;
+      max-width: 340px;
+    }
+    .search-wrap .search-icon {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--gray-300);
+      font-size: .85rem;
+      pointer-events: none;
+      transition: color var(--transition);
+    }
+    .search-wrap input {
+      width: 100%;
+      padding: 9px 14px 9px 36px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-sm);
+      font-size: .875rem;
+      color: var(--gray-700);
+      background: #fff;
+      outline: none;
+      transition: all var(--transition);
+    }
+    .search-wrap input::placeholder { color: var(--gray-300); }
+    .search-wrap input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79,110,247,.12);
+    }
+    .search-wrap input:focus ~ .search-icon { color: var(--primary); }
+    .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn-auto {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-sm);
+      background: #fff;
+      color: var(--gray-500);
+      font-size: .82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition);
+      user-select: none;
+    }
+    .btn-auto:hover { border-color: var(--gray-300); background: var(--gray-50); }
+    .btn-auto.active {
+      border-color: var(--green);
+      color: #059669;
+      background: var(--green-bg);
+    }
+    .btn-auto .toggle-track {
+      width: 28px; height: 16px;
+      border-radius: 10px;
+      background: var(--gray-200);
+      position: relative;
+      transition: all var(--transition);
+    }
+    .btn-auto.active .toggle-track { background: var(--green); }
+    .btn-auto .toggle-thumb {
+      position: absolute;
+      top: 2px; left: 2px;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: #fff;
+      transition: all var(--transition);
+      box-shadow: 0 1px 2px rgba(0,0,0,.12);
+    }
+    .btn-auto.active .toggle-thumb { left: 14px; }
+    .btn-refresh {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 18px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-sm);
+      background: #fff;
+      color: var(--gray-500);
+      font-size: .82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .btn-refresh:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-light);
+    }
+    .btn-refresh:active { transform: scale(.96); }
+    .btn-refresh .spin-icon {
+      display: inline-block;
+      font-size: .9rem;
+      transition: transform .4s;
+    }
+    .btn-refresh .spin-icon.spinning { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ===== File Grid ===== */
+    .file-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 14px;
+      padding-bottom: 60px;
+    }
+    .file-card {
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border: 1px solid var(--gray-100);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all var(--transition);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+    .file-card:hover {
+      border-color: var(--primary);
+      box-shadow: var(--shadow);
+      transform: translateY(-3px);
+    }
+    .file-card:active { transform: translateY(-1px); }
+    .file-card .card-body {
+      padding: 18px 20px 14px;
+      display: flex;
+      gap: 14px;
+      flex: 1;
+    }
+    .file-card .file-icon {
+      width: 42px; height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+      transition: transform var(--transition);
+    }
+    .file-card:hover .file-icon { transform: scale(1.05); }
+    .file-card .file-icon.pdf { background: var(--accent-light); }
+    .file-card .file-icon.html { background: var(--primary-light); }
+    .file-card .file-icon.docx { background: var(--primary-light); }
+    .file-card .file-icon.image { background: var(--green-bg); }
+    .file-card .file-icon.text { background: var(--gray-100); }
+    .file-card .file-icon.other { background: var(--purple-bg); }
+    .file-card .file-info { min-width: 0; flex: 1; }
+    .file-card .file-name {
+      font-weight: 600;
+      font-size: .9rem;
+      color: var(--gray-800);
+      line-height: 1.45;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      word-break: break-all;
+    }
+    .file-card .file-meta {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: .78rem;
+      color: var(--gray-400);
+    }
+    .file-card .file-meta span { display: inline-flex; align-items: center; gap: 4px; }
+    .file-card .card-foot {
+      padding: 10px 20px;
+      border-top: 1px solid var(--gray-50);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--gray-50);
+    }
+    .file-card .type-tag {
+      font-size: .7rem;
+      padding: 2px 10px;
+      border-radius: 4px;
+      font-weight: 600;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+    }
+    .file-card .type-tag.pdf { background: var(--accent-light); color: #d45a42; }
+    .file-card .type-tag.html { background: var(--primary-light); color: var(--primary); }
+    .file-card .type-tag.docx { background: var(--primary-light); color: var(--primary); }
+    .file-card .type-tag.image { background: var(--green-bg); color: #059669; }
+    .file-card .type-tag.text { background: var(--gray-100); color: var(--gray-500); }
+    .file-card .type-tag.other { background: var(--purple-bg); color: #7c5ddb; }
+    .file-card .open-btn {
+      font-size: .78rem;
+      font-weight: 500;
+      color: var(--primary);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      transition: all var(--transition);
+    }
+    .file-card .open-btn:hover { background: var(--primary-light); text-decoration: none; }
+
+    /* ===== Empty State ===== */
+    .empty-state {
+      text-align: center;
+      padding: 100px 20px 80px;
+      grid-column: 1 / -1;
+    }
+    .empty-state .empty-icon {
+      font-size: 3.5rem;
+      margin-bottom: 16px;
+      opacity: .6;
+    }
+    .empty-state h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--gray-400);
+      margin-bottom: 8px;
+    }
+    .empty-state p {
+      font-size: .875rem;
+      color: var(--gray-300);
+      max-width: 380px;
+      margin: 0 auto;
+    }
+
+    /* ===== Loading ===== */
+    .loading-state {
+      text-align: center;
+      padding: 100px 20px 80px;
+      grid-column: 1 / -1;
+    }
+    .loading-state .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--gray-100);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 14px;
+    }
+    .loading-state p { color: var(--gray-400); font-size: .9rem; }
+
+    /* ===== Error ===== */
+    .error-state {
+      text-align: center;
+      padding: 80px 20px;
+      grid-column: 1 / -1;
+    }
+    .error-state .err-icon { font-size: 2.8rem; margin-bottom: 12px; }
+    .error-state h3 { font-size: 1.05rem; font-weight: 600; color: #d45a42; margin-bottom: 6px; }
+    .error-state p { font-size: .85rem; color: var(--gray-400); margin-bottom: 16px; }
+    .error-state .btn-retry {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 22px; border: 1px solid #fecaca;
+      border-radius: var(--radius-sm); background: #fff;
+      color: #d45a42; font-size: .85rem; cursor: pointer;
+      transition: all var(--transition);
+    }
+    .error-state .btn-retry:hover { background: var(--accent-light); }
+
+    /* ===== Footer ===== */
+    footer {
+      border-top: 1px solid var(--gray-100);
+      background: #fff;
+      padding: 36px 0 0;
+    }
+    footer .container { max-width: var(--max-w); }
+    footer .footer-inner {
+      display: flex; flex-wrap: wrap; gap: 40px;
+      padding-bottom: 20px;
+    }
+    footer .footer-brand { flex: 1; min-width: 180px; }
+    footer .footer-brand h4 { font-size: .95rem; font-weight: 700; margin-bottom: 4px; color: var(--gray-700); }
+    footer .footer-brand p { font-size: .82rem; color: var(--gray-400); line-height: 1.6; }
+    footer .footer-links { min-width: 100px; }
+    footer .footer-links h5 { font-size: .82rem; font-weight: 600; color: var(--gray-600); margin-bottom: 8px; }
+    footer .footer-links a {
+      display: block; font-size: .82rem;
+      color: var(--gray-400); margin-bottom: 5px;
+      transition: color var(--transition);
+    }
+    footer .footer-links a:hover { color: var(--primary); }
+    .footer-bottom {
+      border-top: 1px solid var(--gray-50);
+      padding: 14px 0;
+      font-size: .8rem;
+      color: var(--gray-400);
+    }
+    .footer-bottom .container {
+      display: flex; justify-content: space-between;
+      align-items: center; flex-wrap: wrap; gap: 8px;
+    }
+
+    /* ===== Toast ===== */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--gray-800);
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: 10px;
+      font-size: .85rem;
+      opacity: 0;
+      transition: all .4s cubic-bezier(.4,0,.2,1);
+      pointer-events: none;
+      z-index: 999;
+      box-shadow: var(--shadow-lg);
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 640px) {
+      .page-header { padding: 32px 0 20px; }
+      .page-header h1 { font-size: 1.35rem; }
+      .file-grid { grid-template-columns: 1fr; }
+      .nav-links { gap: 4px; }
+      .nav-links a { padding: 5px 10px; font-size: .78rem; }
+      .search-wrap { max-width: none; }
+      .toolbar-right .btn-auto span.label-text { display: none; }
+      .stats-bar .stat-item { font-size: .75rem; padding: 4px 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== Toast ===== -->
+<div class="toast" id="toast"></div>
+
+<!-- ===== Navbar ===== -->
+<nav>
+  <div class="container">
+    <a href="../" class="nav-brand">
+      <svg viewBox="0 0 256 256" width="26" height="26">
+        <defs><linearGradient id="nbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2563eb"/><stop offset="100%" stop-color="#1a56db"/></linearGradient></defs>
+        <rect width="256" height="256" rx="42" fill="url(#nbg)"/>
+        <g transform="translate(56,28)">
+          <path d="M0,0 L105,0 L144,39 L144,180 Q144,192 132,192 L12,192 Q0,192 0,180 Z" fill="white" fill-opacity="0.94"/>
+          <path d="M105,0 L105,39 L144,39 Z" fill="#c8d7f0"/>
+          <rect x="24" y="64" width="96" height="5" rx="2.5" fill="#1e40af" fill-opacity="0.6"/>
+          <rect x="24" y="84" width="96" height="5" rx="2.5" fill="#1e40af" fill-opacity="0.6"/>
+          <rect x="24" y="104" width="96" height="5" rx="2.5" fill="#1e40af" fill-opacity="0.6"/>
+          <rect x="24" y="124" width="64" height="5" rx="2.5" fill="#1e40af" fill-opacity="0.6"/>
+          <circle cx="120" cy="155" r="26" fill="#dc2626" fill-opacity="0.78"/>
+          <text x="120" y="163" text-anchor="middle" font-family="sans-serif" font-size="24" font-weight="bold" fill="#dc2626" fill-opacity="0.9">文</text>
+        </g>
+      </svg>
+      文枢
+    </a>
+    <div class="nav-links">
+      <a href="../">首页</a>
+      <a href="./" class="active">资料库</a>
+      <a href="../docs/quick-start.html">快速开始</a>
+      <a href="../docs/guide.html">使用指南</a>
+      <a href="../changelog/">更新日志</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== Page Header ===== -->
+<section class="page-header">
+  <div class="container">
+    <div class="header-row">
+      <div class="header-left">
+        <h1>
+          <span class="title-icon">📦</span>
+          Jose暂存资料库
+        </h1>
+        <p class="subtitle">实时浏览 TMP 目录中的文档、报告与资源文件，点击即可在新窗口打开查看。</p>
+      </div>
+      <span class="header-badge" id="liveBadge">
+        <span class="live-dot" id="liveDot"></span>
+        <span id="liveText">加载中…</span>
+      </span>
+    </div>
+    <div class="stats-bar">
+      <span class="stat-item"><span class="pulse"></span> 实时监测中</span>
+      <span class="stat-item" id="countStat">📄 <strong>0</strong> 个文件</span>
+      <span class="stat-item" id="autoStat">⏱️ 自动刷新开启</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Main Content ===== -->
+<main class="container">
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="搜索文件名…" oninput="filterFiles()">
+    </div>
+    <div class="toolbar-right">
+      <button class="btn-auto" id="autoToggle" onclick="toggleAutoRefresh()">
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        <span class="label-text">自动刷新</span>
+      </button>
+      <button class="btn-refresh" onclick="loadFiles()" id="refreshBtn" title="立即刷新">
+        <span class="spin-icon" id="refreshIcon">↻</span>
+        刷新
+      </button>
+    </div>
+  </div>
+
+  <!-- File Grid -->
+  <div class="file-grid" id="fileGrid">
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>正在获取文件列表…</p>
+    </div>
+  </div>
+
+</main>
+
+<!-- ===== Footer ===== -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <h4>文枢 · AI 公文智能优化助手</h4>
+        <p>基于 GB/T 9704 标准的桌面端公文格式优化工具。</p>
+      </div>
+      <div class="footer-links">
+        <h5>导航</h5>
+        <a href="../">项目首页</a>
+        <a href="./">资料库</a>
+        <a href="../changelog/">更新日志</a>
+      </div>
+      <div class="footer-links">
+        <h5>资源</h5>
+        <a href="../docs/quick-start.html">快速开始</a>
+        <a href="../docs/guide.html">使用指南</a>
+        <a href="https://github.com/linhut/document-ai-assistant" target="_blank">GitHub</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="container">
+      <span>Copyright &copy; 2025-2026 <a href="https://www.linhut.cn" style="color:var(--gray-400);">Jose AI</a>.</span>
+      <a href="https://doc.linhut.cn" style="color:var(--gray-400);">doc.linhut.cn</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ===== Configuration =====
+// 数据加载方式（自动降级）：
+//   1. <script> 标签加载 files.js（兼容 file:// HTTP 一切环境）
+//   2. fetch 后端 API（仅 HTTP，可选）
+const DATA_JS_URL = '../tmp/files.js';             // JS 数据源（脚本标签注入）
+const API_URL     = '/api/workspace/files';         // 后端 API（可选备用）
+const AUTO_REFRESH_INTERVAL = 5000;
+
+// tmp 目录相对于当前页面的相对路径（自动计算，不受部署位置影响）
+// 当前页面: /workspace/index.html  → tmp 在 ../tmp/
+const TMP_RELATIVE = '../tmp/';
+
+let allFiles = [];
+let autoRefreshTimer = null;
+let isAutoRefreshOn = true;
+
+// ===== Toast =====
+let toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ===== 源 1：<script> 标签加载（兼容所有环境） =====
+function loadViaScriptTag(silent) {
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = DATA_JS_URL + '?t=' + Date.now();
+    script.onload = () => {
+      const data = window.__FILE_DATA || null;
+      window.__FILE_DATA = undefined;
+      script.remove();
+      resolve(data);
+    };
+    script.onerror = () => { script.remove(); resolve(null); };
+    document.head.appendChild(script);
+    setTimeout(() => { if (script.parentNode) { script.remove(); resolve(null); } }, 5000);
+  });
+}
+
+// ===== 源 2：fetch API（仅 HTTP 环境） =====
+async function loadViaFetch(url, silent) {
+  try {
+    const resp = await fetch(url + '?t=' + Date.now());
+    if (resp.ok) { const d = await resp.json(); return d || null; }
+  } catch (_) {}
+  return null;
+}
+
+// ===== Load Files（多源自动降级） =====
+async function loadFiles(silent) {
+  const refreshIcon = document.getElementById('refreshIcon');
+  if (!silent) refreshIcon.classList.add('spinning');
+
+  let filesData = null;
+  let sourceName = '';
+
+  // 源 1
+  filesData = await loadViaScriptTag(silent);
+  if (filesData) sourceName = 'files.js';
+
+  // 源 2（备用）
+  if (!filesData) {
+    filesData = await loadViaFetch(API_URL, silent);
+    if (filesData) sourceName = 'api';
+  }
+
+  if (filesData && filesData.files) {
+    const newFiles = filesData.files;
+    const prevJSON = JSON.stringify(allFiles);
+    const newJSON  = JSON.stringify(newFiles);
+
+    if (newJSON !== prevJSON) {
+      if (prevJSON !== '[]' && !silent) showToast('🔄 文件列表已更新');
+      else if (prevJSON !== '[]' && silent && allFiles.length > 0) showToast('🔄 发现新文件，已自动更新');
+      allFiles = newFiles;
+      renderFiles(filterFilesCurrent());
+      updateStats(filesData.count || allFiles.length, sourceName);
+    }
+    if (document.getElementById('liveText').textContent === '加载中…') {
+      updateStats(filesData.count || allFiles.length, sourceName);
+    }
+  } else {
+    if (!silent) {
+      document.getElementById('fileGrid').innerHTML = `
+        <div class="error-state">
+          <div class="err-icon">⚠️</div>
+          <h3>无法获取文件列表</h3>
+          <p>请确认 <code>tmp/files.js</code> 存在，然后刷新重试。</p>
+          <button class="btn-retry" onclick="loadFiles()">↻ 重试</button>
+        </div>`;
+    }
+    document.getElementById('liveText').textContent = '加载失败';
+    document.getElementById('liveDot').className = 'live-dot offline';
+  }
+
+  refreshIcon.classList.remove('spinning');
+}
+
+// ===== Render（URL 动态计算，相对路径，永远正确） =====
+function renderFiles(files) {
+  const grid = document.getElementById('fileGrid');
+  if (!files || files.length === 0) {
+    grid.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <h3>TMP 目录暂无文件</h3>
+        <p>请使用应用生成或导出文档，文件将自动出现在此处。</p>
+      </div>`;
+    return;
+  }
+  grid.innerHTML = files.map(f => {
+    const icon   = typeIcon(f.type);
+    const label  = f.type.toUpperCase();
+    const fileUrl = TMP_RELATIVE + encodeURIComponent(f.name);
+    return `
+      <div class="file-card" onclick="openFile('${esc(fileUrl)}')" title="点击打开 ${esc(f.name)}">
+        <div class="card-body">
+          <div class="file-icon ${f.type}">${icon}</div>
+          <div class="file-info">
+            <div class="file-name">${esc(f.name)}</div>
+            <div class="file-meta">
+              <span>📦 ${f.size_display || fmtSize(f.size)}</span>
+              <span>🕐 ${f.mtime_display || fmtTime(f.mtime)}</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-foot">
+          <span class="type-tag ${f.type}">${label}</span>
+          <span class="open-btn">在新窗口打开 ↗</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ===== Filter =====
+function filterFiles() { renderFiles(filterFilesCurrent()); }
+function filterFilesCurrent() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  if (!q) return allFiles;
+  return allFiles.filter(f => f.name.toLowerCase().includes(q));
+}
+
+// ===== Open（永远相对路径） =====
+function openFile(url) {
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+// ===== Auto Refresh =====
+function toggleAutoRefresh() {
+  isAutoRefreshOn = !isAutoRefreshOn;
+  const btn = document.getElementById('autoToggle');
+  if (isAutoRefreshOn) {
+    btn.classList.add('active'); startAutoRefresh();
+    document.getElementById('autoStat').innerHTML = '⏱️ 自动刷新开启';
+  } else {
+    btn.classList.remove('active'); stopAutoRefresh();
+    document.getElementById('autoStat').innerHTML = '⏱️ 自动刷新已暂停';
+  }
+}
+function startAutoRefresh() { stopAutoRefresh(); autoRefreshTimer = setInterval(() => loadFiles(true), AUTO_REFRESH_INTERVAL); }
+function stopAutoRefresh() { if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; } }
+
+// ===== Stats =====
+function updateStats(count, source) {
+  const mode  = source === 'api' ? '实时' : '静态';
+  document.getElementById('liveText').textContent = `共 ${count} 个文件 · ${mode}模式`;
+  document.getElementById('liveDot').className   = 'live-dot online';
+  document.getElementById('countStat').innerHTML  = `📄 <strong>${count}</strong> 个文件`;
+}
+
+// ===== Helpers =====
+function typeIcon(type) {
+  switch (type) { case 'pdf':return '📕'; case 'html':return '🌐'; case 'docx':return '📄'; case 'image':return '🖼️'; case 'text':return '📝'; default:return '📎'; }
+}
+function fmtSize(b) {
+  if (!b) return '0 B';
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(1) + ' MB';
+}
+function fmtTime(ts) {
+  if (!ts) return '';
+  return new Date(ts*1000).toLocaleString('zh-CN', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ===== Init =====
+document.addEventListener('DOMContentLoaded', () => {
+  loadFiles().then(() => {
+    if (isAutoRefreshOn) {
+      document.getElementById('autoToggle').classList.add('active');
+      startAutoRefresh();
+    }
+  });
+});
+</script>
+
+</body>
+</html>

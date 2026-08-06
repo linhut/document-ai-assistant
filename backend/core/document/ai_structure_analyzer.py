@@ -67,15 +67,22 @@ def classify_with_ai(model: DocumentModel, provider_name: str = "openai") -> boo
         from utils.crypto import decrypt_value
         db = SessionLocal()
         try:
-            config = db.query(AIConfig).filter(
-                AIConfig.provider == provider_name,
-                AIConfig.is_active == True
-            ).first()
+            # 优先使用当前启用的 AI 配置（不限 provider 类型）。
+            # 修复：此前按 provider_name（默认 "openai"）精确匹配，导致用户启用
+            # 了 DeepSeek / custom:xxx 等其他服务商时，结构分析永远被跳过。
+            config = db.query(AIConfig).filter(AIConfig.is_active == True).first()
             if not config:
-                logger.info(f"No active AI config for {provider_name}, skipping AI structure analysis")
+                # 兼容旧逻辑：按指定 provider 查询已启用配置
+                config = db.query(AIConfig).filter(
+                    AIConfig.provider == provider_name,
+                    AIConfig.is_active == True
+                ).first()
+            if not config:
+                logger.info("No active AI config, skipping AI structure analysis")
                 return False
 
             api_key = decrypt_value(config.api_key_encrypted) if config.api_key_encrypted else ""
+            provider_name = config.provider
             provider = create_provider(
                 provider_name,
                 api_key=api_key,

@@ -13,14 +13,14 @@ def test_available_providers():
     """Test listing available providers."""
     providers = available_providers()
     assert isinstance(providers, list)
-    assert "openai" in providers
-    assert "deepseek" in providers
-    assert "custom" in providers
+    names = {p["name"] for p in providers}
+    assert "openai" in names
+    assert "deepseek" in names
+    assert "custom" in names
     print(f"Available providers: {providers}")
 
 
-@pytest.mark.asyncio
-async def test_openai_provider_mock():
+def test_openai_provider_mock():
     """Test OpenAI provider with mock API (will fail without real API key)."""
     # This is a structure test - real API test requires valid key
     try:
@@ -36,8 +36,7 @@ async def test_openai_provider_mock():
         print(f"Expected: {e}")
 
 
-@pytest.mark.asyncio
-async def test_deepseek_provider_structure():
+def test_deepseek_provider_structure():
     """Test DeepSeek provider structure."""
     provider = create_provider(
         "deepseek",
@@ -48,8 +47,7 @@ async def test_deepseek_provider_structure():
     print(f"DeepSeek provider created: {provider.name}")
 
 
-@pytest.mark.asyncio
-async def test_custom_provider_structure():
+def test_custom_provider_structure():
     """Test Custom provider structure."""
     provider = create_provider(
         "custom",

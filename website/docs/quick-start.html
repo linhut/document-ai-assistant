@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>快速开始 — 文枢 · 文档中心</title>
+  <meta name="description" content="三步上手文枢 AI 公文智能优化助手：安装、上传、检查修复。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%232563eb'/%3E%3Cstop offset='100%25' stop-color='%231a56db'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='256' height='256' rx='42' fill='url(%23bg)'/%3E%3Cg transform='translate(56,28)'%3E%3Cpath d='M0,0 L105,0 L144,39 L144,180 Q144,192 132,192 L12,192 Q0,192 0,180 Z' fill='white' fill-opacity='0.94'/%3E%3Cpath d='M105,0 L105,39 L144,39 Z' fill='%23c8d7f0'/%3E%3Crect x='24' y='64' width='96' height='5' rx='2.5' fill='%231e40af' fill-opacity='0.6'/%3E%3Crect x='24' y='84' width='96' height='5' rx='2.5' fill='%231e40af' fill-opacity='0.6'/%3E%3Crect x='24' y='104' width='96' height='5' rx='2.5' fill='%231e40af' fill-opacity='0.6'/%3E%3Crect x='24' y='124' width='64' height='5' rx='2.5' fill='%231e40af' fill-opacity='0.6'/%3E%3Ccircle cx='120' cy='155' r='26' fill='%23dc2626' fill-opacity='0.78'/%3E%3Ctext x='120' y='163' text-anchor='middle' font-family='sans-serif' font-size='24' font-weight='bold' fill='%23dc2626' fill-opacity='0.9'%3E文%3C/text%3E%3C/g%3E%3C/svg%3E">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue-50: #eff6ff; --blue-100: #dbeafe; --blue-200: #bfdbfe;
+      --blue-300: #93c5fd; --blue-400: #60a5fa; --blue-500: #3b82f6;
+      --blue-600: #2563eb; --blue-700: #1d4ed8; --blue-800: #1e40af;
+      --red-500: #ef4444; --red-600: #dc2626;
+      --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+      --gray-300: #d1d5db; --gray-400: #9ca3af; --gray-500: #6b7280;
+      --gray-600: #4b5563; --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
+      --radius: 10px; --max-w: 900px;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",Helvetica,Arial,sans-serif;
+      color: var(--gray-800); background: #fff; line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--blue-600); text-decoration: none; }
+    a:hover { color: var(--blue-800); text-decoration: underline; }
+    .container { max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
+
+    /* Nav */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,.88); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--gray-100);
+    }
+    nav .container {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 60px;
+    }
+    .nav-brand { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--gray-900); }
+    .nav-brand svg { width: 28px; height: 28px; }
+    .nav-links { display: flex; align-items: center; gap: 24px; }
+    .nav-links a { color: var(--gray-600); font-size: .875rem; font-weight: 500; }
+    .nav-links a:hover { color: var(--blue-600); }
+    .nav-links a.active { color: var(--blue-600); }
+
+    /* Header */
+    .page-header {
+      padding: 56px 0 40px;
+      background: linear-gradient(160deg, var(--blue-50), #fff);
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .page-header h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+    .page-header p { color: var(--gray-500); font-size: 1.05rem; max-width: 600px; }
+
+    /* Content */
+    .content { padding: 48px 0 80px; }
+    .content h2 {
+      font-size: 1.5rem; font-weight: 700; margin: 48px 0 12px;
+      padding-bottom: 8px; border-bottom: 1px solid var(--gray-100);
+    }
+    .content h2:first-of-type { margin-top: 0; }
+    .content h3 { font-size: 1.15rem; font-weight: 700; margin: 28px 0 8px; }
+    .content p { margin-bottom: 16px; color: var(--gray-600); }
+    .content ul, .content ol { margin: 0 0 16px 20px; color: var(--gray-600); }
+    .content li { margin-bottom: 6px; }
+    .content code {
+      background: var(--gray-100); padding: 2px 8px; border-radius: 4px;
+      font-size: .875rem; font-family: "SF Mono","Fira Code","Consolas",monospace;
+    }
+    .content pre {
+      background: var(--gray-900); color: #e5e7eb; border-radius: var(--radius);
+      padding: 20px 24px; overflow-x: auto; margin: 16px 0 24px;
+      font-size: .875rem; line-height: 1.6;
+    }
+    .content pre code { background: none; padding: 0; color: inherit; }
+    .content blockquote {
+      border-left: 3px solid var(--blue-300);
+      background: var(--blue-50); padding: 12px 20px; margin: 16px 0 24px;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      color: var(--gray-700); font-size: .9375rem;
+    }
+    .content .step-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--blue-600); color: #fff; font-size: .8125rem; font-weight: 700;
+      margin-right: 8px; flex-shrink: 0;
+    }
+    .content .step-heading { display: flex; align-items: center; margin: 28px 0 8px; }
+    .content .step-heading h3 { margin: 0; }
+
+    /* Sidebar layout */
+    .layout { display: flex; gap: 40px; max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    .sidebar {
+      width: 220px; flex-shrink: 0; position: sticky; top: 76px;
+      align-self: flex-start; padding-top: 48px;
+    }
+    .sidebar h5 { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em;
+      color: var(--gray-400); margin-bottom: 12px; }
+    .sidebar a {
+      display: block; padding: 6px 0; font-size: .875rem; color: var(--gray-500);
+    }
+    .sidebar a:hover, .sidebar a.active { color: var(--blue-600); text-decoration: none; }
+    .main-content { flex: 1; min-width: 0; padding-bottom: 80px; }
+
+    /* Footer */
+    footer {
+      background: var(--gray-900); color: var(--gray-400); padding: 40px 0 28px;
+    }
+    footer .container {
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 24px;
+    }
+    footer .footer-brand h4 { color: #fff; font-size: 1rem; margin-bottom: 4px; }
+    footer .footer-brand p { font-size: .8125rem; line-height: 1.6; }
+    footer .footer-links h5 { color: #fff; font-size: .8125rem; margin-bottom: 8px; }
+    footer .footer-links a { display: block; font-size: .8125rem; margin-bottom: 4px; color: var(--gray-400); }
+    footer .footer-links a:hover { color: #fff; }
+    .footer-bottom {
+      margin-top: 28px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.08);
+      text-align: center; font-size: .8125rem; color: var(--gray-500);
+    }
+
+    @media (max-width: 768px) {
+      .layout { flex-direction: column; }
+      .sidebar { width: 100%; position: static; padding-top: 24px; }
+      .sidebar .nav-links-side { display: flex; gap: 16px; flex-wrap: wrap; }
+      .sidebar a { padding: 4px 0; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <a href="../" class="nav-brand">
+      <svg viewBox="0 0 256 256" width="28" height="28">
+        <defs><linearGradient id="nbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2563eb"/><stop offset="100%" stop-color="#1a56db"/></linearGradient></defs>
+        <rect width="256" height="256" rx="42" fill="url(#nbg)"/>
+        <g transform="translate(56,28)">
+          <path d="M0,0 L105,0 L144,39 L144,180 Q144,192 132,192 L12,192 Q0,192 0,180 Z" fill="white" fill-opacity="0.94"/>
+          <path d="M105,0 L105,39 L144,39 Z" fill="#c8d7f0"/>
+          <rect x="24" y="64" width="96" height="5" rx="2.5" fill="#1e40af" fill-opacity="0.6"/>
+          <rect x="24" y="84" width="96" height="5" rx="2.5" fill="#1e40af" fill-opacity="0.6"/>
+          <rect x="24" y="104" width="96" height="5" rx="2.5" fill="#1e40af" fill-opacity="0.6"/>
+          <rect x="24" y="124" width="64" height="5" rx="2.5" fill="#1e40af" fill-opacity="0.6"/>
+          <circle cx="120" cy="155" r="26" fill="#dc2626" fill-opacity="0.78"/>
+          <text x="120" y="163" text-anchor="middle" font-family="sans-serif" font-size="24" font-weight="bold" fill="#dc2626" fill-opacity="0.9">文</text>
+        </g>
+      </svg>
+      文枢
+    </a>
+    <div class="nav-links">
+      <a href="../">首页</a>
+      <a href="quick-start.html" class="active">快速开始</a>
+      <a href="guide.html">使用指南</a>
+      <a href="../changelog/">更新日志</a>
+    </div>
+  </div>
+</nav>
+
+<section class="page-header">
+  <div class="container">
+    <h1>快速开始</h1>
+    <p>在最短路径内体验文枢的核心工作流：安装、检查、修复、导出。</p>
+  </div>
+</section>
+
+<div class="layout">
+  <aside class="sidebar">
+    <h5>本页目录</h5>
+    <div class="nav-links-side">
+      <a href="#install">安装与启动</a>
+      <a href="#upload">上传文档</a>
+      <a href="#check">检查格式</a>
+      <a href="#fix">修复问题</a>
+      <a href="#ai">AI 润色</a>
+      <a href="#export">导出文档</a>
+      <a href="#build">构建安装包</a>
+    </div>
+  </aside>
+
+  <main class="main-content content">
+
+    <h2 id="install">第一步：安装并启动</h2>
+
+    <h3>方式一：一键启动（推荐）</h3>
+    <p>下载最新版安装包后双击运行，打开即可看到工作台界面。首次启动会自动初始化后端服务，稍等片刻即可使用。</p>
+    <p>支持平台：<strong>Windows x86_64</strong> · <strong>macOS Intel / Apple Silicon</strong> · <strong>Linux x86_64 / ARM64</strong></p>
+
+    <h3>方式二：从源码运行</h3>
+    <p>适合开发者和信创环境用户：</p>
+    <pre># 1. 克隆仓库
+git clone https://github.com/linhut/document-ai-assistant.git
+cd document-ai-assistant
+
+# 2. 安装后端依赖
+cd backend
+pip install -r requirements.txt
+
+# 3. 启动后端服务（端口 8765）
+python main.py
+
+# 4. 新终端：安装前端依赖并启动
+cd frontend
+npm install
+npm run electron:dev</pre>
+
+    <h3>环境要求</h3>
+    <p>从源码运行时，请确保已安装以下依赖：</p>
+    <ul>
+      <li><strong>Python &ge; 3.12</strong></li>
+      <li><strong>Node.js &ge; 20</strong></li>
+      <li><strong>Git</strong></li>
+    </ul>
+
+    <h2 id="upload">第二步：上传文档</h2>
+    <p>进入<strong>文档处理</strong>页面，将 <code>.docx</code> 文件拖入上传区域，或点击选择文件。</p>
+    <ul>
+      <li>支持批量上传多个文档</li>
+      <li>系统自动检测文档类型（通知、请示、报告等 22 种法定文种）</li>
+      <li>文件仅在本机处理，不会上传到云端</li>
+    </ul>
+    <blockquote>💡 <code>.doc</code> 或 <code>.wps</code> 格式需要系统安装 LibreOffice 以自动转换。<br>Windows 下推荐直接使用 <code>.docx</code> 格式。</blockquote>
+
+    <h2 id="check">第三步：检查格式</h2>
+    <p>上传完成后，点击<strong>检查格式</strong>按钮。系统将基于 <strong>GB/T 9704-2012《党政机关公文格式》</strong> 标准执行全面扫描：</p>
+    <ul>
+      <li><strong>字体检测</strong> — 标题是否使用方正小标宋简体，正文是否为仿宋_GB2312</li>
+      <li><strong>字号检测</strong> — 标题一号（26pt）、正文三号（16pt）等</li>
+      <li><strong>段落检测</strong> — 行距、首行缩进 2 字符、对齐方式</li>
+      <li><strong>页面检测</strong> — 页边距、纸张类型（A4）、页码格式</li>
+      <li><strong>结构检测</strong> — 版头、主体、版记三部分完整性</li>
+    </ul>
+    <p>检查完成后，<strong>校审中心</strong>会列出所有发现的问题，按严重程度分级：</p>
+    <ul>
+      <li><strong>P0（格式错误）</strong> — 必须修复，如字体不符、字号错误</li>
+      <li><strong>P1（轻微问题）</strong> — 建议修复，如行距偏差</li>
+      <li><strong>P2（优化建议）</strong> — 可选改进</li>
+    </ul>
+
+    <h2 id="fix">第四步：一键修复</h2>
+    <p>在校审中心勾选需要修复的问题，点击<strong>应用修复</strong>：</p>
+    <ul>
+      <li>字体自动替换（设置全部 4 个 XML 字体属性：ascii / hAnsi / eastAsia / cs）</li>
+      <li>段落间距、行距、缩进自动校正</li>
+      <li>页边距恢复国家标准值</li>
+      <li>多余空格、空行自动清理</li>
+      <li>每次修复生成新版本，支持回退</li>
+    </ul>
+
+    <h2 id="ai">第五步：AI 智能润色（可选）</h2>
+    <p>如需进行语义级优化，可配置 AI 服务商：</p>
+    <ul>
+      <li>进入 <strong>AI 配置</strong> 页面</li>
+      <li>选择服务商：DeepSeek、通义千问、OpenAI、Claude、Ollama 等 23+ 家</li>
+      <li>填入 API Key（加密存储于本机）</li>
+      <li>点击<strong>测试连接</strong>验证可用性</li>
+    </ul>
+    <p>配置完成后，AI 分析会：</p>
+    <ul>
+      <li>按 22 种公文文种定制检查规则</li>
+      <li>发现规则引擎无法识别的语义问题</li>
+      <li>提供修改建议（可勾选后一键应用）</li>
+    </ul>
+
+    <h2 id="export">第六步：导出成稿</h2>
+    <p>确认所有修复无误后，点击<strong>下载</strong>按钮：</p>
+    <ul>
+      <li>导出符合 GB/T 9704 标准的 <code>.docx</code> 正式文档</li>
+      <li>支持 A4 实时预览，所见即所得</li>
+      <li>版头版记完整保留（发文机关标志、红色反线、抄送等）</li>
+    </ul>
+    <blockquote>💡 也可使用 <strong>A4 实时排版预览</strong> 功能，左侧调参右侧即时预览，确认满意后再下载。</blockquote>
+
+    <h2 id="build">构建桌面安装包</h2>
+    <p>如需自行构建分发给其他用户：</p>
+    <pre># Windows 安装包
+cd frontend
+npm run electron:build:preview
+# 输出: frontend/release/AI公文智能优化助手 Setup X.X.X.exe
+
+# Linux x86_64
+npm run electron:build:linux
+# 输出: *.AppImage + *.deb
+
+# Linux ARM64（鲲鹏/飞腾）
+npm run electron:build:linux:arm64</pre>
+
+    <p style="margin-top:48px;padding-top:24px;border-top:1px solid var(--gray-200);">
+      📖 遇到问题？查看 <a href="guide.html">完整使用指南</a> · 
+      🐛 报告 Bug → <a href="https://github.com/linhut/document-ai-assistant/issues" target="_blank">GitHub Issues</a>
+    </p>
+  </main>
+</div>
+
+<footer>
+  <div class="container">
+    <div class="footer-brand">
+      <h4>文枢 · AI 公文智能优化助手</h4>
+      <p>基于 GB/T 9704 标准的桌面端公文格式优化工具。</p>
+    </div>
+    <div class="footer-links">
+      <h5>文档</h5>
+      <a href="quick-start.html">快速开始</a>
+      <a href="guide.html">使用指南</a>
+      <a href="../changelog/">更新日志</a>
+    </div>
+    <div class="footer-links">
+      <h5>相关链接</h5>
+      <a href="../">项目首页</a>
+      <a href="https://github.com/linhut/document-ai-assistant" target="_blank">GitHub</a>
+      <a href="https://github.com/linhut/document-ai-assistant/releases" target="_blank">下载页面</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="container">
+      Copyright &copy; 2025-2026 <a href="https://www.linhut.cn" style="color:var(--gray-400);">Jose AI</a>.
+      All rights reserved. 基于 GB/T 9704 标准构建.
+      <a href="https://doc.linhut.cn" style="color:var(--gray-400);">doc.linhut.cn</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
