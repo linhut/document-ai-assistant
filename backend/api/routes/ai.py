@@ -103,7 +103,7 @@ async def save_ai_config(req: AIConfigRequest, db: Session = Depends(get_db)):
         if should_activate:
             db.query(AIConfig).filter(
                 AIConfig.provider != req.provider,
-                AIConfig.is_active == True,
+                AIConfig.is_active,
             ).update({"is_active": False})
 
         db.commit()
@@ -257,7 +257,7 @@ async def get_default_ai_config():
 @router.get("/active")
 async def get_active_ai_config(db: Session = Depends(get_db)):
     """获取当前已激活的 AI 配置（首个 is_active=True 的记录）。"""
-    config = db.query(AIConfig).filter(AIConfig.is_active == True).first()
+    config = db.query(AIConfig).filter(AIConfig.is_active).first()
     if not config:
         return {"exists": False, "active": False}
     return {

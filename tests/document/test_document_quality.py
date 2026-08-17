@@ -4,9 +4,7 @@
 """
 文档质量测试体系 — 模板生成、字体XML、格式规则、优化前后对比
 """
-import os
 import zipfile
-import tempfile
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
@@ -17,7 +15,7 @@ from core.document.generator import generate_docx
 from core.document.models import DocumentModel, Paragraph, Run, RunFormat, ParagraphFormat, PageSetup
 from core.document.font_utils import (
     set_run_font, validate_document_fonts, detect_font_from_run,
-    TITLE_FONT, BODY_FONT, LATIN_FONT,
+    TITLE_FONT, BODY_FONT,
 )
 from core.rules.engine import RuleEngine
 from core.rules.loader import load_rules_for_type

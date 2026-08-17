@@ -6,7 +6,6 @@ Problem detector: higher-level analysis beyond basic rule checks.
 Detects structural / semantic issues like inconsistent fonts, mixed styles, etc.
 """
 from __future__ import annotations
-from dataclasses import dataclass
 
 from core.document.models import DocumentModel
 from core.rules.checker import CheckIssue

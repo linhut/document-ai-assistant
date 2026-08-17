@@ -23,9 +23,8 @@ from typing import Any
 from docx import Document
 
 from core.document.font_utils import (
-    INVALID_FONT_PATTERNS, TITLE_FONT, BODY_FONT, LATIN_FONT,
+    INVALID_FONT_PATTERNS,
 )
-from utils.logger import logger
 
 
 WORD_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"

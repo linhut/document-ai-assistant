@@ -9,14 +9,11 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 
-import pytest
 from pathlib import Path
 from docx import Document
-from docx.shared import Pt
 
 from core.document.models import (
-    DocumentModel, Paragraph, Run, RunFormat, ParagraphFormat,
-    Table, TableCell, PageSetup, HeaderFooter, DocumentMetadata,
+    DocumentModel, Paragraph,
 )
 from core.document.parser import parse_docx
 from core.document.generator import generate_docx

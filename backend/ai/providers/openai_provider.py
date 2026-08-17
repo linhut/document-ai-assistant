@@ -62,7 +62,7 @@ class OpenAIProvider(AIProvider):
                 if response.status_code == 404:
                     raise Exception(f"API 端点不存在：{self.base_url}")
                 if response.status_code == 429:
-                    last_error = Exception(f"API 限流 (HTTP 429)")
+                    last_error = Exception("API 限流 (HTTP 429)")
                     wait = min(2 ** (attempt + 1), 32) + random.uniform(0, 1)
                     logger.warning(f"Rate limited (attempt {attempt + 1}/{self.max_retries}), waiting {wait:.1f}s")
                     await asyncio.sleep(wait)
@@ -93,7 +93,7 @@ class OpenAIProvider(AIProvider):
                     await asyncio.sleep(2 ** attempt)
                     continue
 
-            except httpx.ReadTimeout as e:
+            except httpx.ReadTimeout:
                 last_error = Exception(f"API 请求超时（{self.timeout}秒）")
                 logger.warning(f"Read timeout (attempt {attempt + 1}/{self.max_retries})")
                 if attempt < self.max_retries - 1:

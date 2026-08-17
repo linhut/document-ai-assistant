@@ -30,16 +30,17 @@ interface CheckRule {
 export default function TemplateRules() {
   const { templateId } = useParams<{ templateId: string }>();
   const navigate = useNavigate();
-  const { success, error: showError, info, confirm } = useToast();
+  const { success, error: showError, confirm } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [template, setTemplate] = useState<any>(null);
+  const [template, setTemplate] = useState<Record<string, any> | null>(null);
   const [rules, setRules] = useState<CheckRule[]>([]);
 
   useEffect(() => {
     const controller = new AbortController();
     loadTemplateRules(controller.signal);
     return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [templateId]);
 
   const loadTemplateRules = async (signal?: AbortSignal) => {
@@ -51,8 +52,9 @@ export default function TemplateRules() {
           setRules(response.rules.check_rules);
         }
       }
-    } catch (error: any) {
-      if (error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED') return;
+    } catch (error: unknown) {
+      const e = (error && typeof error === 'object') ? error as Record<string, any> : {};
+      if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') return;
       console.error('Load template rules error:', error);
     } finally {
       if (!signal?.aborted) {
@@ -93,8 +95,11 @@ export default function TemplateRules() {
         fix_rules: [],
       });
       success('成功', `规则保存成功！共 ${rules.length} 条检查规则`);
-    } catch (error: any) {
-      showError('错误', '保存失败：' + (error?.response?.data?.detail || error?.message || '请重试'));
+    } catch (error: unknown) {
+      const e = (error && typeof error === 'object') ? error as Record<string, any> : {};
+      const resp = (e.response && typeof e.response === 'object') ? e.response as Record<string, any> : {};
+      const data = (resp.data && typeof resp.data === 'object') ? resp.data as Record<string, any> : {};
+      showError('错误', '保存失败：' + ((data.detail as string) || (e.message as string) || '请重试'));
     } finally {
       setSaving(false);
     }
@@ -190,7 +195,7 @@ export default function TemplateRules() {
                     <select
                       className="w-full border border-primary-200 rounded-md px-3 py-2 bg-white text-sm focus:outline-none focus:ring-1 focus:ring-accent"
                       value={rule.severity}
-                      onChange={(e) => updateRule(index, 'severity', e.target.value as any)}
+                      onChange={(e) => updateRule(index, 'severity', e.target.value as CheckRule['severity'])}
                     >
                       <option value="P0">P0 - 必须修复</option>
                       <option value="P1">P1 - 建议修复</option>

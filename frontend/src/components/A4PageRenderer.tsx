@@ -150,7 +150,7 @@ function renderParagraph(p: DocParagraph, key: number, cfg: {
   // 数值直接当 px 使用（与 Word pt 值 1:1 对应，保证行数/分页一致）
   let fs = cfg.bodyFontSize;
   let font = ff();
-  let lh = `${cfg.bodyLineSpacing}px`;
+  const lh = `${cfg.bodyLineSpacing}px`;
   let indent = `${cfg.bodyFontSize * 2}px`;  // 首行缩进 = 2字符宽
   let align: string = 'justify';
   let bold: boolean | undefined;
@@ -215,7 +215,7 @@ function renderParagraph(p: DocParagraph, key: number, cfg: {
       return (
         <p key={key} className={className} style={{
           fontSize: `${fs}px`, fontFamily: font, lineHeight: lh,
-          textAlign: align as any, textIndent: indent, margin: 0,
+          textAlign: align as CSSProperties['textAlign'], textIndent: indent, margin: 0,
         }}>
           <strong className="a4-bold-first">{p.text.slice(0, dotIdx + 1)}</strong>
           {p.text.slice(dotIdx + 1)}
@@ -226,7 +226,7 @@ function renderParagraph(p: DocParagraph, key: number, cfg: {
 
   const style: CSSProperties = {
     fontSize: `${fs}px`, fontFamily: font, lineHeight: lh,
-    textAlign: align as any, textIndent: indent,
+    textAlign: align as CSSProperties['textAlign'], textIndent: indent,
     margin: 0, fontWeight: bold ? 'bold' : undefined,
   };
 
@@ -279,7 +279,7 @@ function renderTable(table: DocTable, key: number, bodyFontSize: number): React.
 /*  内容流渲染                                                         */
 /* ------------------------------------------------------------------ */
 
-function renderContentFlow(paragraphs: DocParagraph[], tables: DocTable[], cfg: any): React.ReactNode[] {
+function renderContentFlow(paragraphs: DocParagraph[], tables: DocTable[], cfg: Parameters<typeof renderParagraph>[2]): React.ReactNode[] {
   const elements: React.ReactNode[] = [];
 
   const title = paragraphs.find(p => p.role === 'title' || (p.is_heading && p.heading_level === 0));

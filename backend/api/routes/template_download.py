@@ -20,7 +20,6 @@ Template download API: generate and download template documents.
 """
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
-from pathlib import Path
 
 from core.document.generator import generate_docx
 from core.document.models import (
@@ -189,7 +188,7 @@ def _get_template_content(template_id: str, template_name: str) -> dict:
     """
     templates = {
         "notice": {
-            "title": f"关于XXX工作的通知",
+            "title": "关于XXX工作的通知",
             "paragraphs": [
                 "",
                 "各部门、各单位：",
@@ -209,7 +208,7 @@ def _get_template_content(template_id: str, template_name: str) -> dict:
             ],
         },
         "request": {
-            "title": f"关于XXX事项的请示",
+            "title": "关于XXX事项的请示",
             "paragraphs": [
                 "",
                 "XXX（上级机关）：",
@@ -229,7 +228,7 @@ def _get_template_content(template_id: str, template_name: str) -> dict:
             ],
         },
         "report": {
-            "title": f"关于XXX工作的报告",
+            "title": "关于XXX工作的报告",
             "paragraphs": [
                 "",
                 "XXX（上级机关）：",
@@ -251,7 +250,7 @@ def _get_template_content(template_id: str, template_name: str) -> dict:
             ],
         },
         "meeting": {
-            "title": f"XXX会议纪要",
+            "title": "XXX会议纪要",
             "paragraphs": [
                 "",
                 "时间：XXXX年XX月XX日XX时",
@@ -275,7 +274,7 @@ def _get_template_content(template_id: str, template_name: str) -> dict:
             ],
         },
         "letter": {
-            "title": f"关于XXX事项的函",
+            "title": "关于XXX事项的函",
             "paragraphs": [
                 "",
                 "XXX（受文单位）：",
@@ -290,7 +289,7 @@ def _get_template_content(template_id: str, template_name: str) -> dict:
             ],
         },
         "decision": {
-            "title": f"关于XXX的决定",
+            "title": "关于XXX的决定",
             "paragraphs": [
                 "",
                 "为XXX，经研究决定：",
@@ -305,7 +304,7 @@ def _get_template_content(template_id: str, template_name: str) -> dict:
             ],
         },
         "announcement": {
-            "title": f"关于XXX的通告",
+            "title": "关于XXX的通告",
             "paragraphs": [
                 "",
                 "为XXX，现通告如下：",
@@ -320,7 +319,7 @@ def _get_template_content(template_id: str, template_name: str) -> dict:
             ],
         },
         "notice_public": {
-            "title": f"关于XXX的公告",
+            "title": "关于XXX的公告",
             "paragraphs": [
                 "",
                 "根据XXX，现公告如下：",
@@ -335,7 +334,7 @@ def _get_template_content(template_id: str, template_name: str) -> dict:
             ],
         },
         "communique": {
-            "title": f"XXX公报",
+            "title": "XXX公报",
             "paragraphs": [
                 "",
                 "（XXXX年XX月XX日）",
@@ -352,7 +351,7 @@ def _get_template_content(template_id: str, template_name: str) -> dict:
             ],
         },
         "resolution": {
-            "title": f"关于XXX的决议",
+            "title": "关于XXX的决议",
             "paragraphs": [
                 "",
                 "（XXXX年XX月XX日XXX会议通过）",
@@ -369,7 +368,7 @@ def _get_template_content(template_id: str, template_name: str) -> dict:
             ],
         },
         "command": {
-            "title": f"XXX令",
+            "title": "XXX令",
             "paragraphs": [
                 "",
                 "第XXX号",
@@ -382,7 +381,7 @@ def _get_template_content(template_id: str, template_name: str) -> dict:
             ],
         },
         "bill": {
-            "title": f"关于提请审议《XXX》的议案",
+            "title": "关于提请审议《XXX》的议案",
             "paragraphs": [
                 "",
                 "XXX（审议机关）：",
@@ -401,7 +400,7 @@ def _get_template_content(template_id: str, template_name: str) -> dict:
             ],
         },
         "bulletin": {
-            "title": f"关于XXX的通报",
+            "title": "关于XXX的通报",
             "paragraphs": [
                 "",
                 "各部门、各单位：",

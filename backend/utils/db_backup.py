@@ -11,7 +11,6 @@ Usage:
 For periodic backups, call from a background task or cron-equivalent.
 """
 import shutil
-import time
 from pathlib import Path
 from datetime import datetime, timedelta
 

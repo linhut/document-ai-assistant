@@ -10,7 +10,6 @@ from pathlib import Path
 from core.document.parser import parse_docx
 from core.document.generator import generate_docx
 from core.rules.engine import RuleEngine
-from core.rules.checker import CheckIssue
 
 
 # Test fixtures directory

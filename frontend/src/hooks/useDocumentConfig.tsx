@@ -116,13 +116,16 @@ type Action =
   | { type: 'reset' }
   | { type: 'load'; payload: DocumentConfig };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function deepMerge<T extends Record<string, any>>(base: T, overlay: Partial<T>): T {
   const result = { ...base };
   for (const key of Object.keys(overlay)) {
     const val = overlay[key as keyof T];
     if (val && typeof val === 'object' && !Array.isArray(val) && base[key] && typeof base[key] === 'object') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (result as any)[key] = deepMerge(base[key], val as any);
     } else if (val !== undefined) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (result as any)[key] = val;
     }
   }

@@ -7,10 +7,8 @@
 同时同步写入 website/tmp/files.json，使纯静态部署也能获取最新清单。
 """
 import json
-import os
 import time
 from datetime import datetime
-from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse

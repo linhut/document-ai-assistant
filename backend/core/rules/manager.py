@@ -8,7 +8,6 @@ Priority: user > custom > official
 """
 from __future__ import annotations
 import copy
-import json
 import re
 import yaml
 from pathlib import Path

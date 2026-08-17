@@ -12,7 +12,7 @@ from __future__ import annotations
 import asyncio
 import time
 from typing import Any
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import httpx
 
@@ -130,7 +130,7 @@ async def _run_all_checks() -> None:
     def _db_check():
         db = SessionLocal()
         try:
-            configs = db.query(AIConfig).filter(AIConfig.is_active == True).all()
+            configs = db.query(AIConfig).filter(AIConfig.is_active).all()
             return configs
         finally:
             db.close()

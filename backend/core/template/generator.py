@@ -15,7 +15,6 @@ Style Generator: 将 YAML 模板转换为 Word 模板文件（.dotx / .docx）�
 """
 from __future__ import annotations
 from pathlib import Path
-from typing import Any
 
 from docx import Document
 from docx.shared import Pt, Mm
@@ -133,7 +132,6 @@ def _fix_dotx_content_type(dotx_path: Path) -> None:
     需要改为 template 才是合法的 .dotx 格式。
     """
     import zipfile
-    import tempfile
 
     content_types_xml = '[Content_Types].xml'
     # document → template 的替换对

@@ -3,7 +3,7 @@
  * (c) 2026 Jose AI (https://www.linhut.cn)
  * Licensed under the MIT License. See the LICENSE file for details.
  */
-﻿/**
+/**
  * Rules - 规则管理页面
  * 支持按来源层级查看：官方规则、单位规则、用户规则
  */
@@ -16,7 +16,7 @@ import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -55,18 +55,17 @@ export default function Rules() {
   const [rules, setRules] = useState<RuleItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [sourceFilter, setSourceFilter] = useState('all');
-  const [selectedRule, setSelectedRule] = useState<any>(null);
+  const [selectedRule, setSelectedRule] = useState<Record<string, any> | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [importKey, setImportKey] = useState('');
   const [importYamlText, setImportYamlText] = useState('');
-  const [editingRule, setEditingRule] = useState<RuleItem | null>(null);
-  const [editYamlText, setEditYamlText] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
     loadRules(controller.signal);
     return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sourceFilter]);
 
   const loadRules = async (signal?: AbortSignal) => {
@@ -76,8 +75,9 @@ export default function Rules() {
       if (!signal?.aborted) {
         setRules(response.rules || []);
       }
-    } catch (error: any) {
-      if (error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED') return;
+    } catch (error: unknown) {
+      const e = (error && typeof error === 'object') ? error as Record<string, any> : {};
+      if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') return;
       console.error('Load rules error:', error);
     } finally {
       if (!signal?.aborted) {
@@ -88,7 +88,7 @@ export default function Rules() {
 
   const handleViewRule = async (rule: RuleItem) => {
     try {
-      const response = await apiClient.get<Record<string, unknown> & { content?: unknown }>(`/api/rules/${rule.key}?source_type=${rule.source_type}`);
+      const response = await apiClient.get<Record<string, any> & { content?: unknown }>(`/api/rules/${rule.key}?source_type=${rule.source_type}`);
       setSelectedRule({ ...response, source_type: rule.source_type });
       setDetailOpen(true);
     } catch (error) {
@@ -121,8 +121,11 @@ export default function Rules() {
       setImportKey('');
       setImportYamlText('');
       loadRules();
-    } catch (error: any) {
-      showError('错误', '导入失败: ' + (error.response?.data?.detail || error.message));
+    } catch (error: unknown) {
+      const e = (error && typeof error === 'object') ? error as Record<string, any> : {};
+      const resp = (e.response && typeof e.response === 'object') ? e.response as Record<string, any> : {};
+      const data = (resp.data && typeof resp.data === 'object') ? resp.data as Record<string, any> : {};
+      showError('错误', '导入失败: ' + ((data.detail as string) || (e.message as string)));
     }
   };
 
@@ -273,7 +276,7 @@ export default function Rules() {
                   <div>
                     <h3 className="font-medium mb-2">检查规则 ({selectedRule.content.check_rules.length})</h3>
                     <div className="space-y-2">
-                      {selectedRule.content.check_rules.slice(0, 10).map((rule: any, i: number) => (
+                      {selectedRule.content.check_rules.slice(0, 10).map((rule: Record<string, any>, i: number) => (
                         <div key={i} className="p-3 bg-primary-50 rounded text-sm">
                           <span className="font-medium">{rule.name}</span>
                           <span className="text-xs ml-2 text-primary-600">{rule.message}</span>

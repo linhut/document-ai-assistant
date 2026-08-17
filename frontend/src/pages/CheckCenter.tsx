@@ -8,12 +8,12 @@
  * 左侧：问题列表（点击选中 + 筛选 + 批量操作）
  * 右侧：AI 分析结果面板（调用已配置的AI进行智能分析）
  */
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Download, Loader2, CheckSquare, Square, FileText,
   AlertCircle, AlertTriangle, Info, Sparkles, Send,
-  ChevronRight, Zap, Cpu, Settings2,
+  Zap, Cpu, Settings2,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -43,7 +43,7 @@ interface CheckIssue {
 interface AIResult {
   success: boolean;
   provider: string;
-  issues: any[];
+  issues: Record<string, any>[];
   raw_response: string;
   message?: string;
 }
@@ -175,9 +175,12 @@ export default function CheckCenter() {
       if (!signal?.aborted) {
         setIssues(resp);
       }
-    } catch (e: any) {
-      if (e?.name === 'CanceledError' || e?.code === 'ERR_CANCELED') return;
-      setErrorMessage(e.response?.data?.detail || '获取检查结果失败');
+    } catch (e: unknown) {
+      const err = (e && typeof e === 'object') ? e as Record<string, any> : {};
+      if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
+      const resp = (err.response && typeof err.response === 'object') ? err.response as Record<string, any> : {};
+      const data = (resp.data && typeof resp.data === 'object') ? resp.data as Record<string, any> : {};
+      setErrorMessage((data.detail as string) || '获取检查结果失败');
     } finally {
       if (!signal?.aborted) {
         setLoading(false);
@@ -208,7 +211,7 @@ export default function CheckCenter() {
 
   /* ---- 选择操作 ---- */
   const toggleSelect = (id: number) => {
-    setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    setSelectedIds(prev => { const n = new Set(prev); if (n.has(id)) { n.delete(id); } else { n.add(id); } return n; });
   };
 
   const toggleSelectAll = () => {
@@ -235,15 +238,18 @@ export default function CheckCenter() {
   const doApply = async (selectedRuleIds: string[] | null) => {
     setIsApplying(true);
     try {
-      const payload: any = { document_type: documentType, apply_fixes: true };
+      const payload: Record<string, any> = { document_type: documentType, apply_fixes: true };
       if (selectedRuleIds) payload.selected_rule_ids = selectedRuleIds;
       const r = await apiClient.post<{ fixes_applied: number }>(`/api/optimize/${docId}`, payload);
       success('成功', `已应用 ${r.fixes_applied} 个修复`);
       setIsOptimized(true);
       setA4RefreshKey(k => k + 1);
       if (docId) await fetchResults(docId);
-    } catch (e: any) {
-      showError('错误', '修复失败：' + (e.response?.data?.detail || '请重试'));
+    } catch (e: unknown) {
+      const err = (e && typeof e === 'object') ? e as Record<string, any> : {};
+      const resp = (err.response && typeof err.response === 'object') ? err.response as Record<string, any> : {};
+      const data = (resp.data && typeof resp.data === 'object') ? resp.data as Record<string, any> : {};
+      showError('错误', '修复失败：' + ((data.detail as string) || '请重试'));
     } finally {
       setIsApplying(false);
     }
@@ -278,11 +284,14 @@ export default function CheckCenter() {
       }
 
       setAiResult(resp);
-    } catch (e: any) {
-      const status = e.response?.status || '';
-      const detail = e.response?.data?.detail || '';
-      const message = e.response?.data?.message || '';
-      const errText = e.message || '';
+    } catch (e: unknown) {
+      const err = (e && typeof e === 'object') ? e as Record<string, any> : {};
+      const resp = (err.response && typeof err.response === 'object') ? err.response as Record<string, any> : {};
+      const data = (resp.data && typeof resp.data === 'object') ? resp.data as Record<string, any> : {};
+      const status = String(resp.status || '');
+      const detail = String(data.detail || '');
+      const message = String(data.message || '');
+      const errText = String(err.message || '');
 
       let errorMsg = 'AI 分析失败';
       if (status) errorMsg += ` [${status}]`;
@@ -314,7 +323,7 @@ export default function CheckCenter() {
     if (selectedAiIds.size === aiResult.issues.length) {
       setSelectedAiIds(new Set());
     } else {
-      setSelectedAiIds(new Set(aiResult.issues.map((_: any, i: number) => i)));
+      setSelectedAiIds(new Set(aiResult.issues.map((_: unknown, i: number) => i)));
     }
   };
 
@@ -343,8 +352,11 @@ export default function CheckCenter() {
       } else {
         showError('提示', r.message || '应用失败');
       }
-    } catch (e: any) {
-      showError('错误', '应用失败：' + (e.response?.data?.detail || e.message || '请重试'));
+    } catch (e: unknown) {
+      const err = (e && typeof e === 'object') ? e as Record<string, any> : {};
+      const resp = (err.response && typeof err.response === 'object') ? err.response as Record<string, any> : {};
+      const data = (resp.data && typeof resp.data === 'object') ? resp.data as Record<string, any> : {};
+      showError('错误', '应用失败：' + ((data.detail as string) || (err.message as string) || '请重试'));
     } finally {
       setIsApplyingAi(false);
     }
@@ -433,7 +445,6 @@ export default function CheckCenter() {
             <div>
               {groupedIssues.map(group => {
                 const cfg = SEV[group.severity] || SEV.P2;
-                const Icon = cfg.icon;
                 const count = group.issues.length;
                 const allSelected = group.issues.every(i => selectedIds.has(i.id));
                 const someSelected = group.issues.some(i => selectedIds.has(i.id));
@@ -480,7 +491,7 @@ export default function CheckCenter() {
                               e.stopPropagation();
                               setExpandedGroups(prev => {
                                 const n = new Set(prev);
-                                n.has(group.key) ? n.delete(group.key) : n.add(group.key);
+                                if (n.has(group.key)) { n.delete(group.key); } else { n.add(group.key); }
                                 return n;
                               });
                             }}>
@@ -645,7 +656,7 @@ export default function CheckCenter() {
 
                       {/* 问题列表 */}
                       <div className="space-y-2">
-                        {aiResult.issues.map((item: any, idx: number) => {
+                        {aiResult.issues.map((item: Record<string, any>, idx: number) => {
                           const isSelected = selectedAiIds.has(idx);
                           const sevMap: Record<string, { badge: string; border: string }> = {
                             high: { badge: 'bg-severity-p0-bg text-severity-p0', border: 'border-severity-p0' },

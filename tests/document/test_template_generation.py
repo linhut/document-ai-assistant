@@ -5,7 +5,6 @@
 模板生成测试：验证所有公文类型的模板均可正常生成，且字体 XML 正确。
 """
 import sys
-import os
 from pathlib import Path
 import zipfile
 from lxml import etree

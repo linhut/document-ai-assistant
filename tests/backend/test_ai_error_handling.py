@@ -5,7 +5,6 @@
 AI Provider 测试：错误处理、重试机制、超时控制（使用 mock，不需要真实 API）
 """
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
 from ai.providers.openai_provider import OpenAIProvider
 
 

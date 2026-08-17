@@ -7,7 +7,7 @@
  * Templates - 模板中心（优化版 - 改进用户体验）
  */
 import { useState, useEffect } from 'react';
-import { FileText, Eye, Loader2, Plus, Edit, Settings, ChevronRight, Download, FileDown, Sparkles, Upload, Settings2 } from 'lucide-react';
+import { Eye, Loader2, Plus, Settings, ChevronRight, Download, FileDown, Sparkles, Upload, Settings2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -87,8 +87,9 @@ export default function Templates() {
       if (!signal?.aborted) {
         setTemplates(response.templates || []);
       }
-    } catch (error: any) {
-      if (error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED') return;
+    } catch (error: unknown) {
+      const e = (error && typeof error === 'object') ? error as Record<string, unknown> : {};
+      if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') return;
       console.error('Load templates error:', error);
     } finally {
       if (!signal?.aborted) {
@@ -112,15 +113,6 @@ export default function Templates() {
     setDownloadingId(`dotx-${template.id}`);
     try {
       await downloadFile(`/api/templates/official/${template.id}/download/dotx`, `${template.name}_公文模板.dotx`);
-    } finally {
-      setDownloadingId(null);
-    }
-  };
-
-  const handleDownloadStyleDocx = async (template: Template) => {
-    setDownloadingId(`docx-${template.id}`);
-    try {
-      await downloadFile(`/api/templates/styles/${template.id}/download/docx`, `${template.name}_样式预览.docx`);
     } finally {
       setDownloadingId(null);
     }
@@ -195,8 +187,11 @@ export default function Templates() {
         message: '标题应使用方正小标宋简体'
       }]);
       await loadTemplates();
-    } catch (error: any) {
-      showError('错误', '创建失败：' + (error.response?.data?.detail || '请重试'));
+    } catch (error: unknown) {
+      const e = (error && typeof error === 'object') ? error as Record<string, unknown> : {};
+      const resp = (e.response && typeof e.response === 'object') ? e.response as Record<string, unknown> : {};
+      const data = (resp.data && typeof resp.data === 'object') ? resp.data as Record<string, unknown> : {};
+      showError('错误', '创建失败：' + ((data.detail as string) || '请重试'));
     } finally {
       setCreating(false);
     }

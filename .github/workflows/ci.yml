@@ -30,8 +30,10 @@ jobs:
           python-version: "3.12"
       - name: Install ruff
         run: pip install ruff
-      - name: Run ruff check
+      - name: Run ruff check (zero-warning gate)
         run: ruff check backend/ tests/ --output-format=github
+      - name: Run ruff format check
+        run: ruff format backend/ tests/ --check
 
   lint-frontend:
     runs-on: windows-latest
@@ -47,7 +49,7 @@ jobs:
       - name: Run ESLint
         run: |
           cd frontend
-          npx eslint src/ --max-warnings=50
+          npx eslint src/ --max-warnings=0
 
   frontend-build:
     runs-on: windows-latest

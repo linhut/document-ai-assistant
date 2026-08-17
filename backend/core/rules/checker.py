@@ -6,10 +6,10 @@ Format checker: validates a DocumentModel against loaded rules.
 Returns a list of CheckIssue objects.
 """
 from __future__ import annotations
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
-from core.document.models import DocumentModel, Paragraph
+from core.document.models import DocumentModel
 from utils.logger import logger
 
 

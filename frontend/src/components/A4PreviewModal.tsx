@@ -13,7 +13,7 @@
  * 使用统一的 A4PageRenderer 组件渲染，通过 remapParagraphRoles
  * 兼容旧数据中缺少 header_org/header_number 角色的段落。
  */
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { X, ZoomIn, ZoomOut, RefreshCw, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { apiClient, downloadFile } from '@/api/client';
@@ -57,12 +57,23 @@ export default function A4PreviewModal({
 
   /* ---- 数据加载 ---- */
 
-  const loadData = async (signal?: AbortSignal) => {
+  type PreviewResponse = {
+    paragraphs?: DocParagraph[];
+    tables?: DocTable[];
+    page_setup?: {
+      margin_top_mm: number;
+      margin_bottom_mm: number;
+      margin_left_mm: number;
+      margin_right_mm: number;
+    };
+  };
+
+  const loadData = useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       setError('');
 
-      let resp: any;
+      let resp: PreviewResponse;
       if (isTemplateMode) {
         resp = await apiClient.post(`/api/templates/${templateId}/preview`, {}, { timeout: 30000, signal });
       } else if (docId) {
@@ -77,22 +88,25 @@ export default function A4PreviewModal({
         setTables(resp.tables || []);
         setPageSetup(resp.page_setup || pageSetup);
       }
-    } catch (err: any) {
-      if (err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED') return;
-      const msg = err?.response?.data?.detail || err?.message || '预览加载失败';
+    } catch (err: unknown) {
+      const errObj = (err && typeof err === 'object') ? err as Record<string, unknown> : {};
+      if (errObj.name === 'CanceledError' || errObj.code === 'ERR_CANCELED') return;
+      const resp = (errObj.response && typeof errObj.response === 'object') ? errObj.response as Record<string, unknown> : {};
+      const respData = (resp.data && typeof resp.data === 'object') ? resp.data as Record<string, unknown> : {};
+      const msg = respData.detail || errObj.message || '预览加载失败';
       setError(typeof msg === 'string' ? msg : JSON.stringify(msg));
     } finally {
       if (!signal?.aborted) {
         setLoading(false);
       }
     }
-  };
+  }, [isTemplateMode, docId, templateId, pageSetup]);
 
   useEffect(() => {
     const controller = new AbortController();
     loadData(controller.signal);
     return () => controller.abort();
-  }, [docId, templateId, refreshKey]);
+  }, [loadData, refreshKey]);
 
   /* ---- 角色映射：兼容旧数据（缺少 header_org/header_number） ---- */
 

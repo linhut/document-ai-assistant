@@ -13,10 +13,10 @@ and delegates calls to the active provider.
   - custom    : 任意 OpenAI 兼容接口
 """
 from __future__ import annotations
-from typing import Any
+import os
 import httpx
 
-from ai.base import AIProvider, AIAnalysisResult
+from ai.base import AIProvider
 from ai.providers.openai_provider import OpenAIProvider
 from ai.providers.deepseek_provider import DeepSeekProvider
 from ai.providers.claude_provider import ClaudeProvider
@@ -34,7 +34,6 @@ _PROVIDER_REGISTRY: dict[str, type[AIProvider]] = {
 }
 
 # 默认内置配置（聚合服务）— 密钥通过环境变量注入，不硬编码
-import os
 DEFAULT_PROVIDER_CONFIG = {
     "provider": "openai",
     "base_url": os.environ.get("DEFAULT_AI_BASE_URL", "https://cpa.linhut.cn/v1"),

@@ -128,10 +128,10 @@ def test_complete_workflow():
     print("=" * 60)
     print()
     print("Summary:")
-    print(f"  - Document uploaded successfully")
+    print("  - Document uploaded successfully")
     print(f"  - Found {check_data['total_issues']} issues")
     print(f"  - Applied {optimize_data['fixes_applied']} fixes")
-    print(f"  - Generated optimized document")
+    print("  - Generated optimized document")
     print()
     print("Phase 4 is working correctly!")
 
@@ -147,7 +147,7 @@ if __name__ == "__main__":
                     print("Backend is ready!")
                     print()
                     break
-            except:
+            except Exception:
                 time.sleep(1)
         else:
             print("ERROR: Backend not responding. Please start backend with: python backend/main.py")

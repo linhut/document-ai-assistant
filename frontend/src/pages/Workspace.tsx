@@ -213,9 +213,9 @@ export default function Workspace() {
 
         // Network access status
         if (netRes.status === 'fulfilled') {
-          const n = netRes.value as any;
-          setWebAccess(n?.web_access_enabled ?? false);
-          setLanUrl(n?.lan_url ?? '');
+          const n = netRes.value as Record<string, unknown>;
+          setWebAccess(n?.web_access_enabled === true);
+          setLanUrl((n?.lan_url as string) ?? '');
         }
 
         stateRef.current.setLoading(false);

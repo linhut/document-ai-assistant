@@ -21,7 +21,7 @@ import axios, { type RawAxiosRequestConfig } from 'axios';
  */
 function getBaseUrl(): string {
   // Electron 环境：通过 IPC 获取后端地址
-  if (typeof window !== 'undefined' && (window as any).electronAPI?.getBackendStatus) {
+  if (typeof window !== 'undefined' && (window as unknown as { electronAPI?: { getBackendStatus?: () => unknown } }).electronAPI?.getBackendStatus) {
     // 同步返回已知地址（Electron main 进程已确认后端可用）
     return 'http://127.0.0.1:8765';
   }
@@ -166,7 +166,7 @@ export async function downloadFile(endpoint: string, filename: string, timeoutMs
     if (!resp.ok) {
       const text = await resp.text().catch(() => '');
       let msg = `下载失败 (HTTP ${resp.status})`;
-      try { msg = JSON.parse(text).detail || msg; } catch {}
+      try { msg = JSON.parse(text).detail || msg; } catch { /* ignore parse error */ }
       throw new Error(msg);
     }
     const blob = await resp.blob();
@@ -178,15 +178,17 @@ export async function downloadFile(endpoint: string, filename: string, timeoutMs
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(blobUrl);
-  } catch (err: any) {
+  } catch (err: unknown) {
     clearTimeout(timeoutId);
-    if (err?.name === 'AbortError') {
+    const errMsg = (err && typeof err === 'object' && 'message' in err) ? (err as Record<string, unknown>).message as string : '';
+    const errName = (err && typeof err === 'object' && 'name' in err) ? (err as Record<string, unknown>).name as string : '';
+    if (errName === 'AbortError') {
       const msg = '下载超时，请检查网络连接或稍后重试';
       console.error('downloadFile timeout:', url);
       alert(msg);
     } else {
       console.error('downloadFile error:', err);
-      alert(err?.message || '下载失败，请重试');
+      alert(errMsg || '下载失败，请重试');
     }
   }
 }

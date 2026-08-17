@@ -12,17 +12,17 @@ Document generator: converts DocumentModel back into a .docx file.
 """
 from __future__ import annotations
 from pathlib import Path
+from typing import Any
 from docx import Document
 from docx.shared import Pt, Mm, Cm, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from lxml import etree
 
 from core.document.models import DocumentModel, Paragraph, Run, Table as TableModel, HeaderFooter
 from core.document.font_utils import (
-    set_run_font, set_paragraph_font, validate_document_fonts,
-    TITLE_FONT, BODY_FONT, LATIN_FONT,
+    set_run_font, validate_document_fonts,
+    BODY_FONT, LATIN_FONT,
 )
 from utils.logger import logger
 
@@ -101,7 +101,7 @@ def generate_docx(model: DocumentModel, output_path: Path | str) -> Path:
 
 def _auto_fix_fonts(doc: Document, font_issues: list[dict]):
     """自动替换检测到的无效字体（MS Gothic 等）为合规字体。"""
-    from core.document.font_utils import FONT_FALLBACK_MAP, INVALID_FONT_PATTERNS
+    from core.document.font_utils import FONT_FALLBACK_MAP
 
     def _get_replacement(attr: str, invalid_font: str) -> str:
         """根据属性类型和无效字体名，返回合规替换字体。"""

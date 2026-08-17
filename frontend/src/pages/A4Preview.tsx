@@ -35,6 +35,7 @@ export default function A4Preview() {
 
   useEffect(() => {
     if (docId) loadDocument(parseInt(docId));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docId]);
 
   const loadDocument = async (id: number) => {
