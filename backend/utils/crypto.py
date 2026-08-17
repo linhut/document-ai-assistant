@@ -10,7 +10,6 @@ from cryptography.fernet import Fernet
 import base64
 import os
 import sys
-from pathlib import Path
 
 from config import APP_DATA_DIR
 

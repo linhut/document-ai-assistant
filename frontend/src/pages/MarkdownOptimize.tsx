@@ -119,8 +119,8 @@ export default function MarkdownOptimize() {
     apiClient.get<{ templates?: Array<{ id: string; name: string; enabled?: boolean }> }>('/api/templates/list').then(resp => {
       const templates = resp?.templates || [];
       const types = templates
-        .filter((t: any) => t.enabled !== false)
-        .map((t: any) => ({ id: t.id, name: t.name || t.id }));
+        .filter((t) => t.enabled !== false)
+        .map((t) => ({ id: t.id, name: t.name || t.id }));
       if (types.length > 0) setDocTypes(types);
     }).catch((err) => {
       console.error('Failed to load document types:', err);
@@ -176,8 +176,9 @@ export default function MarkdownOptimize() {
           });
         }
       }
-    } catch (err: any) {
-      setError(err?.message || '生成失败');
+    } catch (err: unknown) {
+      const e = (err && typeof err === 'object') ? err as Record<string, unknown> : {};
+      setError((e.message as string) || '生成失败');
     } finally {
       setGenerating(false);
     }
@@ -198,8 +199,9 @@ export default function MarkdownOptimize() {
       } else if (resp.message) {
         setError(resp.message);
       }
-    } catch (err: any) {
-      setError(err?.message || 'AI 润色失败，请检查 AI 配置');
+    } catch (err: unknown) {
+      const e = (err && typeof err === 'object') ? err as Record<string, unknown> : {};
+      setError((e.message as string) || 'AI 润色失败，请检查 AI 配置');
     } finally {
       setPolishing(false);
     }

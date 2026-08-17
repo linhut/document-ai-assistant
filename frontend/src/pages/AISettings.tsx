@@ -71,13 +71,11 @@ export default function AISettings() {
   const [apiKey, setApiKey] = useState('');
   const [baseUrl, setBaseUrl] = useState('https://cpa.linhut.cn/v1');
   const [model, setModel] = useState('gpt-4o-mini');
-  const [isConnected, setIsConnected] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [isTesting, setIsTesting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
-  const [apiKeyMasked, setApiKeyMasked] = useState('');
   const [hasSavedKey, setHasSavedKey] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -90,6 +88,7 @@ export default function AISettings() {
     loadConfig(controller.signal);
     loadDefaultConfig(controller.signal);
     return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provider]);
 
   // 模型可用性状态轮询（每 60 秒）
@@ -98,16 +97,18 @@ export default function AISettings() {
     loadModelStatus(controller.signal);
     const timer = setInterval(() => loadModelStatus(controller.signal), 60000);
     return () => { clearInterval(timer); controller.abort(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadDefaultConfig = async (signal?: AbortSignal) => {
     try {
       const resp = await apiClient.get<{ api_key?: string }>('/api/ai/default', { signal });
       if (resp.api_key && !apiKey) {
-        setApiKeyMasked(resp.api_key);
+        // api key exists but is masked (not stored in component state)
       }
-    } catch (err: any) {
-      if (err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED') return;
+    } catch (err: unknown) {
+      const e = (err && typeof err === 'object') ? err as Record<string, unknown> : {};
+      if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') return;
       // 默认配置加载失败不影响正常使用
       console.warn('加载默认 AI 配置失败');
     }
@@ -117,8 +118,9 @@ export default function AISettings() {
     try {
       const resp = await apiClient.get<{ statuses?: typeof modelStatuses }>('/api/ai/status', { signal });
       if (resp.statuses) setModelStatuses(resp.statuses);
-    } catch (err: any) {
-      if (err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED') return;
+    } catch (err: unknown) {
+      const e = (err && typeof err === 'object') ? err as Record<string, unknown> : {};
+      if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') return;
       // 静默失败
     }
   };
@@ -137,23 +139,22 @@ export default function AISettings() {
       if (response.exists) {
         setBaseUrl(response.base_url || '');
         setModel(response.model || '');
-        setIsConnected(response.is_active ?? true);
-        setIsActive(response.is_active ?? true);
+                setIsActive(response.is_active ?? true);
         if (response.api_key_masked) {
-          setApiKeyMasked(response.api_key_masked);
-          setHasSavedKey(true);
+                    setHasSavedKey(true);
         }
       } else if (response.default) {
         // 使用默认配置
         setBaseUrl(response.default.base_url || '');
         setModel(response.default.model || '');
         if (response.default.api_key_masked) {
-          setApiKeyMasked(response.default.api_key_masked);
+          // setApiKeyMasked was removed (unused)
           setHasSavedKey(true);
         }
       }
-    } catch (error: any) {
-      if (error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED') return;
+    } catch (error: unknown) {
+      const e = (error && typeof error === 'object') ? error as Record<string, unknown> : {};
+      if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') return;
       console.error('Load config error:', error);
     }
   };
@@ -181,8 +182,11 @@ export default function AISettings() {
       } else {
         setErrorMessage(resp.message || '未获取到模型列表');
       }
-    } catch (error: any) {
-      setErrorMessage('获取模型失败：' + (error.response?.data?.message || '请检查配置'));
+    } catch (error: unknown) {
+      const e = (error && typeof error === 'object') ? error as Record<string, unknown> : {};
+      const resp = (e.response && typeof e.response === 'object') ? e.response as Record<string, unknown> : {};
+      const data = (resp.data && typeof resp.data === 'object') ? resp.data as Record<string, unknown> : {};
+      setErrorMessage('获取模型失败：' + ((data.message as string) || '请检查配置'));
     } finally {
       setIsFetchingModels(false);
     }
@@ -204,16 +208,16 @@ export default function AISettings() {
         model,
       });
       if (response.success) {
-        setIsConnected(true);
-        setSuccessMessage(`连接成功！模型：${response.model || model}`);
+                setSuccessMessage(`连接成功！模型：${response.model || model}`);
       } else {
         setErrorMessage(response.message || '连接失败');
-        setIsConnected(false);
-      }
-    } catch (error: any) {
-      setErrorMessage(error.response?.data?.message || '连接测试失败');
-      setIsConnected(false);
-    } finally {
+              }
+    } catch (error: unknown) {
+      const e = (error && typeof error === 'object') ? error as Record<string, unknown> : {};
+      const resp = (e.response && typeof e.response === 'object') ? e.response as Record<string, unknown> : {};
+      const data = (resp.data && typeof resp.data === 'object') ? resp.data as Record<string, unknown> : {};
+      setErrorMessage((data.message as string) || '连接测试失败');
+          } finally {
       setIsTesting(false);
     }
   };
@@ -236,8 +240,7 @@ export default function AISettings() {
       });
       if (response.success) {
         setSuccessMessage('配置已保存并启用！');
-        setIsConnected(true);
-        setIsActive(true);
+                setIsActive(true);
         notifyAIConfigChanged(); // 通知全局刷新 AI 状态
         if (apiKey) {
           setApiKey('');
@@ -245,8 +248,11 @@ export default function AISettings() {
           await loadConfig();
         }
       }
-    } catch (error: any) {
-      setErrorMessage(error.response?.data?.detail || '保存失败');
+    } catch (error: unknown) {
+      const e = (error && typeof error === 'object') ? error as Record<string, unknown> : {};
+      const resp = (e.response && typeof e.response === 'object') ? e.response as Record<string, unknown> : {};
+      const data = (resp.data && typeof resp.data === 'object') ? resp.data as Record<string, unknown> : {};
+      setErrorMessage((data.detail as string) || '保存失败');
     } finally {
       setIsSaving(false);
     }
@@ -260,19 +266,16 @@ export default function AISettings() {
     setBaseUrl(info.defaultUrl);
     setModel(info.defaultModel);
     setAvailableModels([]);
-    setIsConnected(false);
-    setIsActive(true);
+        setIsActive(true);
     setHasSavedKey(false);
-    setApiKeyMasked('');
-    setApiKey('');
+        setApiKey('');
     setErrorMessage('');
     setSuccessMessage('');
   };
 
   const handleToggleActive = async (newState: boolean) => {
     setIsActive(newState);
-    setIsConnected(newState);
-    try {
+        try {
       await apiClient.post('/api/ai/config', {
         provider,
         is_active: newState,
@@ -280,8 +283,7 @@ export default function AISettings() {
       notifyAIConfigChanged(); // 通知全局刷新 AI 状态
     } catch {
       setIsActive(!newState);
-      setIsConnected(!newState);
-      console.error('切换 AI 状态失败');
+            console.error('切换 AI 状态失败');
     }
   };
 

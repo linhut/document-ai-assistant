@@ -128,5 +128,6 @@
         "to": "icon.ico"
       }
     ]
-  }
+  },
+  "type": "module"
 }

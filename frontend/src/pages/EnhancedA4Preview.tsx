@@ -32,6 +32,14 @@ import { CN_FONT_OPTIONS, FONT_SIZE_OPTIONS, formatFontSizeLabel } from '@/lib/g
 import type { DocParagraph, DocTable } from '@/lib/types';
 import { getCachedPreview } from '@/pages/MarkdownOptimize';
 
+interface PreviewData {
+  paragraphs: DocParagraph[];
+  tables: DocTable[];
+  page_setup: Record<string, number>;
+  doc_type?: string;
+  template_name?: string;
+}
+
 /* ------------------------------------------------------------------ */
 /*  独立表单组件                                                        */
 /* ------------------------------------------------------------------ */
@@ -144,9 +152,9 @@ export default function EnhancedA4Preview() {
       // 优先从模块级缓存读取（MarkdownOptimize 传入），其次 sessionStorage
       if (fromMarkdown) {
         try {
-          let data: any = null;
+          let data: PreviewData | null = null;
           if (cacheKey) {
-            data = getCachedPreview(cacheKey);
+            data = getCachedPreview(cacheKey) ?? null;
           }
           // 兜底：兼容旧版/缓存读不到时从 sessionStorage 取
           if (!data) {
@@ -191,7 +199,7 @@ export default function EnhancedA4Preview() {
       }
 
       try {
-        let resp: any;
+        let resp: Record<string, any>;
         if (templateId) {
           resp = await apiClient.post(`/api/templates/${templateId}/preview`, {}, { timeout: 30000 });
           if (!cancelled) setDocName(resp.template_name || templateId || '模板');
@@ -216,14 +224,19 @@ export default function EnhancedA4Preview() {
             },
           });
         }
-      } catch (err: any) {
-        if (!cancelled) setError(err?.response?.data?.detail || '加载失败');
+      } catch (err: unknown) {
+        if (!cancelled) {
+          const e = (err && typeof err === 'object') ? err as Record<string, any> : {};
+          const respData = (e.response && typeof e.response === 'object') ? (e.response as Record<string, any>).data as Record<string, any> : {};
+          setError((respData.detail as string) || '加载失败');
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
     load();
     return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docId, templateId, cacheKey, fromMarkdown]);
 
   // 用 ref 绑定 config/patch/reset，让 SettingsPanel 函数引用完全稳定

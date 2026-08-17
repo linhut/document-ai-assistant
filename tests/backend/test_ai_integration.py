@@ -4,7 +4,6 @@
 """
 Test suite for AI Integration (Phase 5).
 """
-import pytest
 import asyncio
 from ai.manager import create_provider, available_providers
 

@@ -66,7 +66,7 @@ async def test_anyrouter_api():
         """
 
         result = await provider.analyze(test_content)
-        print(f"✓ Analysis complete!")
+        print("✓ Analysis complete!")
         print(f"  Issues found: {len(result.issues)}")
         if result.issues:
             print(f"  First issue: {result.issues[0]}")
@@ -76,7 +76,7 @@ async def test_anyrouter_api():
     print("\n3. Testing typo detection...")
     try:
         result = await provider.proofread("这是一个测试文本，包含一些可能的问题。")
-        print(f"✓ Proofread complete!")
+        print("✓ Proofread complete!")
         print(f"  Typos found: {len(result)}")
     except Exception as e:
         print(f"✗ Proofread error: {e}")

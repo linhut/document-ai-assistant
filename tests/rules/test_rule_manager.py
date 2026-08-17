@@ -6,14 +6,10 @@ Rule Manager 测试：三层规则合并、CRUD、导入导出、验证
 """
 import pytest
 import yaml
-import tempfile
-import shutil
-from pathlib import Path
 
 from core.rules.manager import (
     load_rules_merged, list_rule_files, get_rule_content,
     save_rule, delete_rule, import_rule, export_rule, validate_rule,
-    OFFICIAL_RULES_DIR, CUSTOM_RULES_DIR, USER_RULES_DIR,
 )
 
 

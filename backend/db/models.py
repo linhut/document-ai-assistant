@@ -6,18 +6,17 @@ SQLAlchemy ORM models for the application database.
 """
 from datetime import datetime, timezone
 
-
-def _utcnow():
-    """Return current UTC time (replaces deprecated datetime.utcnow)."""
-    return datetime.now(timezone.utc)
-
-
 from sqlalchemy import (
-    Column, Integer, String, Text, Boolean, DateTime, ForeignKey, Float
+    Column, Integer, String, Text, Boolean, DateTime, ForeignKey
 )
 from sqlalchemy.orm import relationship
 
 from db.database import Base
+
+
+def _utcnow():
+    """Return current UTC time (replaces deprecated datetime.utcnow)."""
+    return datetime.now(timezone.utc)
 
 
 class Document(Base):

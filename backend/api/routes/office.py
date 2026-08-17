@@ -14,7 +14,6 @@ from starlette.background import BackgroundTask
 from pydantic import BaseModel
 from pathlib import Path
 import base64
-import tempfile
 import uuid
 
 from core.document.parser import parse_docx
@@ -231,8 +230,6 @@ async def office_apply_template(payload: TemplateApplyRequest):
             raise HTTPException(status_code=404, detail=f"Template not found: {payload.template_id}")
 
         # 使用模板的 fix_rules 或直接应用样式
-        from core.rules.manager import load_rules_merged
-        rules = load_rules_merged(payload.template_id)
         _, fixed_model = _rule_engine.check_and_fix(model, payload.template_id)
 
         out_path = _BRIDGE_TMP / f"styled_{uuid.uuid4().hex[:8]}_{payload.filename}"

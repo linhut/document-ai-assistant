@@ -85,8 +85,9 @@ export default function DocumentProcess() {
           description: t.description || '',
         }));
         setDocumentTypes(types);
-      } catch (error: any) {
-        if (error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED') return;
+      } catch (error: unknown) {
+        const e = (error && typeof error === 'object') ? error as Record<string, unknown> : {};
+        if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') return;
         console.error('Failed to load document types:', error);
         // 回退到基础列表
         setDocumentTypes([
@@ -164,8 +165,11 @@ export default function DocumentProcess() {
       setCheckComplete(true);
       setIsProcessing(false);
 
-    } catch (error: any) {
-      setErrorMessage(error.response?.data?.detail || '处理失败，请重试');
+    } catch (error: unknown) {
+      const e = (error && typeof error === 'object') ? error as Record<string, unknown> : {};
+      const resp = (e.response && typeof e.response === 'object') ? e.response as Record<string, unknown> : {};
+      const data = (resp.data && typeof resp.data === 'object') ? resp.data as Record<string, unknown> : {};
+      setErrorMessage((data.detail as string) || '处理失败，请重试');
       setIsProcessing(false);
       console.error('Processing error:', error);
     }

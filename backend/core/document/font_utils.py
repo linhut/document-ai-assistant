@@ -16,7 +16,6 @@ Font utilities: Handle Chinese font settings correctly for Word documents.
 - AIPoliDoc/MCP-Doc 项目的文档处理思想
 """
 from __future__ import annotations
-from typing import Optional
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Pt

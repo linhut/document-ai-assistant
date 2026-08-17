@@ -6,9 +6,8 @@ Part of the core/document/parse pipeline.
 """
 from __future__ import annotations
 
-from typing import Optional
 
-from docx.shared import Pt, Length
+from docx.shared import Length
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 

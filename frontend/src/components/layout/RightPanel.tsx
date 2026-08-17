@@ -12,10 +12,9 @@ import { useState, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import {
   Activity, Cpu, Shield, Type, Info, BookOpen, Sparkles,
-  Upload, Lightbulb, ChevronRight, BarChart3, LayoutTemplate,
+  ChevronRight, BarChart3, LayoutTemplate,
   Compass, CheckCircle2, FileText, Settings, Home,
 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { detectActiveAI, AI_CONFIG_CHANGED, type AIStatus } from '@/lib/ai-status';
 import apiClient from '@/api/client';
@@ -59,12 +58,12 @@ function SystemStatus() {
         if (!ok) return;
         if (aiR.status === 'fulfilled') setAi(aiR.value);
         if (ruleR.status === 'fulfilled') {
-          const d = ruleR.value as any;
-          setRules(Array.isArray(d) ? d.length : d?.total ?? 0);
+          const d = ruleR.value as Record<string, any>;
+          setRules(Array.isArray(d) ? d.length : (d?.total as number) ?? 0);
         }
         if (fontR.status === 'fulfilled') {
-          const d = fontR.value as any;
-          setFonts(Array.isArray(d) ? d.length : d?.total ?? 0);
+          const d = fontR.value as Record<string, any>;
+          setFonts(Array.isArray(d) ? d.length : (d?.total as number) ?? 0);
         }
       });
     };
@@ -96,7 +95,7 @@ function DocAssistant() {
   const [templates, setTemplates] = useState<{ id: string; name: string }[]>([]);
   useEffect(() => {
     apiClient.get('/api/templates/list')
-      .then(r => setTemplates((Array.isArray(r) ? r : (r as any)?.templates || []).slice(0, 3)))
+      .then(r => setTemplates((Array.isArray(r) ? r : ((r as Record<string, any>)?.templates as { id: string; name: string }[]) || []).slice(0, 3)))
       .catch((err) => { console.error('Failed to load templates for sidebar:', err); });
   }, []);
 
@@ -141,7 +140,7 @@ function CheckStats() {
     const docId = params.get('docId');
     if (!docId) return;
     apiClient.get(`/api/check/${docId}/results`).then(r => {
-      const items: any[] = Array.isArray(r) ? r : [];
+      const items: Record<string, any>[] = Array.isArray(r) ? r : [];
       const c: Record<string, number> = {};
       items.forEach(i => { const s = i.severity || '?'; c[s] = (c[s] || 0) + 1; });
       setCounts(c);
@@ -180,7 +179,7 @@ function TemplateStats() {
 
   useEffect(() => {
     apiClient.get('/api/templates/list').then(r => {
-      const items: any[] = Array.isArray(r) ? r : (r as any)?.templates || [];
+      const items: Record<string, any>[] = Array.isArray(r) ? r : ((r as Record<string, any>)?.templates as Record<string, any>[]) || [];
       setTotal(items.length);
       const c: Record<string, number> = {};
       items.forEach(t => { const cat = t.category || '未分类'; c[cat] = (c[cat] || 0) + 1; });

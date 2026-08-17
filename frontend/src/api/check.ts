@@ -29,7 +29,7 @@ export interface CheckResult {
 /**
  * 执行格式检查
  */
-export const runCheck = async (docId: number, documentType?: string): Promise<any> => {
+export const runCheck = async (docId: number, documentType?: string): Promise<unknown> => {
   return apiClient.post(`/api/check/${docId}`, { document_type: documentType });
 };
 

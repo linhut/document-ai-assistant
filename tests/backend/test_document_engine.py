@@ -81,7 +81,7 @@ def test_roundtrip_consistency():
     for i, (p1, p2) in enumerate(zip(model1.paragraphs, model2.paragraphs)):
         assert p1.text == p2.text, f"Paragraph {i} text mismatch"
 
-    print(f"Roundtrip test passed")
+    print("Roundtrip test passed")
 
     # Cleanup
     if temp_file.exists():
@@ -106,7 +106,7 @@ def test_model_serialization():
     model2 = DocumentModel.model_validate_json(json_data)
     assert len(model2.paragraphs) == len(model.paragraphs)
 
-    print(f"Serialization test passed")
+    print("Serialization test passed")
 
 
 if __name__ == "__main__":

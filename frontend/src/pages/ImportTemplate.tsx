@@ -137,8 +137,11 @@ export default function ImportTemplate() {
       setResult(resp);
       setTemplateName(resp.template_name || file.name.replace(/\.\w+$/, ''));
       setDocumentType(resp.document_type || '');
-    } catch (err: any) {
-      const msg = err?.response?.data?.detail || err?.message || '格式提取失败';
+    } catch (err: unknown) {
+      const e = (err && typeof err === 'object') ? err as Record<string, any> : {};
+      const resp = (e.response && typeof e.response === 'object') ? e.response as Record<string, any> : {};
+      const data = (resp.data && typeof resp.data === 'object') ? resp.data as Record<string, any> : {};
+      const msg = (data.detail as string) || (e.message as string) || '格式提取失败';
       toastError('提取失败', String(msg));
     } finally {
       setExtracting(false);
@@ -159,8 +162,11 @@ export default function ImportTemplate() {
         yaml_content: result.yaml_content,
       });
       toastSuccess('保存成功', `模板 "${templateName}" 已保存为自定义规则，可用于格式检查和优化`);
-    } catch (err: any) {
-      const msg = err?.response?.data?.detail || err?.message || '保存失败';
+    } catch (err: unknown) {
+      const e = (err && typeof err === 'object') ? err as Record<string, any> : {};
+      const resp = (e.response && typeof e.response === 'object') ? e.response as Record<string, any> : {};
+      const data = (resp.data && typeof resp.data === 'object') ? resp.data as Record<string, any> : {};
+      const msg = (data.detail as string) || (e.message as string) || '保存失败';
       toastError('保存失败', String(msg));
     } finally {
       setSaving(false);

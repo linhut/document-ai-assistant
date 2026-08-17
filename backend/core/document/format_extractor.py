@@ -10,7 +10,6 @@ from collections import Counter
 from typing import Any
 
 from core.document.models import DocumentModel, Paragraph
-from utils.logger import logger
 
 
 def _most_common(values: list) -> Any:

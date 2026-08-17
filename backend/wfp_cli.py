@@ -17,7 +17,6 @@ Licensed under the MIT License. See the LICENSE file for details.
 """
 import argparse
 import sys
-import os
 from pathlib import Path
 
 # 添加项目根目录到路径

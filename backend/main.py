@@ -10,7 +10,6 @@ AI 公文智能优化助手 - FastAPI 后端入口
   --force        端口被占用时自动杀死旧进程
 """
 import argparse
-import atexit
 import os
 import signal
 import socket
@@ -172,7 +171,6 @@ async def startup():
 def _log_directory_status():
     """启动时打印关键目录状态，便于排查打包问题。"""
     from config import RULES_DIR, UPLOAD_DIR, BASE_DIR
-    from pathlib import Path
 
     dirs_to_check = {
         "BASE_DIR": BASE_DIR,
@@ -189,12 +187,11 @@ def _log_directory_status():
     print(f"[startup] Rule YAML files: {yaml_count}")
     if yaml_count == 0:
         print(f"[startup] WARNING: No rule YAML files found at {RULES_DIR}!")
-        print(f"[startup] Templates will show 'has_rules: false' and document check will return no issues.")
+        print("[startup] Templates will show 'has_rules: false' and document check will return no issues.")
 
 
 def _init_default_ai_config():
     """启动时自动初始化默认 AI 配置（如果数据库中没有或配置不完整）。"""
-    import os
     default_api_key = os.environ.get("DEFAULT_AI_API_KEY", "")
     default_base_url = os.environ.get("DEFAULT_AI_BASE_URL", "https://cpa.linhut.cn/v1")
     default_model = os.environ.get("DEFAULT_AI_MODEL", "gpt-4o-mini")

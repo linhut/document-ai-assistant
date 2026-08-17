@@ -4,6 +4,9 @@
 """
 Settings API routes: rule types, general config, font download.
 """
+import json
+import socket
+
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -12,7 +15,6 @@ from pathlib import Path
 from api.schemas.api_models import RuleTypeResponse
 from core.rules.engine import RuleEngine
 from config import BASE_DIR
-from utils.logger import logger
 
 router = APIRouter()
 
@@ -94,9 +96,6 @@ def _get_font_description(filename: str) -> str:
 # ---------------------------------------------------------------------------
 #  网络访问设置（局域网共享）
 # ---------------------------------------------------------------------------
-
-import json
-import socket
 
 _NETWORK_CONFIG_FILE = Path(__file__).resolve().parent.parent.parent / "data" / "network_config.json"
 

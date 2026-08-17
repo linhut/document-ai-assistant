@@ -7,7 +7,6 @@ Supports priority layering: user > custom > official.
 """
 from __future__ import annotations
 from typing import Any
-import copy
 
 from core.document.models import DocumentModel
 from core.rules.manager import load_rules_merged

@@ -6,7 +6,6 @@
 用法：cd backend && python verify_all.py
 """
 import sys
-import os
 import zipfile
 from pathlib import Path
 from xml.etree import ElementTree as ET
@@ -35,7 +34,7 @@ def test_font_generation():
 
     from core.document.models import DocumentModel, Paragraph, Run, RunFormat, ParagraphFormat, PageSetup
     from core.document.generator import generate_docx
-    from core.document.font_utils import TITLE_FONT, BODY_FONT, LATIN_FONT
+    from core.document.font_utils import TITLE_FONT, BODY_FONT
 
     model = DocumentModel(
         filename="verify_test.docx",
@@ -108,7 +107,7 @@ def test_font_generation():
             styles_xml = zf.read("word/styles.xml").decode("utf-8")
         has_defaults = "docDefaults" in styles_xml
         check(has_defaults, "styles.xml 包含 docDefaults")
-    except:
+    except Exception:
         check(False, "styles.xml 读取失败")
 
     # --- 全面格式验证 ---
@@ -231,5 +230,5 @@ if __name__ == "__main__":
 
     section("验证完成")
     print(f"\n  生成的测试文档: {doc_path}")
-    print(f"  请用 Word 打开此文件验证字体是否正确。")
-    print(f"  如果字体显示为「仿宋_GB2312」而非「MS Gothic」，则修复成功。\n")
+    print("  请用 Word 打开此文件验证字体是否正确。")
+    print("  如果字体显示为「仿宋_GB2312」而非「MS Gothic」，则修复成功。\n")

@@ -10,7 +10,6 @@ Token is auto-generated on first start and stored in data/.auth_token.
 """
 import os
 import secrets
-from pathlib import Path
 from typing import Optional
 
 from fastapi import Request

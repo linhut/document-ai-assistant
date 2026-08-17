@@ -6,9 +6,7 @@ Rules API routes: manage check and fix rules across priority layers.
 """
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from pathlib import Path
 
-from config import RULES_DIR
 from core.rules.manager import (
     list_rule_files,
     get_rule_content,
@@ -19,7 +17,6 @@ from core.rules.manager import (
     validate_rule,
     load_rules_merged,
 )
-from core.rules.engine import RuleEngine
 import services.document_service as svc
 from utils.logger import logger
 

@@ -18,6 +18,12 @@ from services import document_service as svc
 from services.document_service import _OPTIMIZED_SUFFIX
 from utils.logger import logger
 
+from pydantic import BaseModel
+from typing import Any
+import re as _re
+import datetime as _dt
+from docx.oxml import OxmlElement
+
 router = APIRouter()
 
 
@@ -25,8 +31,6 @@ router = APIRouter()
 #  Markdown 格式转换（前端实时预览用）— 必须在 /{doc_id} 之前定义
 # ---------------------------------------------------------------------------
 
-from pydantic import BaseModel
-from typing import Any
 
 
 class ParagraphData(BaseModel):
@@ -72,7 +76,7 @@ async def ai_polish_markdown(body: AIPolishRequest, db: Session = Depends(get_db
     model = ""
 
     try:
-        config = db.query(AIConfig).filter(AIConfig.is_active == True).first()
+        config = db.query(AIConfig).filter(AIConfig.is_active).first()
         if config:
             provider_name = config.provider
             api_key = decrypt_value(config.api_key_encrypted) or ""
@@ -204,8 +208,6 @@ async def convert_markdown_text(body: MarkdownConvertRequest):
 #  Markdown 文本 → 预览数据（粘贴 Markdown + 选文种 → 生成公文预览）
 # ---------------------------------------------------------------------------
 
-import re as _re
-import datetime as _dt
 
 
 def _parse_margin(val):
@@ -239,9 +241,8 @@ def _embed_stamp(
     import base64
     import tempfile
     from docx import Document
-    from docx.shared import Mm, Cm
+    from docx.shared import Mm
     from docx.oxml.ns import qn
-    from lxml import etree
 
     # 解码 base64 → 临时 PNG 文件
     # 支持 data:image/png;base64,... 格式
@@ -393,7 +394,7 @@ def _set_picture_absolute_position(
         anchored.append(effectExtent)
 
     # wrapNone — 浮于文字上方
-    wrapNone = etree.SubElement(anchored, qn('wp:wrapNone'))
+    etree.SubElement(anchored, qn('wp:wrapNone'))  # wrapNone — 浮于文字上方
 
     # docPr
     if docPr is not None:
@@ -454,7 +455,7 @@ def _inject_header_to_docx(output_path: str, header_config: dict) -> None:
         p_org = doc.add_paragraph()
         p_org.alignment = WD_ALIGN_PARAGRAPH.CENTER
         run_org = p_org.add_run(org_name)
-        from core.document.font_utils import TITLE_FONT, BODY_FONT, set_run_font
+        from core.document.font_utils import TITLE_FONT, BODY_FONT
         set_run_font(run_org, TITLE_FONT)
         run_org.font.size = Pt(30)
         run_org.font.color.rgb = RGBColor(0xE0, 0x00, 0x00)
@@ -480,7 +481,7 @@ def _inject_header_to_docx(output_path: str, header_config: dict) -> None:
             mr = doc.sections[0].right_margin
             if pw and ml and mr:
                 # 从 EMU 转换为 mm: 1mm = 36000 EMU, 1 twip = 1/1440 inch = 1/567 cm
-                from docx.shared import Emu
+                # from docx.shared import Emu  # unused
                 usable_twips = int((pw - ml - mr) / 635)  # 1 twip ≈ 635 EMU (实际 1mm=36000EMU, 1twip=635EMU)
                 tab_pos = usable_twips
             else:
@@ -604,7 +605,7 @@ def _inject_footer_to_docx(output_path: str, footer_config: dict) -> None:
                 
                 # 版记需要的最小行数（上分隔线 + 抄送 + 印发行 + 下分隔线 ≈ 3行）
                 MIN_LINES_FOR_FOOTER = 3
-                MIN_FOOTER_HEIGHT_EMU = MIN_LINES_FOR_FOOTER * line_height_emu  # ≈ 30mm
+                # MIN_FOOTER_HEIGHT_EMU = MIN_LINES_FOR_FOOTER * line_height_emu  # ≈ 30mm（未使用）
                 
                 # 计算最后一个内容段落在第几页
                 last_page_paras = para_count % lines_per_page
@@ -774,8 +775,7 @@ def _inject_page_number_to_docx(output_path: str, page_number_config: dict) -> N
         from docx import Document
         from docx.oxml import OxmlElement
         from docx.oxml.ns import qn
-        from docx.shared import Pt, Emu
-        import re
+        from docx.shared import Pt
 
         # 兼容前端字段名差异：前端发送 show/position，后端期望 enabled/alignment
         enabled = page_number_config.get('enabled')
@@ -860,7 +860,8 @@ def _inject_even_page_footer_direct(output_path: str, fmt: str, font_name: str, 
     3. 创建 word/footer2.xml（左对齐+左空一字）
     4. 添加关系映射
     """
-    import zipfile, io
+    import zipfile
+    import io
     from lxml import etree
 
     even_ftr_xml = (
@@ -950,7 +951,6 @@ def _build_page_number_xml(fmt: str, font_name: str, size_pt: int) -> list:
 
     返回 [(tag, attrs, text), ...] 列表，由调用方直接 append 到段落。
     """
-    from docx.oxml.ns import qn
     import re
 
     elements = []

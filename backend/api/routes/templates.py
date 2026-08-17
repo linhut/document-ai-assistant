@@ -8,7 +8,7 @@ Templates management API: create, read, update templates.
   2. 样式模板 (templates/official/) — 用于生成 Word 模板文件
   3. 预置 .dotx 模板 (dotx_templates/) — 可直接使用的 Word 模板文件
 """
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
+from fastapi import APIRouter, HTTPException, Query, UploadFile, File
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from pathlib import Path
@@ -426,7 +426,7 @@ async def extract_template_from_doc(file: UploadFile = File(...)):
 
         # 提取格式
         from core.document.format_extractor import (
-            FormatExtractor, extract_format_from_docx, generate_template_from_docx
+            FormatExtractor
         )
         from core.document.parser import parse_docx
 
@@ -471,7 +471,6 @@ async def preview_template(template_id: str):
     """根据模板规则生成示例文档，返回 A4 预览数据。"""
     from core.rules.manager import load_rules_merged
     from core.document.models import (
-        DocumentModel, DocumentMetadata, PageSetup,
         Paragraph, ParagraphFormat, Run, RunFormat,
     )
 
@@ -492,25 +491,33 @@ async def preview_template(template_id: str):
     margins = ps.get('margins', {})
 
     def _parse_pt(val, default=16):
-        if val is None: return default
+        if val is None:
+            return default
         s = str(val).replace('pt', '').strip()
-        try: return float(s)
-        except: return default
+        try:
+            return float(s)
+        except Exception:
+            return default
 
     def _parse_cm(val, default_mm=37):
-        if val is None: return default_mm
+        if val is None:
+            return default_mm
         s = str(val).replace('cm', '').replace('mm', '').strip()
         try:
             v = float(s)
             return v * 10 if 'cm' in str(val) else v
-        except: return default_mm
+        except Exception:
+            return default_mm
 
     def _parse_indent(val, base_pt=16):
-        if val is None: return None
+        if val is None:
+            return None
         s = str(val)
         if 'em' in s:
-            try: return float(s.replace('em', '').strip()) * base_pt
-            except: return None
+            try:
+                return float(s.replace('em', '').strip()) * base_pt
+            except Exception:
+                return None
         return _parse_pt(val, None)
 
     def _mk_para(text, font=None, size=None, align=None, bold=False, indent=None,
@@ -544,7 +551,8 @@ async def preview_template(template_id: str):
         align=title_fmt.get('align', 'center'),
         is_heading=True, heading_level=0, role='title',
     ))
-    paras[-1].index = idx; idx += 1
+    paras[-1].index = idx
+    idx += 1
 
     # 一级标题
     if h1_fmt:
@@ -555,7 +563,8 @@ async def preview_template(template_id: str):
             align=h1_fmt.get('align', 'left'),
             is_heading=True, heading_level=1,
         ))
-        paras[-1].index = idx; idx += 1
+        paras[-1].index = idx
+        idx += 1
 
     # 正文段落
     sample_body = [
@@ -572,7 +581,8 @@ async def preview_template(template_id: str):
             line_spacing=_parse_pt(body_fmt.get('line_spacing'), 28.95),
             role='body',
         ))
-        paras[-1].index = idx; idx += 1
+        paras[-1].index = idx
+        idx += 1
 
     # 二级标题
     if h2_fmt:
@@ -583,14 +593,16 @@ async def preview_template(template_id: str):
             align=h2_fmt.get('align'),
             is_heading=True, heading_level=2,
         ))
-        paras[-1].index = idx; idx += 1
+        paras[-1].index = idx
+        idx += 1
         paras.append(_mk_para(
             "各责任部门要明确专人负责，建立工作台账，定期检查工作进展情况，确保各项措施有效落实。",
             font=body_fmt.get('font', '仿宋_GB2312'), size=body_size,
             align=body_fmt.get('align', 'justify'), indent=body_indent,
             line_spacing=_parse_pt(body_fmt.get('line_spacing'), 28.95), role='body',
         ))
-        paras[-1].index = idx; idx += 1
+        paras[-1].index = idx
+        idx += 1
 
     # 三级标题
     if h3_fmt:
@@ -601,7 +613,8 @@ async def preview_template(template_id: str):
             bold=h3_fmt.get('bold', True),
             is_heading=True, heading_level=3,
         ))
-        paras[-1].index = idx; idx += 1
+        paras[-1].index = idx
+        idx += 1
 
     # 落款 + 日期
     paras.append(_mk_para(
@@ -609,13 +622,15 @@ async def preview_template(template_id: str):
         font=sig_fmt.get('font', '仿宋_GB2312'), size=_parse_pt(sig_fmt.get('size'), 16),
         align=sig_fmt.get('align', 'right'), role='signature',
     ))
-    paras[-1].index = idx; idx += 1
+    paras[-1].index = idx
+    idx += 1
     paras.append(_mk_para(
         "2026年06月25日",
         font=date_fmt.get('font', '仿宋_GB2312'), size=_parse_pt(date_fmt.get('size'), 16),
         align=date_fmt.get('align', 'right'), role='date',
     ))
-    paras[-1].index = idx; idx += 1
+    paras[-1].index = idx
+    idx += 1
 
     # 组装预览数据
     paragraphs_data = []
@@ -649,8 +664,8 @@ async def preview_template(template_id: str):
 @router.post("/save-extracted")
 async def save_extracted_template(body: SaveExtractedRequest):
     """保存从文档提取的规则模板。"""
-    from config import CUSTOM_RULES_DIR, USER_RULES_DIR
-    from core.rules.manager import validate_rule, save_rule
+    from config import USER_RULES_DIR
+    from core.rules.manager import validate_rule
 
     # 校验文档类型标识
     doc_type = body.document_type.strip()
@@ -726,8 +741,7 @@ async def download_style_template_docx(template_id: str):
         # Get template name for the download filename
         from core.template.style_manager import get_template
         tmpl = get_template(template_id)
-        name = tmpl.get("name", template_id) if tmpl else template_id
-
+        name = tmpl.get("name", template_id) if isinstance(tmpl, dict) else template_id
         return FileResponse(
             path=str(output_path),
             filename=f"{name}_样式模板.docx",
@@ -749,8 +763,8 @@ async def download_style_template_dotx(template_id: str):
     try:
         generate_dotx_template(template_id, output_path)
         from core.template.style_manager import get_template
-        tmpl = get_template(template_id)
-        name = tmpl.get("name", template_id) if tmpl else template_id
+        tmpl = get_template(template_id) or {}
+        name = tmpl.get("name", template_id) if isinstance(tmpl, dict) else template_id
 
         return FileResponse(
             path=str(output_path),
@@ -860,9 +874,6 @@ async def download_official_dotx(template_id: str):
         output_path = output_dir / f"{template_id}_generated.dotx"
         generate_dotx_template(template_id, output_path)
 
-        from core.template.style_manager import get_template
-        tmpl = get_template(template_id)
-        name = tmpl.get("name", template_id) if tmpl else template_id
 
         return FileResponse(
             path=str(output_path),

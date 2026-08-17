@@ -54,7 +54,7 @@ class AIProvider(ABC):
     async def test_connection(self) -> bool:
         """Test if the provider can be reached. Default: try a minimal request."""
         try:
-            result = await self.proofread("测试连接")
+            await self.proofread("测试连接")
             return True
         except Exception:
             return False

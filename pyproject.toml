@@ -1,0 +1,30 @@
+[project]
+name = "official-doc-ai-assistant"
+version = "1.5.1"
+description = "AI 公文智能优化助手 — GB/T 9704 公文格式智能检测与优化桌面应用"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "linhut", email = "hi@linhut.cn"}]
+
+# ============================================================================
+# 开发工具配置
+# ============================================================================
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+# 默认 E4/E7/E9/F 规则组 —— 代码库当前零违规
+select = ["E4", "E7", "E9", "F"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+# 测试与本地验证脚本允许更宽松的写法
+"tests/**" = ["E402", "E501"]
+"backend/verify_all.py" = ["E722"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
