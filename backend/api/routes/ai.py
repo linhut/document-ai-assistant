@@ -147,6 +147,30 @@ async def get_ai_config(provider: str, db: Session = Depends(get_db)):
     }
 
 
+@router.delete("/config/{provider}")
+async def delete_ai_config(provider: str, db: Session = Depends(get_db)):
+    """删除指定 AI provider 的配置（含加密 API Key）。
+
+    删除启用中的配置后，该服务商不再活跃，AI 服务回到未启用状态。
+    """
+    config = db.query(AIConfig).filter(AIConfig.provider == provider).first()
+    if not config:
+        raise HTTPException(status_code=404, detail=f"未找到 AI 配置: {provider}")
+
+    db.delete(config)
+    db.commit()
+
+    # 同步清理模型健康检测缓存，避免状态列表残留已删除的服务商
+    try:
+        from services import model_health
+        model_health._provider_statuses.pop(provider, None)
+    except Exception:
+        pass
+
+    logger.info(f"AI config deleted: {provider}")
+    return {"success": True, "message": f"AI 配置 {provider} 已删除"}
+
+
 def _resolve_api_key(api_key: str, provider: str, db: Session) -> str:
     """解析 API Key：__saved__ 占位符从数据库读取已保存的密钥。"""
     if api_key == "__saved__":

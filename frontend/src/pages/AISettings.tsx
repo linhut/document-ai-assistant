@@ -8,7 +8,7 @@
  * 支持多 Provider、获取模型列表、连接测试、脱敏 API Key
  */
 import { useState, useEffect } from 'react';
-import { Sparkles, Lock, CheckCircle2, Loader2, RefreshCw, Wifi, WifiOff } from 'lucide-react';
+import { Sparkles, Lock, CheckCircle2, Loader2, RefreshCw, Wifi, WifiOff, Trash2 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { apiClient } from '@/api/client';
 import { notifyAIConfigChanged } from '@/lib/ai-status';
+import { useToast } from '@/components/ui/toast';
 
 interface ProviderInfo {
   value: string;      // DB 存储 key（custom 服务用 "custom:<服务名>" 格式确保唯一）
@@ -82,6 +83,7 @@ export default function AISettings() {
   const [modelStatuses, setModelStatuses] = useState<Array<{ provider: string; model: string; online: boolean; latency_ms?: number; error?: string }>>([]);
 
   const currentProvider = PROVIDERS.find(p => p.label === selectedLabel);
+  const { confirm } = useToast();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -284,6 +286,26 @@ export default function AISettings() {
     } catch {
       setIsActive(!newState);
             console.error('切换 AI 状态失败');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!hasSavedKey) return;
+    const ok = await confirm('确认删除', `确认删除「${selectedLabel}」的 AI 配置？（将同时删除已保存的 API Key）`);
+    if (!ok) return;
+    try {
+      await apiClient.delete(`/api/ai/config/${encodeURIComponent(provider)}`);
+      // 重置表单状态
+      setApiKey('');
+      setApiKeyMasked('');
+      setHasSavedKey(false);
+      setIsActive(false);
+      setIsConnected(false);
+      setErrorMessage('');
+      setSuccessMessage('配置已删除');
+      notifyAIConfigChanged(); // 通知全局刷新 AI 状态
+    } catch (error: any) {
+      setErrorMessage(error.response?.data?.detail || '删除失败');
     }
   };
 
@@ -491,6 +513,18 @@ export default function AISettings() {
                 {isSaving ? (
                   <><Loader2 className="h-4 w-4 mr-2 animate-spin" />保存中...</>
                 ) : '保存配置'}
+              </Button>
+            </div>
+
+            {/* 删除配置 */}
+            <div className="flex justify-end">
+              <Button
+                onClick={handleDelete}
+                disabled={!hasSavedKey}
+                variant="outline"
+                className="text-status-error border-status-error/60 hover:bg-status-error-bg"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />删除配置
               </Button>
             </div>
           </CardContent>

@@ -122,7 +122,7 @@ def _setup_signal_handlers() -> None:
 app = FastAPI(
     title="Official Document AI Assistant",
     description="AI 公文智能优化助手核心引擎 API",
-    version="1.5.1",
+    version="1.5.2",
 )
 
 app.add_middleware(
