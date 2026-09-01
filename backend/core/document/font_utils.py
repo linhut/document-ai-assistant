@@ -15,6 +15,7 @@ Font utilities: Handle Chinese font settings correctly for Word documents.
 - python-docx 的 OXML 底层字体机制
 - AIPoliDoc/MCP-Doc 项目的文档处理思想
 """
+
 from __future__ import annotations
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
@@ -91,16 +92,16 @@ def set_run_font(run, font_name: str, latin_font: str | None = None) -> None:
     rPr = run._element.get_or_add_rPr()
 
     # 3. 获取或创建 rFonts 元素
-    rFonts = rPr.find(qn('w:rFonts'))
+    rFonts = rPr.find(qn("w:rFonts"))
     if rFonts is None:
-        rFonts = OxmlElement('w:rFonts')
+        rFonts = OxmlElement("w:rFonts")
         rPr.insert(0, rFonts)
 
     # 4. 设置四个关键字体属性
-    rFonts.set(qn('w:ascii'), latin)       # 西文 ASCII
-    rFonts.set(qn('w:hAnsi'), latin)       # 高位 ANSI
-    rFonts.set(qn('w:eastAsia'), font_name)  # 东亚文字（核心！）
-    rFonts.set(qn('w:cs'), font_name)       # 复杂脚本
+    rFonts.set(qn("w:ascii"), latin)  # 西文 ASCII
+    rFonts.set(qn("w:hAnsi"), latin)  # 高位 ANSI
+    rFonts.set(qn("w:eastAsia"), font_name)  # 东亚文字（核心！）
+    rFonts.set(qn("w:cs"), font_name)  # 复杂脚本
 
     logger.debug(f"Set font: eastAsia={font_name}, latin={latin}")
 
@@ -116,13 +117,13 @@ def set_run_font_east_asian(run, font_name: str) -> None:
     """
     rPr = run._element.get_or_add_rPr()
 
-    rFonts = rPr.find(qn('w:rFonts'))
+    rFonts = rPr.find(qn("w:rFonts"))
     if rFonts is None:
-        rFonts = OxmlElement('w:rFonts')
+        rFonts = OxmlElement("w:rFonts")
         rPr.insert(0, rFonts)
 
-    rFonts.set(qn('w:eastAsia'), font_name)
-    rFonts.set(qn('w:cs'), font_name)
+    rFonts.set(qn("w:eastAsia"), font_name)
+    rFonts.set(qn("w:cs"), font_name)
 
 
 def set_paragraph_font(paragraph, font_name: str, latin_font: str | None = None) -> None:
@@ -138,8 +139,9 @@ def set_paragraph_font(paragraph, font_name: str, latin_font: str | None = None)
         set_run_font(run, font_name, latin_font)
 
 
-def apply_paragraph_style_font(paragraph, font_name: str, font_size_pt: float,
-                                bold: bool = False, latin_font: str | None = None) -> None:
+def apply_paragraph_style_font(
+    paragraph, font_name: str, font_size_pt: float, bold: bool = False, latin_font: str | None = None
+) -> None:
     """
     为段落中的所有 run 应用统一的字体格式。
     这是一个便捷的综合设置函数。
@@ -186,14 +188,14 @@ def detect_font_from_run(run) -> dict[str, str | None]:
         result["font_name"] = run.font.name
 
     # 从底层 XML 读取
-    rPr = run._element.find(qn('w:rPr'))
+    rPr = run._element.find(qn("w:rPr"))
     if rPr is not None:
-        rFonts = rPr.find(qn('w:rFonts'))
+        rFonts = rPr.find(qn("w:rFonts"))
         if rFonts is not None:
-            result["ascii"] = rFonts.get(qn('w:ascii'))
-            result["hAnsi"] = rFonts.get(qn('w:hAnsi'))
-            result["eastAsia"] = rFonts.get(qn('w:eastAsia'))
-            result["cs"] = rFonts.get(qn('w:cs'))
+            result["ascii"] = rFonts.get(qn("w:ascii"))
+            result["hAnsi"] = rFonts.get(qn("w:hAnsi"))
+            result["eastAsia"] = rFonts.get(qn("w:eastAsia"))
+            result["cs"] = rFonts.get(qn("w:cs"))
 
     return result
 
@@ -269,14 +271,16 @@ def validate_document_fonts(doc) -> list[dict]:
             for attr in ["ascii", "hAnsi", "eastAsia", "cs"]:
                 fname = font_info.get(attr)
                 if fname and not validate_font_name(fname):
-                    issues.append({
-                        "paragraph": location_prefix,
-                        "run": run_idx,
-                        "attribute": attr,
-                        "font_name": fname,
-                        "text": run.text[:50],
-                        "run_obj": run,  # 保留引用用于自动修复
-                    })
+                    issues.append(
+                        {
+                            "paragraph": location_prefix,
+                            "run": run_idx,
+                            "attribute": attr,
+                            "font_name": fname,
+                            "text": run.text[:50],
+                            "run_obj": run,  # 保留引用用于自动修复
+                        }
+                    )
 
     # 1. 正文段落
     for para_idx, para in enumerate(doc.paragraphs):

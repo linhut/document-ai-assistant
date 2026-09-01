@@ -4,11 +4,10 @@
 """
 SQLAlchemy ORM models for the application database.
 """
+
 from datetime import datetime, timezone
 
-from sqlalchemy import (
-    Column, Integer, String, Text, Boolean, DateTime, ForeignKey
-)
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
 from db.database import Base

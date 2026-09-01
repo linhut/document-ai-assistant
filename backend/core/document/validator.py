@@ -13,6 +13,7 @@ Document Validator — 文档格式质量自动验证器
   3. 段落格式（layout）— 行距/缩进/对齐
   4. 页面设置（page）— A4/页边距
 """
+
 from __future__ import annotations
 import zipfile
 from pathlib import Path
@@ -33,6 +34,7 @@ WORD_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 @dataclass
 class ValidationResult:
     """验证结果。"""
+
     font_errors: int = 0
     style_errors: int = 0
     layout_errors: int = 0
@@ -89,8 +91,7 @@ def validate_document(file_path: str | Path) -> ValidationResult:
         # 4. 页面设置检查
         _check_page_setup(file_path, result)
 
-        result.passed = (result.font_errors + result.style_errors +
-                         result.layout_errors + result.page_errors) == 0
+        result.passed = (result.font_errors + result.style_errors + result.layout_errors + result.page_errors) == 0
 
     except Exception as e:
         result.passed = False
@@ -102,6 +103,7 @@ def validate_document(file_path: str | Path) -> ValidationResult:
 # ---------------------------------------------------------------------------
 #  1. 字体检查
 # ---------------------------------------------------------------------------
+
 
 def _check_fonts(xml_content: str, result: ValidationResult):
     """检查 document.xml 中的字体设置。"""
@@ -124,11 +126,13 @@ def _check_fonts(xml_content: str, result: ValidationResult):
         # 检查 eastAsia 是否缺失
         if not ea:
             missing_eastasia += 1
-            result.details.append({
-                "category": "font",
-                "error": "eastAsia font missing",
-                "ascii": ascii_f,
-            })
+            result.details.append(
+                {
+                    "category": "font",
+                    "error": "eastAsia font missing",
+                    "ascii": ascii_f,
+                }
+            )
 
         # 检查无效字体
         for attr_val in [ea, ascii_f, hAnsi, cs]:
@@ -141,15 +145,18 @@ def _check_fonts(xml_content: str, result: ValidationResult):
     result.fallback_fonts = list(invalid_fonts)
 
     if invalid_fonts:
-        result.details.append({
-            "category": "font",
-            "error": f"Invalid fallback fonts detected: {invalid_fonts}",
-        })
+        result.details.append(
+            {
+                "category": "font",
+                "error": f"Invalid fallback fonts detected: {invalid_fonts}",
+            }
+        )
 
 
 # ---------------------------------------------------------------------------
 #  2. 样式继承检查
 # ---------------------------------------------------------------------------
+
 
 def _check_styles(styles_xml: str | None, result: ValidationResult):
     """检查 styles.xml 中的样式定义。"""
@@ -184,6 +191,7 @@ def _check_styles(styles_xml: str | None, result: ValidationResult):
 #  3. 段落格式检查
 # ---------------------------------------------------------------------------
 
+
 def _check_layout(xml_content: str, result: ValidationResult):
     """检查段落格式（行距、缩进、对齐）。"""
     root = ET.fromstring(xml_content)
@@ -212,15 +220,18 @@ def _check_layout(xml_content: str, result: ValidationResult):
 
     if para_count > 0 and no_spacing == para_count:
         result.layout_errors += 1
-        result.details.append({
-            "category": "layout",
-            "error": f"No paragraphs have spacing defined ({para_count} total)",
-        })
+        result.details.append(
+            {
+                "category": "layout",
+                "error": f"No paragraphs have spacing defined ({para_count} total)",
+            }
+        )
 
 
 # ---------------------------------------------------------------------------
 #  4. 页面设置检查
 # ---------------------------------------------------------------------------
+
 
 def _check_page_setup(file_path: Path, result: ValidationResult):
     """检查页面设置。"""
@@ -234,17 +245,21 @@ def _check_page_setup(file_path: Path, result: ValidationResult):
 
         if abs(width_mm - 210) > 5:
             result.page_errors += 1
-            result.details.append({
-                "category": "page",
-                "error": f"Paper width not A4: {width_mm:.1f}mm (expected 210mm)",
-            })
+            result.details.append(
+                {
+                    "category": "page",
+                    "error": f"Paper width not A4: {width_mm:.1f}mm (expected 210mm)",
+                }
+            )
 
         if abs(height_mm - 297) > 5:
             result.page_errors += 1
-            result.details.append({
-                "category": "page",
-                "error": f"Paper height not A4: {height_mm:.1f}mm (expected 297mm)",
-            })
+            result.details.append(
+                {
+                    "category": "page",
+                    "error": f"Paper height not A4: {height_mm:.1f}mm (expected 297mm)",
+                }
+            )
 
         # 页边距检查
         margins = {
@@ -256,10 +271,12 @@ def _check_page_setup(file_path: Path, result: ValidationResult):
         for name, (actual, expected, tolerance) in margins.items():
             if actual and abs(actual - expected) > tolerance:
                 result.page_errors += 1
-                result.details.append({
-                    "category": "page",
-                    "error": f"Margin {name}: {actual:.1f}mm (expected {expected}mm)",
-                })
+                result.details.append(
+                    {
+                        "category": "page",
+                        "error": f"Margin {name}: {actual:.1f}mm (expected {expected}mm)",
+                    }
+                )
 
     except Exception as e:
         result.page_errors += 1
@@ -269,6 +286,7 @@ def _check_page_setup(file_path: Path, result: ValidationResult):
 # ---------------------------------------------------------------------------
 #  Helpers
 # ---------------------------------------------------------------------------
+
 
 def _read_document_xml(file_path: Path) -> str:
     """读取 word/document.xml。"""

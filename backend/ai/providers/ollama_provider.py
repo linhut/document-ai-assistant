@@ -5,6 +5,7 @@
 Ollama Provider — 本地大模型。
 支持任何兼容 OpenAI API 的本地模型服务。
 """
+
 from ai.providers.openai_provider import OpenAIProvider
 
 

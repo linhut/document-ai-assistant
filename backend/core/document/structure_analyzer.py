@@ -5,6 +5,7 @@
 文档结构分析器 - 智能识别文档结构
 基于AIPoliDoc项目的思路，结合我们的公文格式需求
 """
+
 from __future__ import annotations
 import re
 from typing import List, Dict, Optional, Tuple
@@ -27,27 +28,62 @@ class DocumentStructureAnalyzer:
         """初始化文档结构分析器"""
         # 标题关键词
         self.title_keywords = [
-            "通知", "请示", "报告", "函", "纪要", "决定", "通告", "公告",
-            "会议", "关于", "的通知", "的请示", "的报告", "的函"
+            "通知",
+            "请示",
+            "报告",
+            "函",
+            "纪要",
+            "决定",
+            "通告",
+            "公告",
+            "会议",
+            "关于",
+            "的通知",
+            "的请示",
+            "的报告",
+            "的函",
         ]
 
         # 主送机关关键词
         self.recipient_keywords = [
-            "各", "全体", "全市", "全县", "各部门", "各单位", "各处室",
-            "市", "县", "区", "局", "办", "委", "厅"
+            "各",
+            "全体",
+            "全市",
+            "全县",
+            "各部门",
+            "各单位",
+            "各处室",
+            "市",
+            "县",
+            "区",
+            "局",
+            "办",
+            "委",
+            "厅",
         ]
 
         # 落款关键词
         self.signature_keywords = [
-            "特此通知", "特此函告", "妥否", "请批复", "请示",
-            "局", "办", "委", "厅", "部", "组", "处", "科"
+            "特此通知",
+            "特此函告",
+            "妥否",
+            "请批复",
+            "请示",
+            "局",
+            "办",
+            "委",
+            "厅",
+            "部",
+            "组",
+            "处",
+            "科",
         ]
 
         # 日期模式
         self.date_patterns = [
-            r'\d{4}年\d{1,2}月\d{1,2}日',  # 2023年1月1日
-            r'\d{4}\.\d{1,2}\.\d{1,2}',     # 2023.1.1
-            r'\d{4}-\d{1,2}-\d{1,2}',       # 2023-01-01
+            r"\d{4}年\d{1,2}月\d{1,2}日",  # 2023年1月1日
+            r"\d{4}\.\d{1,2}\.\d{1,2}",  # 2023.1.1
+            r"\d{4}-\d{1,2}-\d{1,2}",  # 2023-01-01
         ]
 
         # 会议纪要特殊关键词
@@ -57,7 +93,7 @@ class DocumentStructureAnalyzer:
             "attendees": ["参会人员", "参加人员", "出席人员", "与会人员"],
             "host": ["主持人", "主持", "由", "主持会议"],
             "topics": ["议题", "会议议题", "讨论议题", "主要议题"],
-            "decisions": ["决定", "会议决定", "形成决议", "一致同意"]
+            "decisions": ["决定", "会议决定", "形成决议", "一致同意"],
         }
 
     def analyze(self, model: DocumentModel) -> Dict[str, any]:
@@ -71,14 +107,14 @@ class DocumentStructureAnalyzer:
             结构分析结果
         """
         result = {
-            "title": None,          # 标题段落索引
-            "recipient": None,      # 主送机关段落索引
-            "body_start": None,     # 正文开始索引
-            "body_end": None,       # 正文结束索引
-            "signature": None,      # 落款段落索引
-            "date": None,          # 日期段落索引
-            "special_sections": {}, # 特殊部分（会议纪要用）
-            "structure_type": None, # 文档结构类型
+            "title": None,  # 标题段落索引
+            "recipient": None,  # 主送机关段落索引
+            "body_start": None,  # 正文开始索引
+            "body_end": None,  # 正文结束索引
+            "signature": None,  # 落款段落索引
+            "date": None,  # 日期段落索引
+            "special_sections": {},  # 特殊部分（会议纪要用）
+            "structure_type": None,  # 文档结构类型
         }
 
         paragraphs = model.paragraphs
@@ -192,9 +228,9 @@ class DocumentStructureAnalyzer:
 
         return signature_idx, date_idx
 
-    def _find_body_range(self, paragraphs: List[Paragraph],
-                        recipient_idx: Optional[int],
-                        signature_idx: Optional[int]) -> Tuple[Optional[int], Optional[int]]:
+    def _find_body_range(
+        self, paragraphs: List[Paragraph], recipient_idx: Optional[int], signature_idx: Optional[int]
+    ) -> Tuple[Optional[int], Optional[int]]:
         """查找正文范围"""
         total = len(paragraphs)
         if total == 0:
@@ -303,7 +339,7 @@ class DocumentStructureAnalyzer:
 结构提示：
 {hints_text}
 
-文档类型：{structure['structure_type']}
+文档类型：{structure["structure_type"]}
 
 排版规则：
 {rules}

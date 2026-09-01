@@ -5,6 +5,7 @@
 Document modifier: applies a list of AI-provided or rule-based
 modifications to the DocumentModel.
 """
+
 from __future__ import annotations
 import copy
 from typing import Any

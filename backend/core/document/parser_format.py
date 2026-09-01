@@ -4,6 +4,7 @@ Format and run-level parsing helpers for the Document Parser.
 Extracted from parser.py to reduce file size.
 Part of the core/document/parse pipeline.
 """
+
 from __future__ import annotations
 
 
@@ -36,6 +37,7 @@ def parse_paragraph_format(para) -> ParagraphFormat:
     if pf.line_spacing is not None:
         try:
             from docx.enum.text import WD_LINE_SPACING
+
             rule = pf.line_spacing_rule
             if rule == WD_LINE_SPACING.MULTIPLE:
                 line_spacing_pt = float(pf.line_spacing) * 16
@@ -70,9 +72,9 @@ def parse_paragraph_format(para) -> ParagraphFormat:
         try:
             pPr = para._element.pPr
             if pPr is not None:
-                ind = pPr.find(qn('w:ind'))
+                ind = pPr.find(qn("w:ind"))
                 if ind is not None:
-                    chars_val = ind.get(qn('w:firstLineChars'))
+                    chars_val = ind.get(qn("w:firstLineChars"))
                     if chars_val:
                         first_line_indent_pt = round(float(chars_val) / 100 * 16, 2)
         except Exception:

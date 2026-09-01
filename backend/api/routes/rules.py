@@ -4,6 +4,7 @@
 """
 Rules API routes: manage check and fix rules across priority layers.
 """
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 

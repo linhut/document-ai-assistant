@@ -4,6 +4,7 @@
 """
 Settings API routes: rule types, general config, font download.
 """
+
 import json
 import socket
 
@@ -38,20 +39,23 @@ async def settings_health():
 #  字体下载
 # ---------------------------------------------------------------------------
 
+
 @router.get("/fonts")
 async def list_fonts():
     """列出可用的公文字体文件。"""
     fonts = []
     if FONTS_DIR.exists():
         for f in sorted(FONTS_DIR.iterdir()):
-            if f.suffix.lower() in ('.ttf', '.otf', '.ttc'):
+            if f.suffix.lower() in (".ttf", ".otf", ".ttc"):
                 size_kb = f.stat().st_size / 1024
-                fonts.append({
-                    "filename": f.name,
-                    "display_name": _get_display_name(f.name),
-                    "size_kb": round(size_kb, 1),
-                    "description": _get_font_description(f.name),
-                })
+                fonts.append(
+                    {
+                        "filename": f.name,
+                        "display_name": _get_display_name(f.name),
+                        "size_kb": round(size_kb, 1),
+                        "description": _get_font_description(f.name),
+                    }
+                )
     return {"fonts": fonts, "total": len(fonts)}
 
 
@@ -59,7 +63,7 @@ async def list_fonts():
 async def download_font(filename: str):
     """下载单个字体文件。"""
     # 安全检查：防止路径遍历
-    if '..' in filename or '/' in filename or '\\' in filename:
+    if ".." in filename or "/" in filename or "\\" in filename:
         raise HTTPException(status_code=400, detail="Invalid filename")
 
     font_path = FONTS_DIR / filename
@@ -80,7 +84,7 @@ def _get_display_name(filename: str) -> str:
         "方正小标宋简.TTF": "方正小标宋简体",
         "楷体_GB2312.TTF": "楷体_GB2312",
     }
-    return name_map.get(filename, filename.rsplit('.', 1)[0])
+    return name_map.get(filename, filename.rsplit(".", 1)[0])
 
 
 def _get_font_description(filename: str) -> str:

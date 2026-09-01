@@ -4,6 +4,7 @@
 """
 Document CRUD API routes.
 """
+
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pathlib import Path
@@ -27,20 +28,14 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
 
     # 支持 .docx / .doc / .wps 三种格式
     if ext not in (".docx", ".doc", ".wps"):
-        raise HTTPException(
-            status_code=400,
-            detail="仅支持 .docx、.doc、.wps 格式的文档"
-        )
+        raise HTTPException(status_code=400, detail="仅支持 .docx、.doc、.wps 格式的文档")
 
     # Check file size (max 10MB recommended, warn if larger)
     content = await file.read()
     file_size_mb = len(content) / (1024 * 1024)
 
     if file_size_mb > 50:
-        raise HTTPException(
-            status_code=400,
-            detail="文件过大（超过 50MB）。建议使用 WPS/Word 插件处理大型文档。"
-        )
+        raise HTTPException(status_code=400, detail="文件过大（超过 50MB）。建议使用 WPS/Word 插件处理大型文档。")
 
     if file_size_mb > 10:
         logger.warning(f"Large file detected: {filename} ({file_size_mb:.2f} MB)")
@@ -48,7 +43,8 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
     # Save to temp location
     import re
     import uuid as _uuid
-    safe_name = re.sub(r'[^\w一-鿿._-]', '_', filename)
+
+    safe_name = re.sub(r"[^\w一-鿿._-]", "_", filename)
     tmp_dir = TEMP_DIR
     tmp_dir.mkdir(parents=True, exist_ok=True)
     # 使用 UUID 前缀防止并发上传同名文件互相覆盖
@@ -68,10 +64,7 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
             raise HTTPException(status_code=400, detail=str(e))
         except Exception as e:
             logger.error(f"文档转换失败: {e}", exc_info=True)
-            raise HTTPException(
-                status_code=500,
-                detail="文档格式转换失败，请确认文件未损坏"
-            )
+            raise HTTPException(status_code=500, detail="文档格式转换失败，请确认文件未损坏")
 
     try:
         doc = svc.upload_document(db, temp_path, file.filename)
@@ -124,11 +117,16 @@ async def list_documents(skip: int = 0, limit: int = 50, db: Session = Depends(g
     docs = svc.list_documents(db, skip, limit)
     return [
         DocumentInfo(
-            id=d.id, filename=d.filename, file_path=d.file_path,
-            file_hash=d.file_hash, document_type=d.document_type,
-            status=d.status, page_count=d.page_count,
+            id=d.id,
+            filename=d.filename,
+            file_path=d.file_path,
+            file_hash=d.file_hash,
+            document_type=d.document_type,
+            status=d.status,
+            page_count=d.page_count,
             paragraph_count=d.paragraph_count,
-            created_at=d.created_at, updated_at=d.updated_at,
+            created_at=d.created_at,
+            updated_at=d.updated_at,
         )
         for d in docs
     ]
@@ -169,6 +167,7 @@ async def get_document_preview(doc_id: int, db: Session = Depends(get_db)):
         else:
             # 尝试按文件名在 OUTPUT_DIR 中查找（兼容路径变化场景）
             from config import OUTPUT_DIR
+
             fallback = OUTPUT_DIR / p.name
             if fallback.exists():
                 file_path = str(fallback)
@@ -187,10 +186,10 @@ async def get_document_preview(doc_id: int, db: Session = Depends(get_db)):
             color = None
             try:
                 if p.runs and p.runs[0].format:
-                    font_name = getattr(p.runs[0].format, 'font_name', None)
-                    font_size_pt = getattr(p.runs[0].format, 'font_size_pt', None)
-                    bold = getattr(p.runs[0].format, 'bold', None)
-                    color = getattr(p.runs[0].format, 'color', None)
+                    font_name = getattr(p.runs[0].format, "font_name", None)
+                    font_size_pt = getattr(p.runs[0].format, "font_size_pt", None)
+                    bold = getattr(p.runs[0].format, "bold", None)
+                    color = getattr(p.runs[0].format, "color", None)
             except Exception:
                 pass
 
@@ -198,28 +197,32 @@ async def get_document_preview(doc_id: int, db: Session = Depends(get_db)):
             runs_data = []
             for r in p.runs:
                 rf = r.format
-                runs_data.append({
-                    "text": r.text or "",
-                    "bold": getattr(rf, 'bold', None),
-                    "font_name": getattr(rf, 'font_name', None),
-                })
+                runs_data.append(
+                    {
+                        "text": r.text or "",
+                        "bold": getattr(rf, "bold", None),
+                        "font_name": getattr(rf, "font_name", None),
+                    }
+                )
 
-            paragraphs.append({
-                "text": p.text or "",
-                "role": getattr(p, 'role', None),
-                "is_heading": p.is_heading,
-                "heading_level": p.heading_level,
-                "format": {
-                    "alignment": p.format.alignment,
-                    "first_line_indent_pt": p.format.first_line_indent_pt,
-                    "font_name": font_name,
-                    "font_size_pt": font_size_pt,
-                    "line_spacing_pt": p.format.line_spacing_pt,
-                    "bold": bold,
-                    "color": color,
-                },
-                "runs": runs_data,
-            })
+            paragraphs.append(
+                {
+                    "text": p.text or "",
+                    "role": getattr(p, "role", None),
+                    "is_heading": p.is_heading,
+                    "heading_level": p.heading_level,
+                    "format": {
+                        "alignment": p.format.alignment,
+                        "first_line_indent_pt": p.format.first_line_indent_pt,
+                        "font_name": font_name,
+                        "font_size_pt": font_size_pt,
+                        "line_spacing_pt": p.format.line_spacing_pt,
+                        "bold": bold,
+                        "color": color,
+                    },
+                    "runs": runs_data,
+                }
+            )
         # 序列化表格
         tables = []
         for t in model.tables:
@@ -228,17 +231,27 @@ async def get_document_preview(doc_id: int, db: Session = Depends(get_db)):
                 cell_paras = []
                 for cp in c.paragraphs:
                     rf = cp.runs[0].format if cp.runs else RunFormat()
-                    cell_paras.append({
-                        "text": cp.text,
-                        "format": {
-                            "alignment": cp.format.alignment,
-                            "font_name": getattr(rf, 'font_name', None),
-                            "font_size_pt": getattr(rf, 'font_size_pt', None),
-                            "bold": getattr(rf, 'bold', None),
-                        },
-                    })
+                    cell_paras.append(
+                        {
+                            "text": cp.text,
+                            "format": {
+                                "alignment": cp.format.alignment,
+                                "font_name": getattr(rf, "font_name", None),
+                                "font_size_pt": getattr(rf, "font_size_pt", None),
+                                "bold": getattr(rf, "bold", None),
+                            },
+                        }
+                    )
                 cells.append({"row": c.row, "col": c.col, "text": c.text, "paragraphs": cell_paras})
-            tables.append({"index": t.index, "rows": t.rows, "cols": t.cols, "cells": cells, "insert_after_index": t.insert_after_index})
+            tables.append(
+                {
+                    "index": t.index,
+                    "rows": t.rows,
+                    "cols": t.cols,
+                    "cells": cells,
+                    "insert_after_index": t.insert_after_index,
+                }
+            )
 
         return {
             "paragraphs": paragraphs,

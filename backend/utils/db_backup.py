@@ -10,6 +10,7 @@ Usage:
 
 For periodic backups, call from a background task or cron-equivalent.
 """
+
 import shutil
 from pathlib import Path
 from datetime import datetime, timedelta
@@ -19,17 +20,18 @@ from utils.logger import logger
 
 # --- Configuration ---
 BACKUP_DIR = APP_DATA_DIR / "backups"
-MAX_BACKUPS = 14           # keep 14 most recent backups (2 weeks at daily)
+MAX_BACKUPS = 14  # keep 14 most recent backups (2 weeks at daily)
 BACKUP_INTERVAL_HOURS = 6  # minimum gap between backups
 
 
 def _get_db_path() -> Path | None:
     """Resolve the actual database file path from DATABASE_URL."""
     import os
+
     raw = os.getenv("DATABASE_URL", f"sqlite:///{APP_DATA_DIR / 'app.db'}")
     # sqlite:///path
     if raw.startswith("sqlite:///"):
-        return Path(raw[len("sqlite:///"):])
+        return Path(raw[len("sqlite:///") :])
     return None
 
 
@@ -113,17 +115,21 @@ def list_backups() -> list[dict]:
             ts_str = b.stem.replace("app_backup_", "")
             ts = datetime.strptime(ts_str, "%Y%m%d_%H%M%S")
             size_kb = b.stat().st_size / 1024
-            result.append({
-                "filename": b.name,
-                "timestamp": ts.isoformat(),
-                "size_kb": round(size_kb, 1),
-            })
+            result.append(
+                {
+                    "filename": b.name,
+                    "timestamp": ts.isoformat(),
+                    "size_kb": round(size_kb, 1),
+                }
+            )
         except (ValueError, IndexError):
-            result.append({
-                "filename": b.name,
-                "timestamp": "unknown",
-                "size_kb": round(b.stat().st_size / 1024, 1),
-            })
+            result.append(
+                {
+                    "filename": b.name,
+                    "timestamp": "unknown",
+                    "size_kb": round(b.stat().st_size / 1024, 1),
+                }
+            )
     return result
 
 

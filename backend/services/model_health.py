@@ -7,6 +7,7 @@ AI 模型可用性检测服务。
 每 60 秒检测一次所有已配置的 AI provider，记录在线状态和延迟。
 状态通过 /api/ai/status 端点暴露给前端。
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -171,8 +172,7 @@ async def _run_all_checks() -> None:
                 await _check_provider(status, api_key)
 
             logger.debug(
-                f"Health check: {cfg.provider} → "
-                f"{'✓' if status.online else '✗'} {status.latency_ms}ms {status.error}"
+                f"Health check: {cfg.provider} → {'✓' if status.online else '✗'} {status.latency_ms}ms {status.error}"
             )
     except Exception as e:
         logger.error(f"Model health check error: {e}")

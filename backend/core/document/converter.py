@@ -7,6 +7,7 @@
 使用 Windows COM 接口调用本地 Word 或 WPS Office 进行转换。
 优先使用 Word COM，失败则回退到 WPS COM。
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -62,9 +63,10 @@ def convert_to_docx(file_path: Path, output_dir: Path) -> Path:
             logger.warning(f"删除旧输出文件失败: {e}，将覆盖写入")
 
     import sys
+
     converted = False
 
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         # Windows: 优先 Word COM → WPS COM → LibreOffice
         converted = _try_word_com(file_path, output_path)
         if not converted:
@@ -196,14 +198,14 @@ def _try_libreoffice(file_path: Path, output_path: Path) -> bool:
     import shutil
 
     # 查找 libreoffice 可执行文件
-    lo_cmd = shutil.which('libreoffice') or shutil.which('soffice')
+    lo_cmd = shutil.which("libreoffice") or shutil.which("soffice")
     if not lo_cmd:
         # 尝试常见安装路径
         for candidate in [
-            '/usr/bin/libreoffice',
-            '/usr/bin/soffice',
-            '/opt/libreoffice/program/soffice',
-            '/usr/local/bin/libreoffice',
+            "/usr/bin/libreoffice",
+            "/usr/bin/soffice",
+            "/opt/libreoffice/program/soffice",
+            "/usr/local/bin/libreoffice",
         ]:
             if Path(candidate).exists():
                 lo_cmd = candidate
@@ -218,8 +220,10 @@ def _try_libreoffice(file_path: Path, output_path: Path) -> bool:
         dst_dir = str(output_path.parent.resolve())
 
         result = subprocess.run(
-            [lo_cmd, '--headless', '--convert-to', 'docx', '--outdir', dst_dir, src],
-            capture_output=True, text=True, timeout=120,
+            [lo_cmd, "--headless", "--convert-to", "docx", "--outdir", dst_dir, src],
+            capture_output=True,
+            text=True,
+            timeout=120,
         )
 
         if result.returncode == 0 and output_path.exists():

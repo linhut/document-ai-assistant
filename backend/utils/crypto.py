@@ -6,6 +6,7 @@ Encryption utilities for sensitive data (API keys, etc.).
 
 密钥文件存储在 APP_DATA_DIR/，由 config.py 统一管理路径。
 """
+
 from cryptography.fernet import Fernet
 import base64
 import os
@@ -40,10 +41,11 @@ def _get_or_create_key() -> bytes:
             else:
                 # Windows: 使用 icacls 设置 restrictive permissions
                 import subprocess
+
                 subprocess.run(
-                    ["icacls", _KEY_FILE, "/inheritance:r",
-                     "/grant:r", f"{os.getenv('USERNAME', 'Everyone')}:F"],
-                    capture_output=True, check=False
+                    ["icacls", _KEY_FILE, "/inheritance:r", "/grant:r", f"{os.getenv('USERNAME', 'Everyone')}:F"],
+                    capture_output=True,
+                    check=False,
                 )
         except Exception:
             pass  # 权限设置失败不阻止密钥创建

@@ -5,15 +5,18 @@
 Tests for document download functionality and document_service.
 Covers the P0 blank document fix and optimized_path download.
 """
+
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
 
 from pathlib import Path
 from docx import Document
 
 from core.document.models import (
-    DocumentModel, Paragraph,
+    DocumentModel,
+    Paragraph,
 )
 from core.document.parser import parse_docx
 from core.document.generator import generate_docx
@@ -22,6 +25,7 @@ from core.document.generator import generate_docx
 # ---------------------------------------------------------------------------
 #  Helper: create a test .docx with tables
 # ---------------------------------------------------------------------------
+
 
 def _create_test_docx_with_table(path: Path) -> Path:
     """Create a .docx file that has both paragraphs and a table."""
@@ -67,6 +71,7 @@ def _create_test_docx_tables_only(path: Path) -> Path:
 # ---------------------------------------------------------------------------
 #  Phase 1: Table preservation tests
 # ---------------------------------------------------------------------------
+
 
 class TestTablePreservation:
     """P0 fix: tables must survive the generate_docx roundtrip."""
@@ -136,6 +141,7 @@ class TestTablePreservation:
 #  Phase 2: Headers / footers / metadata tests
 # ---------------------------------------------------------------------------
 
+
 class TestHeadersFootersMetadata:
     """Headers, footers, and metadata must be preserved."""
 
@@ -163,6 +169,7 @@ class TestHeadersFootersMetadata:
 #  Phase 3: Generator roundtrip integrity (enhanced)
 # ---------------------------------------------------------------------------
 
+
 class TestGeneratorRoundtrip:
     """Roundtrip tests verifying content completeness."""
 
@@ -177,8 +184,7 @@ class TestGeneratorRoundtrip:
         result = parse_docx(out)
         result_texts = [p.text for p in result.paragraphs]
 
-        assert result_texts == original_texts, \
-            f"Paragraph texts changed: {original_texts} → {result_texts}"
+        assert result_texts == original_texts, f"Paragraph texts changed: {original_texts} → {result_texts}"
 
     def test_roundtrip_preserves_page_setup(self, tmp_path):
         """页面设置在 roundtrip 后保留。"""
@@ -212,6 +218,7 @@ class TestGeneratorRoundtrip:
 
         # 模拟优化：修改字体但不改内容
         from core.rules.engine import RuleEngine
+
         engine = RuleEngine()
         try:
             issues, fixed = engine.check_and_fix(model, "meeting")
@@ -237,6 +244,7 @@ class TestGeneratorRoundtrip:
 #  Phase 4: Edge cases
 # ---------------------------------------------------------------------------
 
+
 class TestEdgeCases:
     """边界条件测试。"""
 
@@ -249,9 +257,7 @@ class TestEdgeCases:
 
     def test_model_without_source_path(self, tmp_path):
         """没有 source_path 的 model 使用新建 Document()。"""
-        model = DocumentModel(
-            paragraphs=[Paragraph(index=0, text="测试文本", runs=[])]
-        )
+        model = DocumentModel(paragraphs=[Paragraph(index=0, text="测试文本", runs=[])])
         out = generate_docx(model, tmp_path / "no_source.docx")
         result = parse_docx(out)
         assert any("测试文本" in p.text for p in result.paragraphs)

@@ -12,6 +12,7 @@ and delegates calls to the active provider.
   - ollama    : 本地模型 (OpenAI 兼容)
   - custom    : 任意 OpenAI 兼容接口
 """
+
 from __future__ import annotations
 import os
 import httpx

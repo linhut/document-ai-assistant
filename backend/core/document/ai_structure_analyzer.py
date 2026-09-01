@@ -11,6 +11,7 @@ AI Structure Analyzer — 基于AI的文档结构智能分析
 
 适用场景：未排版文档、格式混乱的文档，本地启发式检测不足时自动触发。
 """
+
 from __future__ import annotations
 import json
 import re
@@ -64,6 +65,7 @@ def classify_with_ai(model: DocumentModel, provider_name: str = "openai") -> boo
     # 获取AI provider
     try:
         from utils.crypto import decrypt_value
+
         db = SessionLocal()
         try:
             # 优先使用当前启用的 AI 配置（不限 provider 类型）。
@@ -72,10 +74,7 @@ def classify_with_ai(model: DocumentModel, provider_name: str = "openai") -> boo
             config = db.query(AIConfig).filter(AIConfig.is_active).first()
             if not config:
                 # 兼容旧逻辑：按指定 provider 查询已启用配置
-                config = db.query(AIConfig).filter(
-                    AIConfig.provider == provider_name,
-                    AIConfig.is_active
-                ).first()
+                config = db.query(AIConfig).filter(AIConfig.provider == provider_name, AIConfig.is_active).first()
             if not config:
                 logger.info("No active AI config, skipping AI structure analysis")
                 return False
@@ -108,6 +107,7 @@ def classify_with_ai(model: DocumentModel, provider_name: str = "openai") -> boo
         logger.info("Too few paragraphs for AI structure analysis")
         try:
             import asyncio
+
             asyncio.get_event_loop().run_until_complete(provider.close())
         except Exception:
             pass
@@ -121,19 +121,23 @@ def classify_with_ai(model: DocumentModel, provider_name: str = "openai") -> boo
         logger.info(f"Calling AI ({provider_name}) for structure analysis of {len(paragraphs_text)} paragraphs")
         # provider.analyze() 是 async 函数，需要使用 asyncio 运行
         import asyncio
+
         try:
             loop = asyncio.get_event_loop()
             if loop.is_running():
                 # 如果事件循环正在运行，使用 run_coroutine_threadsafe
                 import concurrent.futures
+
                 with concurrent.futures.ThreadPoolExecutor() as pool:
-                    result = pool.submit(asyncio.run, provider.analyze(prompt, task_type="classification")).result(timeout=30)
+                    result = pool.submit(asyncio.run, provider.analyze(prompt, task_type="classification")).result(
+                        timeout=30
+                    )
             else:
                 result = loop.run_until_complete(provider.analyze(prompt, task_type="classification"))
         except RuntimeError:
             # 没有事件循环，直接运行
             result = asyncio.run(provider.analyze(prompt, task_type="classification"))
-        raw_response = result.raw_response if hasattr(result, 'raw_response') else str(result)
+        raw_response = result.raw_response if hasattr(result, "raw_response") else str(result)
     except Exception as e:
         logger.error(f"AI structure analysis failed: {e}")
         return False
@@ -141,6 +145,7 @@ def classify_with_ai(model: DocumentModel, provider_name: str = "openai") -> boo
         # 关闭 provider 的 HTTP 连接
         try:
             import asyncio as _asyncio
+
             _asyncio.run(provider.close())
         except Exception:
             pass
@@ -179,7 +184,7 @@ def _parse_ai_response(raw: str) -> list[dict] | None:
         pass
 
     # 策略2: 提取```json```代码块
-    code_block = re.search(r'```(?:json)?\s*\n?(.*?)\n?```', raw, re.DOTALL)
+    code_block = re.search(r"```(?:json)?\s*\n?(.*?)\n?```", raw, re.DOTALL)
     if code_block:
         try:
             data = json.loads(code_block.group(1).strip())
@@ -189,13 +194,13 @@ def _parse_ai_response(raw: str) -> list[dict] | None:
             pass
 
     # 策略3: 提取[...]数组
-    array_match = re.search(r'\[.*\]', raw, re.DOTALL)
+    array_match = re.search(r"\[.*\]", raw, re.DOTALL)
     if array_match:
         text = array_match.group(0)
         # 策略4: 修复常见JSON错误
-        text = re.sub(r',\s*]', ']', text)  # 尾逗号
-        text = re.sub(r',\s*}', '}', text)  # 对象尾逗号
-        text = re.sub(r'}\s*{', '},{', text)  # 缺失逗号
+        text = re.sub(r",\s*]", "]", text)  # 尾逗号
+        text = re.sub(r",\s*}", "}", text)  # 对象尾逗号
+        text = re.sub(r"}\s*{", "},{", text)  # 缺失逗号
         try:
             data = json.loads(text)
             if isinstance(data, list):

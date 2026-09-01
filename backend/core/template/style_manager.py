@@ -9,6 +9,7 @@ Style Manager: 管理样式模板的加载、保存、导入导出。
   custom  → templates/custom/
   official→ templates/official/
 """
+
 from __future__ import annotations
 from pathlib import Path
 import re
@@ -55,18 +56,20 @@ def list_templates(source: str = "all") -> list[dict]:
             if f.stem.startswith("_"):
                 continue
             data = _load_yaml(f)
-            results.append({
-                "id": f.stem,
-                "name": data.get("name", f.stem),
-                "type": data.get("type", "unknown"),
-                "version": data.get("version", "1.0"),
-                "author": data.get("author", src),
-                "source": src,
-                "standard": data.get("standard", ""),
-                "path": str(f),
-                "has_styles": "styles" in data,
-                "has_page": "page" in data,
-            })
+            results.append(
+                {
+                    "id": f.stem,
+                    "name": data.get("name", f.stem),
+                    "type": data.get("type", "unknown"),
+                    "version": data.get("version", "1.0"),
+                    "author": data.get("author", src),
+                    "source": src,
+                    "standard": data.get("standard", ""),
+                    "path": str(f),
+                    "has_styles": "styles" in data,
+                    "has_page": "page" in data,
+                }
+            )
 
     return results
 
@@ -114,7 +117,7 @@ def save_template(template_id: str, content: dict, source: str = "user") -> bool
     _ensure_dirs()
 
     # 验证template_id只包含安全字符
-    if not re.match(r'^[a-zA-Z0-9_-]+$', template_id):
+    if not re.match(r"^[a-zA-Z0-9_-]+$", template_id):
         logger.error(f"Invalid template_id: {template_id}")
         return False
 
@@ -155,7 +158,7 @@ def delete_template(template_id: str, source: str = "user") -> bool:
         return False
 
     # 验证template_id只包含安全字符
-    if not re.match(r'^[a-zA-Z0-9_-]+$', template_id):
+    if not re.match(r"^[a-zA-Z0-9_-]+$", template_id):
         logger.error(f"Invalid template_id: {template_id}")
         return False
 

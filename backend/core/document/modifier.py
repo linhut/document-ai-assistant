@@ -18,6 +18,7 @@ Document modifier: the single source of truth for all DocumentModel mutations.
 - MCP-Doc 的文档能力抽象思想
 - AIPoliDoc 的文档修改器概念
 """
+
 from __future__ import annotations
 import copy
 import re
@@ -30,6 +31,7 @@ from utils.logger import logger
 # ---------------------------------------------------------------------------
 #  Target selector: 根据 target 字符串选中段落
 # ---------------------------------------------------------------------------
+
 
 def _select_paragraphs(model: DocumentModel, target: str) -> list[Paragraph]:
     """
@@ -58,17 +60,16 @@ def _select_paragraphs(model: DocumentModel, target: str) -> list[Paragraph]:
         return [p for p in model.paragraphs if p.is_heading and p.heading_level == 3]
     elif target == "body":
         # 优先使用 role 字段，回退到启发式
-        role_body = [p for p in model.paragraphs if p.role == 'body']
+        role_body = [p for p in model.paragraphs if p.role == "body"]
         if role_body:
             return role_body
         # 回退：排除签名段落（最后2个非空段落）
         non_empty = [p for p in model.paragraphs if p.text.strip()]
         sig_set = set(id(p) for p in non_empty[-2:]) if len(non_empty) >= 2 else set()
-        return [p for p in model.paragraphs
-                if not p.is_heading and p.text.strip() and id(p) not in sig_set]
+        return [p for p in model.paragraphs if not p.is_heading and p.text.strip() and id(p) not in sig_set]
     elif target == "signature":
         # 优先使用 role 字段
-        role_sig = [p for p in model.paragraphs if p.role in ('signature', 'date')]
+        role_sig = [p for p in model.paragraphs if p.role in ("signature", "date")]
         if role_sig:
             return role_sig
         non_empty = [p for p in model.paragraphs if p.text.strip()]
@@ -83,6 +84,7 @@ def _select_paragraphs(model: DocumentModel, target: str) -> list[Paragraph]:
 # ---------------------------------------------------------------------------
 #  Single-operation modifiers
 # ---------------------------------------------------------------------------
+
 
 def modify_font(model: DocumentModel, target: str, font_name: str) -> None:
     """
@@ -115,8 +117,9 @@ def modify_alignment(model: DocumentModel, target: str, alignment: str) -> None:
             para.format.alignment = alignment
 
 
-def modify_line_spacing(model: DocumentModel, target: str, spacing_pt: float | None,
-                        spacing_rule: str | None = None) -> None:
+def modify_line_spacing(
+    model: DocumentModel, target: str, spacing_pt: float | None, spacing_rule: str | None = None
+) -> None:
     """修改指定段落的行距。同时设置行距规则（exact/multiple）。"""
     if spacing_pt is None:
         return
@@ -161,11 +164,11 @@ def remove_extra_spaces(model: DocumentModel) -> None:
     """清除段落中的多余空格（连续2个以上空格压缩为1个）。"""
     for para in model.paragraphs:
         for run in para.runs:
-            if run.text and '  ' in run.text:
-                run.text = re.sub(r' {2,}', ' ', run.text)
+            if run.text and "  " in run.text:
+                run.text = re.sub(r" {2,}", " ", run.text)
 
 
-def remove_extra_blank_lines(model: DocumentModel, mode: str = 'delete_single') -> None:
+def remove_extra_blank_lines(model: DocumentModel, mode: str = "delete_single") -> None:
     """处理空行（支持三种模式）。
 
     Args:
@@ -175,10 +178,10 @@ def remove_extra_blank_lines(model: DocumentModel, mode: str = 'delete_single') 
             - 'delete_single': 删除单个空行，多个空行保留至1个
             - 'keep_single': 保留单个空行，多个空行保留至1个
     """
-    if mode == 'keep_all':
+    if mode == "keep_all":
         return
 
-    if mode == 'keep_single':
+    if mode == "keep_single":
         # 保留单个空行，多个连续空行合并为1个
         to_remove: set[int] = set()
         blank_count = 0
@@ -210,9 +213,9 @@ def remove_extra_blank_lines(model: DocumentModel, mode: str = 'delete_single') 
 
 
 # 空行处理模式常量
-BLANK_LINE_MODE_KEEP_ALL = 'keep_all'
-BLANK_LINE_MODE_DELETE_SINGLE = 'delete_single'
-BLANK_LINE_MODE_KEEP_SINGLE = 'keep_single'
+BLANK_LINE_MODE_KEEP_ALL = "keep_all"
+BLANK_LINE_MODE_DELETE_SINGLE = "delete_single"
+BLANK_LINE_MODE_KEEP_SINGLE = "keep_single"
 
 
 def fix_bold_range(model: DocumentModel) -> int:
@@ -222,8 +225,8 @@ def fix_bold_range(model: DocumentModel) -> int:
     2. 无边界但整段加粗 → 全部取消加粗
     """
     changes = 0
-    _EXCLUDE_ROLES = {'signature', 'date'}
-    _CLAUSE_RE = re.compile(r'[:：。、]')
+    _EXCLUDE_ROLES = {"signature", "date"}
+    _CLAUSE_RE = re.compile(r"[:：。、]")
 
     for para in model.paragraphs:
         if para.is_heading and para.heading_level is not None and para.heading_level <= 2:
@@ -268,6 +271,7 @@ def fix_bold_range(model: DocumentModel) -> int:
         for run_idx, first_part, second_part in reversed(insertions):
             para.runs[run_idx].text = first_part
             from core.document.models import Run as _Run, RunFormat as _RF
+
             new_run = _Run(
                 index=run_idx + 1,
                 text=second_part,
@@ -290,25 +294,25 @@ def fix_bold_range(model: DocumentModel) -> int:
 
 # 半角→全角映射表（仅在中文语境中转换）
 _PUNCT_MAP = {
-    ',': '，',
-    ':': '：',
-    ';': '；',
-    '?': '？',
-    '!': '！',
-    '(': '（',
-    ')': '）',
-    '[': '【',
-    ']': '】',
+    ",": "，",
+    ":": "：",
+    ";": "；",
+    "?": "？",
+    "!": "！",
+    "(": "（",
+    ")": "）",
+    "[": "【",
+    "]": "】",
 }
 
 # 句号特殊处理：仅在中文字符后转换 . → 。（避免破坏 URL、数字小数点）
-_PERIOD_RE = re.compile(r'([一-鿿　-〿＀-￯])\.(?=[^\d]|$)')
+_PERIOD_RE = re.compile(r"([一-鿿　-〿＀-￯])\.(?=[^\d]|$)")
 
 # 中文标点后多余空格
-_PUNCT_SPACE_RE = re.compile(r'([，。；：！？）】])\s{2,}')
+_PUNCT_SPACE_RE = re.compile(r"([，。；：！？）】])\s{2,}")
 
 # 中文标点前多余空格（逗号/句号前不应有空格）
-_PUNCT_BEFORE_SPACE_RE = re.compile(r'\s+([，。；：！？])')
+_PUNCT_BEFORE_SPACE_RE = re.compile(r"\s+([，。；：！？])")
 
 
 def normalize_punctuation(model: DocumentModel) -> int:
@@ -330,10 +334,10 @@ def normalize_punctuation(model: DocumentModel) -> int:
             for i, ch in enumerate(text):
                 if ch in _PUNCT_MAP:
                     # 判断上下文：如果前后都是 ASCII 字母数字，则不转换（保护英文环境）
-                    prev_ch = text[i-1] if i > 0 else ''
-                    next_ch = text[i+1] if i < len(text)-1 else ''
+                    prev_ch = text[i - 1] if i > 0 else ""
+                    next_ch = text[i + 1] if i < len(text) - 1 else ""
                     # 括号始终转换（中文文档中半角括号几乎总是错误的）
-                    if ch in '()[]':
+                    if ch in "()[]":
                         result.append(_PUNCT_MAP[ch])
                     # 逗号/冒号/分号等：如果不在纯英文环境中则转换
                     elif prev_ch.isascii() and next_ch.isascii() and prev_ch.strip() and next_ch.strip():
@@ -342,16 +346,16 @@ def normalize_punctuation(model: DocumentModel) -> int:
                         result.append(_PUNCT_MAP[ch])
                 else:
                     result.append(ch)
-            text = ''.join(result)
+            text = "".join(result)
 
             # 2. 句号：仅中文字符后转换
-            text = _PERIOD_RE.sub(r'\1。', text)
+            text = _PERIOD_RE.sub(r"\1。", text)
 
             # 3. 清理中文标点后多余空格
-            text = _PUNCT_SPACE_RE.sub(r'\1', text)
+            text = _PUNCT_SPACE_RE.sub(r"\1", text)
 
             # 4. 清理中文标点前多余空格
-            text = _PUNCT_BEFORE_SPACE_RE.sub(r'\1', text)
+            text = _PUNCT_BEFORE_SPACE_RE.sub(r"\1", text)
 
             if text != original:
                 changes = sum(1 for a, b in zip(original, text) if a != b)
@@ -377,12 +381,12 @@ def normalize_heading_content(model: DocumentModel) -> int:
         text = para.text.strip()
 
         # 一级标题：1、xxx → 一、xxx
-        m = re.match(r'^(\d+)[、，](.+)', text)
+        m = re.match(r"^(\d+)[、，](.+)", text)
         if m and para.is_heading and (para.heading_level == 1 or para.heading_level is None):
             num = int(m.group(1))
             cn = _arabic_to_chinese(num)
             if cn:
-                new_text = f'{cn}、{m.group(2)}'
+                new_text = f"{cn}、{m.group(2)}"
                 if new_text != text:
                     para.text = new_text
                     if para.runs:
@@ -393,9 +397,9 @@ def normalize_heading_content(model: DocumentModel) -> int:
                 continue
 
         # 二级标题：(一)xxx → （一）xxx
-        m = re.match(r'^\(([一二三四五六七八九十]+)\)(.+)', text)
+        m = re.match(r"^\(([一二三四五六七八九十]+)\)(.+)", text)
         if m:
-            new_text = f'（{m.group(1)}）{m.group(2)}'
+            new_text = f"（{m.group(1)}）{m.group(2)}"
             if new_text != text:
                 para.text = new_text
                 if para.runs:
@@ -406,9 +410,9 @@ def normalize_heading_content(model: DocumentModel) -> int:
             continue
 
         # 三级标题：1．xxx → 1.xxx（全角句号→半角）
-        m = re.match(r'^(\d+)[．。](.+)', text)
+        m = re.match(r"^(\d+)[．。](.+)", text)
         if m:
-            new_text = f'{m.group(1)}.{m.group(2)}'
+            new_text = f"{m.group(1)}.{m.group(2)}"
             if new_text != text:
                 para.text = new_text
                 if para.runs:
@@ -419,9 +423,9 @@ def normalize_heading_content(model: DocumentModel) -> int:
             continue
 
         # 四级标题：(1)xxx → （1）xxx
-        m = re.match(r'^\((\d+)\)(.+)', text)
+        m = re.match(r"^\((\d+)\)(.+)", text)
         if m:
-            new_text = f'（{m.group(1)}）{m.group(2)}'
+            new_text = f"（{m.group(1)}）{m.group(2)}"
             if new_text != text:
                 para.text = new_text
                 if para.runs:
@@ -436,15 +440,15 @@ def normalize_heading_content(model: DocumentModel) -> int:
 def _arabic_to_chinese(n: int) -> str:
     """阿拉伯数字转中文数字（1-99）。"""
     if n < 1 or n > 99:
-        return ''
-    digits = '零一二三四五六七八九十'
+        return ""
+    digits = "零一二三四五六七八九十"
     if n <= 10:
         return digits[n]
     if n < 20:
-        return f'十{digits[n % 10]}' if n % 10 else '十'
+        return f"十{digits[n % 10]}" if n % 10 else "十"
     tens = n // 10
     ones = n % 10
-    result = f'{digits[tens]}十'
+    result = f"{digits[tens]}十"
     if ones:
         result += digits[ones]
     return result
@@ -466,38 +470,38 @@ def replace_paragraph_text(model: DocumentModel, para_index: int, new_text: str)
 # ---------------------------------------------------------------------------
 
 # markdown 标题标记：行首的 # ## ### #### 等，捕获 # 数量和正文
-_MD_HEADING_RE = re.compile(r'^(#{1,6})\s+(.*)')
+_MD_HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)")
 
 # markdown 加粗标记 **text** 和 __text__（不含斜体 *text* 避免误伤）
-_MD_BOLD_RE = re.compile(r'\*{2}(.+?)\*{2}')
-_MD_BOLD_UNDER_RE = re.compile(r'__(.+?)__')
+_MD_BOLD_RE = re.compile(r"\*{2}(.+?)\*{2}")
+_MD_BOLD_UNDER_RE = re.compile(r"__(.+?)__")
 
 # markdown 行首无序列表标记：- * +
-_MD_UL_RE = re.compile(r'^[-*+]\s+')
+_MD_UL_RE = re.compile(r"^[-*+]\s+")
 
 # markdown 有序列表前缀：1. 2. 3. 或 1、2、3、
-_MD_OL_RE = re.compile(r'^\d+[.、]\s*')
+_MD_OL_RE = re.compile(r"^\d+[.、]\s*")
 
 # markdown 表格行
-_MD_TABLE_RE = re.compile(r'^\|.+\|.+\|$')
+_MD_TABLE_RE = re.compile(r"^\|.+\|.+\|$")
 
 # markdown 表格分隔行：|----|----|
-_MD_TABLE_SEP_RE = re.compile(r'^\|[\s\-:|]+\|$')
+_MD_TABLE_SEP_RE = re.compile(r"^\|[\s\-:|]+\|$")
 
 # markdown 水平分隔线：--- *** ___
-_MD_HR_RE = re.compile(r'^[-*_]{3,}$')
+_MD_HR_RE = re.compile(r"^[-*_]{3,}$")
 
 # HTML 标签
-_HTML_TAG_RE = re.compile(r'<[^>]+>')
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
 
 # markdown 链接：[text](url)
-_MD_LINK_RE = re.compile(r'\[([^\]]+)\]\([^)]+\)')
+_MD_LINK_RE = re.compile(r"\[([^\]]+)\]\([^)]+\)")
 
 # 代码块标记 ```
-_MD_CODE_BLOCK_RE = re.compile(r'^`{3,}')
+_MD_CODE_BLOCK_RE = re.compile(r"^`{3,}")
 
 # 行内代码 `code`
-_MD_INLINE_CODE_RE = re.compile(r'`([^`]+)`')
+_MD_INLINE_CODE_RE = re.compile(r"`([^`]+)`")
 
 
 def convert_markdown(model: DocumentModel) -> int:
@@ -528,9 +532,9 @@ def convert_markdown(model: DocumentModel) -> int:
     table_insert_positions = []  # [(original_insert_after, Table对象)]
 
     for region in table_regions:
-        header_cells = region['header']
-        data_rows = region['rows']
-        insert_idx = region['insert_after']  # 在这个段落索引之后插入表格
+        header_cells = region["header"]
+        data_rows = region["rows"]
+        insert_idx = region["insert_after"]  # 在这个段落索引之后插入表格
 
         if not header_cells:
             continue
@@ -548,33 +552,52 @@ def convert_markdown(model: DocumentModel) -> int:
         # 填充表头单元格
         for col_idx, cell_text in enumerate(header_cells):
             cell_para = Paragraph(
-                index=0, text=cell_text, is_heading=False,
-                runs=[Run(index=0, text=cell_text, format=RunFormat(
-                    font_name='黑体', font_size_pt=12, bold=True,
-                ))],
-                format=ParagraphFormat(alignment='center'),
+                index=0,
+                text=cell_text,
+                is_heading=False,
+                runs=[
+                    Run(
+                        index=0,
+                        text=cell_text,
+                        format=RunFormat(
+                            font_name="黑体",
+                            font_size_pt=12,
+                            bold=True,
+                        ),
+                    )
+                ],
+                format=ParagraphFormat(alignment="center"),
             )
             table.cells.append(TableCell(row=0, col=col_idx, text=cell_text, paragraphs=[cell_para]))
 
         # 填充数据行单元格
         for row_idx, row_cells in enumerate(data_rows):
             for col_idx in range(num_cols):
-                cell_text = row_cells[col_idx] if col_idx < len(row_cells) else ''
+                cell_text = row_cells[col_idx] if col_idx < len(row_cells) else ""
                 # 清理加粗标记
                 clean_bold = False
-                if '**' in cell_text:
-                    cell_text = _MD_BOLD_RE.sub(r'\1', cell_text)
-                    cell_text = _MD_BOLD_UNDER_RE.sub(r'\1', cell_text)
+                if "**" in cell_text:
+                    cell_text = _MD_BOLD_RE.sub(r"\1", cell_text)
+                    cell_text = _MD_BOLD_UNDER_RE.sub(r"\1", cell_text)
                     clean_bold = True
-                cell_text = _HTML_TAG_RE.sub('', cell_text).strip()
+                cell_text = _HTML_TAG_RE.sub("", cell_text).strip()
 
                 cell_para = Paragraph(
-                    index=0, text=cell_text, is_heading=False,
-                    runs=[Run(index=0, text=cell_text, format=RunFormat(
-                        font_name='仿宋_GB2312', font_size_pt=12,
-                        bold=True if clean_bold else None,
-                    ))],
-                    format=ParagraphFormat(alignment='left'),
+                    index=0,
+                    text=cell_text,
+                    is_heading=False,
+                    runs=[
+                        Run(
+                            index=0,
+                            text=cell_text,
+                            format=RunFormat(
+                                font_name="仿宋_GB2312",
+                                font_size_pt=12,
+                                bold=True if clean_bold else None,
+                            ),
+                        )
+                    ],
+                    format=ParagraphFormat(alignment="left"),
                 )
                 table.cells.append(TableCell(row=row_idx + 1, col=col_idx, text=cell_text, paragraphs=[cell_para]))
 
@@ -582,7 +605,7 @@ def convert_markdown(model: DocumentModel) -> int:
         table_insert_positions.append((insert_idx, table))
 
         # 标记所有表格段落为待删除
-        for idx in region['all_indices']:
+        for idx in region["all_indices"]:
             table_para_indices.add(idx)
 
         changes += 1
@@ -625,24 +648,20 @@ def convert_markdown(model: DocumentModel) -> int:
             if level == 1:
                 para.is_heading = True
                 para.heading_level = 0
-                para.role = 'title'
-                _apply_heading_format(para, content,
-                    font='方正小标宋简体', size=22, align='center', bold=False)
+                para.role = "title"
+                _apply_heading_format(para, content, font="方正小标宋简体", size=22, align="center", bold=False)
             elif level == 2:
                 para.is_heading = True
                 para.heading_level = 1
-                _apply_heading_format(para, content,
-                    font='黑体', size=16, align='left', bold=False)
+                _apply_heading_format(para, content, font="黑体", size=16, align="left", bold=False)
             elif level == 3:
                 para.is_heading = True
                 para.heading_level = 2
-                _apply_heading_format(para, content,
-                    font='楷体_GB2312', size=16, align='left', bold=False)
+                _apply_heading_format(para, content, font="楷体_GB2312", size=16, align="left", bold=False)
             elif level >= 4:
                 para.is_heading = True
                 para.heading_level = 3
-                _apply_heading_format(para, content,
-                    font='仿宋_GB2312', size=16, align='left', bold=True)
+                _apply_heading_format(para, content, font="仿宋_GB2312", size=16, align="left", bold=True)
 
             changes += 1
 
@@ -651,14 +670,14 @@ def convert_markdown(model: DocumentModel) -> int:
         has_bold = False
         if _MD_BOLD_RE.search(text) or _MD_BOLD_UNDER_RE.search(text):
             has_bold = True
-            text = _MD_BOLD_RE.sub(r'\1', text)
-            text = _MD_BOLD_UNDER_RE.sub(r'\1', text)
+            text = _MD_BOLD_RE.sub(r"\1", text)
+            text = _MD_BOLD_UNDER_RE.sub(r"\1", text)
 
         # --- 清理其他 markdown 语法 ---
 
-        text = _MD_LINK_RE.sub(r'\1', text)
-        text = _MD_INLINE_CODE_RE.sub(r'\1', text)
-        text = _HTML_TAG_RE.sub('', text)
+        text = _MD_LINK_RE.sub(r"\1", text)
+        text = _MD_INLINE_CODE_RE.sub(r"\1", text)
+        text = _HTML_TAG_RE.sub("", text)
 
         # --- 处理列表标记 ---
 
@@ -668,7 +687,7 @@ def convert_markdown(model: DocumentModel) -> int:
         ul_match = _MD_UL_RE.match(text)
         if ul_match:
             is_list = True
-            text = _MD_UL_RE.sub('', text)
+            text = _MD_UL_RE.sub("", text)
             list_indent_pt = 32  # 2字符缩进
 
         ol_match = _MD_OL_RE.match(text)
@@ -677,7 +696,7 @@ def convert_markdown(model: DocumentModel) -> int:
 
         # --- 应用格式修改到 run ---
 
-        text = re.sub(r' {2,}', ' ', text).strip()
+        text = re.sub(r" {2,}", " ", text).strip()
 
         if text != original_text or has_bold or is_list:
             para.text = text
@@ -733,9 +752,7 @@ def _split_inline_headings(model: DocumentModel) -> None:
     """
     # 正则匹配标题+正文在同一段落的情况
     # 模式：标题文本（以。或；结尾）+ 正文文本
-    inline_pattern = re.compile(
-        r'^(.{2,60}[。；])\s*(.{4,}.*)$', re.DOTALL
-    )
+    inline_pattern = re.compile(r"^(.{2,60}[。；])\s*(.{4,}.*)$", re.DOTALL)
 
     insertions = []
     for i, para in enumerate(model.paragraphs):
@@ -750,8 +767,21 @@ def _split_inline_headings(model: DocumentModel) -> None:
 
             # 确保标题文本确实像一个标题（包含标题关键词）
             title_keywords = [
-                "关于", "通知", "请示", "报告", "函", "纪要", "决定", "通告", "公告",
-                "的意见", "的方案", "的办法", "的规定", "的决定", "的通知"
+                "关于",
+                "通知",
+                "请示",
+                "报告",
+                "函",
+                "纪要",
+                "决定",
+                "通告",
+                "公告",
+                "的意见",
+                "的方案",
+                "的办法",
+                "的规定",
+                "的决定",
+                "的通知",
             ]
             is_likely_title = any(kw in title_text for kw in title_keywords)
 
@@ -762,21 +792,45 @@ def _split_inline_headings(model: DocumentModel) -> None:
     for i, title_text, body_text in reversed(insertions):
         # 创建标题段落
         title_para = Paragraph(
-            index=i, text=title_text, is_heading=True, heading_level=0, role='title',
-            runs=[Run(index=0, text=title_text, format=RunFormat(
-                font_name='方正小标宋简体', font_size_pt=22,
-            ))],
-            format=ParagraphFormat(alignment='center', line_spacing_pt=33.0),
+            index=i,
+            text=title_text,
+            is_heading=True,
+            heading_level=0,
+            role="title",
+            runs=[
+                Run(
+                    index=0,
+                    text=title_text,
+                    format=RunFormat(
+                        font_name="方正小标宋简体",
+                        font_size_pt=22,
+                    ),
+                )
+            ],
+            format=ParagraphFormat(alignment="center", line_spacing_pt=33.0),
         )
 
         # 创建正文段落
         body_para = Paragraph(
-            index=i + 1, text=body_text, is_heading=False, heading_level=None, role='body',
-            runs=[Run(index=0, text=body_text, format=RunFormat(
-                font_name='仿宋_GB2312', font_size_pt=16,
-            ))],
+            index=i + 1,
+            text=body_text,
+            is_heading=False,
+            heading_level=None,
+            role="body",
+            runs=[
+                Run(
+                    index=0,
+                    text=body_text,
+                    format=RunFormat(
+                        font_name="仿宋_GB2312",
+                        font_size_pt=16,
+                    ),
+                )
+            ],
             format=ParagraphFormat(
-                alignment='justify', line_spacing_pt=28.95, first_line_indent_pt=32.0,
+                alignment="justify",
+                line_spacing_pt=28.95,
+                first_line_indent_pt=32.0,
             ),
         )
 
@@ -790,7 +844,7 @@ def _split_inline_headings(model: DocumentModel) -> None:
 
 
 # --- 附件标记正则 ---
-RE_ATTACHMENT = re.compile(r'^\s*附件[：:1-9]?\s*(?:说明|清单|内容)?')
+RE_ATTACHMENT = re.compile(r"^\s*附件[：:1-9]?\s*(?:说明|清单|内容)?")
 
 
 def _add_attachment_page_breaks(model: DocumentModel) -> None:
@@ -805,8 +859,8 @@ def _add_attachment_page_breaks(model: DocumentModel) -> None:
         if RE_ATTACHMENT.match(text):
             # 在段落文本前插入分页标记
             # generator 会识别这个标记并插入分页符
-            if not para.text.startswith('\x0C'):
-                para.text = '\x0C' + para.text
+            if not para.text.startswith("\x0c"):
+                para.text = "\x0c" + para.text
 
 
 def _detect_md_table_regions(paragraphs: list) -> list[dict]:
@@ -817,17 +871,17 @@ def _detect_md_table_regions(paragraphs: list) -> list[dict]:
     regions = []
     i = 0
     while i < len(paragraphs):
-        text = paragraphs[i].text.strip() if paragraphs[i].text else ''
+        text = paragraphs[i].text.strip() if paragraphs[i].text else ""
         # 检测表格起始：以 | 开头和结尾的行
         if _MD_TABLE_RE.match(text) and not _MD_TABLE_SEP_RE.match(text):
             # 找到表格区域的起点
             all_indices = [i]
-            header_cells = [c.strip() for c in text.strip('|').split('|')]
+            header_cells = [c.strip() for c in text.strip("|").split("|")]
 
             j = i + 1
             # 检查下一行是否是分隔行 |----|----|
             if j < len(paragraphs):
-                next_text = paragraphs[j].text.strip() if paragraphs[j].text else ''
+                next_text = paragraphs[j].text.strip() if paragraphs[j].text else ""
                 if _MD_TABLE_SEP_RE.match(next_text):
                     all_indices.append(j)
                     j += 1
@@ -835,22 +889,24 @@ def _detect_md_table_regions(paragraphs: list) -> list[dict]:
             # 收集数据行
             data_rows = []
             while j < len(paragraphs):
-                row_text = paragraphs[j].text.strip() if paragraphs[j].text else ''
+                row_text = paragraphs[j].text.strip() if paragraphs[j].text else ""
                 if _MD_TABLE_RE.match(row_text) and not _MD_TABLE_SEP_RE.match(row_text):
                     all_indices.append(j)
-                    cells = [c.strip() for c in row_text.strip('|').split('|')]
+                    cells = [c.strip() for c in row_text.strip("|").split("|")]
                     data_rows.append(cells)
                     j += 1
                 else:
                     break
 
             if header_cells:
-                regions.append({
-                    'header': header_cells,
-                    'rows': data_rows,
-                    'all_indices': all_indices,
-                    'insert_after': i - 1,  # 在表格前一个段落之后插入
-                })
+                regions.append(
+                    {
+                        "header": header_cells,
+                        "rows": data_rows,
+                        "all_indices": all_indices,
+                        "insert_after": i - 1,  # 在表格前一个段落之后插入
+                    }
+                )
 
             i = j
         else:
@@ -859,8 +915,7 @@ def _detect_md_table_regions(paragraphs: list) -> list[dict]:
     return regions
 
 
-def _apply_heading_format(para, text: str, font: str, size: int,
-                           align: str, bold: bool) -> None:
+def _apply_heading_format(para, text: str, font: str, size: int, align: str, bold: bool) -> None:
     """给段落应用标题格式。"""
     para.text = text
     para.format.alignment = align
@@ -875,8 +930,7 @@ def _apply_heading_format(para, text: str, font: str, size: int,
             r.format.bold = bold if bold else None
 
 
-def set_paragraph_format_attr(model: DocumentModel, para_index: int,
-                               attr: str, value: Any) -> None:
+def set_paragraph_format_attr(model: DocumentModel, para_index: int, attr: str, value: Any) -> None:
     """设置指定段落格式属性。"""
     if 0 <= para_index < len(model.paragraphs):
         para = model.paragraphs[para_index]
@@ -887,6 +941,7 @@ def set_paragraph_format_attr(model: DocumentModel, para_index: int,
 # ---------------------------------------------------------------------------
 #  Batch apply: apply a list of modification dicts (AI / manual)
 # ---------------------------------------------------------------------------
+
 
 def apply_modifications(model: DocumentModel, modifications: list[dict]) -> DocumentModel:
     """
@@ -923,6 +978,7 @@ def apply_modifications(model: DocumentModel, modifications: list[dict]) -> Docu
 # ---------------------------------------------------------------------------
 #  Helpers
 # ---------------------------------------------------------------------------
+
 
 def _parse_mm_value(value: str | float | None) -> float | None:
     """Parse margin value like '3.7cm' or 37 to mm."""

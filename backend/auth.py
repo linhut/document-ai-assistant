@@ -8,6 +8,7 @@ Authentication middleware for the API.
 Token-based authentication for sensitive endpoints.
 Token is auto-generated on first start and stored in data/.auth_token.
 """
+
 import os
 import secrets
 from typing import Optional

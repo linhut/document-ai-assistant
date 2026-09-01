@@ -7,6 +7,7 @@ Logging configuration for the application.
 日志文件写入 APP_DATA_DIR/logs/，由 config.py 统一管理路径。
 使用 RotatingFileHandler 防止日志文件无限增长。
 """
+
 import logging
 import sys
 from logging.handlers import RotatingFileHandler
@@ -39,7 +40,7 @@ def setup_logger(name: str = "official_doc_ai", level: int = logging.INFO) -> lo
         log_dir / "app.log",
         maxBytes=10 * 1024 * 1024,  # 10MB
         backupCount=5,  # 保留5个备份
-        encoding="utf-8"
+        encoding="utf-8",
     )
     file_handler.setFormatter(fmt)
     logger.addHandler(file_handler)

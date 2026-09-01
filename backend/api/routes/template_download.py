@@ -18,14 +18,12 @@ Template download API: generate and download template documents.
   - 正确的数字字体（Times New Roman）
   - eastAsia 字体属性正确写入 XML
 """
+
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
 from core.document.generator import generate_docx
-from core.document.models import (
-    DocumentModel, Paragraph, Run, RunFormat,
-    ParagraphFormat, PageSetup
-)
+from core.document.models import DocumentModel, Paragraph, Run, RunFormat, ParagraphFormat, PageSetup
 from utils.logger import logger
 from config import APP_DATA_DIR
 
@@ -49,6 +47,7 @@ async def download_template(template_id: str):
     try:
         # Load template configuration
         from core.rules.manager import load_rules_merged
+
         rules = load_rules_merged(template_id)
 
         template_name = rules.get("template_name", template_id)
@@ -68,7 +67,7 @@ async def download_template(template_id: str):
         return FileResponse(
             path=str(output_path),
             filename=f"{template_name}模板.docx",
-            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
 
     except Exception as e:
@@ -149,8 +148,11 @@ def _create_template_document(template_id: str, rules: dict) -> DocumentModel:
         is_signature = any(k in para_text for k in ["落款", "单位名称", "XXXX年"])
 
         alignment = "right" if is_signature else body_config.get("align", "justify")
-        indent = 0 if (is_signature or _is_recipient(para_text)) else \
-            _parse_indent(body_config.get("first_line_indent", "2em"))
+        indent = (
+            0
+            if (is_signature or _is_recipient(para_text))
+            else _parse_indent(body_config.get("first_line_indent", "2em"))
+        )
 
         body_para = Paragraph(
             text=para_text,
@@ -167,7 +169,7 @@ def _create_template_document(template_id: str, rules: dict) -> DocumentModel:
                     format=RunFormat(
                         font_name=body_config.get("font", "仿宋_GB2312"),
                         font_size_pt=_parse_size(body_config.get("size", 16)),
-                    )
+                    ),
                 )
             ],
         )

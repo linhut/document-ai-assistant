@@ -4,6 +4,7 @@
 """
 Test suite for Document Engine (Parser and Generator).
 """
+
 import pytest
 from pathlib import Path
 from core.document.parser import parse_docx
@@ -124,4 +125,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Test failed: {e}")
         import traceback
+
         traceback.print_exc()

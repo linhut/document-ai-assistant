@@ -4,6 +4,7 @@
 """
 模板生成测试：验证所有公文类型的模板均可正常生成，且字体 XML 正确。
 """
+
 import sys
 from pathlib import Path
 import zipfile
@@ -16,14 +17,20 @@ from core.document.generator import generate_docx
 from core.document.models import DocumentModel, Paragraph, Run, RunFormat, ParagraphFormat, PageSetup
 
 TEMPLATE_TYPES = [
-    "notice", "request", "report", "letter", "meeting",
-    "decision", "announcement", "notice_public",
+    "notice",
+    "request",
+    "report",
+    "letter",
+    "meeting",
+    "decision",
+    "announcement",
+    "notice_public",
 ]
 
 OUTPUT_DIR = Path(__file__).resolve().parent / "output" / "templates"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-NS = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
+NS = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
 REQUIRED_EAST_ASIA = {"方正小标宋简体", "仿宋_GB2312"}
 
 
@@ -54,7 +61,8 @@ def _create_test_model(doc_type, rules):
     doc = DocumentModel(
         filename=f"{doc_type}_template.docx",
         page_setup=PageSetup(
-            paper_width_mm=210, paper_height_mm=297,
+            paper_width_mm=210,
+            paper_height_mm=297,
             margin_top_mm=_parse_margin(m.get("top", "3.7cm")),
             margin_bottom_mm=_parse_margin(m.get("bottom", "3.5cm")),
             margin_left_mm=_parse_margin(m.get("left", "2.8cm")),
@@ -64,13 +72,20 @@ def _create_test_model(doc_type, rules):
 
     title_para = Paragraph(
         text=f"关于XXX事项的{doc_type}",
-        index=0, is_heading=True, heading_level=1,
+        index=0,
+        is_heading=True,
+        heading_level=1,
         format=ParagraphFormat(alignment="center"),
-        runs=[Run(index=0, text=f"关于XXX事项的{doc_type}",
-            format=RunFormat(
-                font_name=tc.get("font", "方正小标宋简体"),
-                font_size_pt=_parse_size(tc.get("size", 22)),
-            ))]
+        runs=[
+            Run(
+                index=0,
+                text=f"关于XXX事项的{doc_type}",
+                format=RunFormat(
+                    font_name=tc.get("font", "方正小标宋简体"),
+                    font_size_pt=_parse_size(tc.get("size", 22)),
+                ),
+            )
+        ],
     )
     doc.paragraphs.append(title_para)
 
@@ -78,11 +93,16 @@ def _create_test_model(doc_type, rules):
         text="正文内容测试ABC123，包含中文字符和英文数字。",
         index=1,
         format=ParagraphFormat(alignment="justify", first_line_indent_pt=32, line_spacing_pt=28.95),
-        runs=[Run(index=0, text="正文内容测试ABC123，包含中文字符和英文数字。",
-            format=RunFormat(
-                font_name=bc.get("font", "仿宋_GB2312"),
-                font_size_pt=_parse_size(bc.get("size", 16)),
-            ))]
+        runs=[
+            Run(
+                index=0,
+                text="正文内容测试ABC123，包含中文字符和英文数字。",
+                format=RunFormat(
+                    font_name=bc.get("font", "仿宋_GB2312"),
+                    font_size_pt=_parse_size(bc.get("size", 16)),
+                ),
+            )
+        ],
     )
     doc.paragraphs.append(body_para)
 
@@ -115,27 +135,28 @@ def test_font_xml_east_asia():
 
     for t in TEMPLATE_TYPES:
         fpath = OUTPUT_DIR / f"{t}_template_test.docx"
-        with zipfile.ZipFile(fpath, 'r') as z:
-            with z.open('word/document.xml') as xf:
+        with zipfile.ZipFile(fpath, "r") as z:
+            with z.open("word/document.xml") as xf:
                 tree = etree.parse(xf)
 
         root = tree.getroot()
-        rfonts = root.findall('.//w:rFonts', NS)
+        rfonts = root.findall(".//w:rFonts", NS)
 
         east_asias = set()
         ms_found = False
 
         for rf in rfonts:
             for attr_name, attr_value in rf.attrib.items():
-                if 'MS' in str(attr_value):
+                if "MS" in str(attr_value):
                     ms_found = True
-            ea = rf.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}eastAsia')
+            ea = rf.get("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}eastAsia")
             if ea:
                 east_asias.add(ea)
 
         assert not ms_found, f"{t}: 发现 MS 替代字体!"
-        assert REQUIRED_EAST_ASIA.issubset(east_asias), \
+        assert REQUIRED_EAST_ASIA.issubset(east_asias), (
             f"{t}: eastAsia 不全, 实际={east_asias}, 期望包含={REQUIRED_EAST_ASIA}"
+        )
         print(f"  PASS: {t} eastAsia={sorted(east_asias)}, MS=False")
 
     print("  ALL PASSED\n")
@@ -148,19 +169,19 @@ def test_document_defaults():
     print("=" * 60)
 
     fpath = OUTPUT_DIR / "notice_template_test.docx"
-    with zipfile.ZipFile(fpath, 'r') as z:
-        with z.open('word/styles.xml') as xf:
+    with zipfile.ZipFile(fpath, "r") as z:
+        with z.open("word/styles.xml") as xf:
             tree = etree.parse(xf)
 
     root = tree.getroot()
-    doc_defaults = root.find('.//w:docDefaults', NS)
+    doc_defaults = root.find(".//w:docDefaults", NS)
     assert doc_defaults is not None, "docDefaults 未设置!"
 
-    rFonts = doc_defaults.find('.//w:rPrDefault/w:rPr/w:rFonts', NS)
+    rFonts = doc_defaults.find(".//w:rPrDefault/w:rPr/w:rFonts", NS)
     assert rFonts is not None, "docDefaults 中无 rFonts 元素!"
 
-    east_asia = rFonts.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}eastAsia')
-    ascii_font = rFonts.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}ascii')
+    east_asia = rFonts.get("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}eastAsia")
+    ascii_font = rFonts.get("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}ascii")
 
     assert east_asia == "仿宋_GB2312", f"docDefaults eastAsia 错误: {east_asia}"
     assert ascii_font == "Times New Roman", f"docDefaults ascii 错误: {ascii_font}"
@@ -175,16 +196,16 @@ def test_line_spacing():
     print("=" * 60)
 
     fpath = OUTPUT_DIR / "notice_template_test.docx"
-    with zipfile.ZipFile(fpath, 'r') as z:
-        with z.open('word/document.xml') as xf:
+    with zipfile.ZipFile(fpath, "r") as z:
+        with z.open("word/document.xml") as xf:
             tree = etree.parse(xf)
 
     root = tree.getroot()
-    spacings = root.findall('.//w:spacing', NS)
+    spacings = root.findall(".//w:spacing", NS)
 
     for sp in spacings:
-        line_rule = sp.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}lineRule')
-        line_val = sp.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}line')
+        line_rule = sp.get("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}lineRule")
+        line_val = sp.get("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}line")
         if line_val:
             # lineRule should be "exact" for fixed line spacing
             if line_rule:

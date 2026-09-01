@@ -4,6 +4,7 @@
 """
 OpenAI Provider implementation.
 """
+
 import json
 import httpx
 from typing import Any
@@ -29,9 +30,7 @@ class OpenAIProvider(AIProvider):
             timeout=httpx.Timeout(self.timeout, connect=10.0),
         )
 
-    async def _call_api(
-        self, messages: list[dict], temperature: float = 0.3, max_tokens: int = 2000
-    ) -> str:
+    async def _call_api(self, messages: list[dict], temperature: float = 0.3, max_tokens: int = 2000) -> str:
         """
         Call OpenAI Chat Completions API with exponential backoff retry.
 
@@ -90,7 +89,7 @@ class OpenAIProvider(AIProvider):
                 last_error = Exception(f"无法连接到 API 服务器: {self.base_url}")
                 logger.warning(f"Connect error (attempt {attempt + 1}/{self.max_retries}): {e}")
                 if attempt < self.max_retries - 1:
-                    await asyncio.sleep(2 ** attempt)
+                    await asyncio.sleep(2**attempt)
                     continue
 
             except httpx.ReadTimeout:
@@ -113,13 +112,27 @@ class OpenAIProvider(AIProvider):
         """Analyze document against GB/T 9704 official document standards, type-aware."""
         document_type = kwargs.get("document_type", "notice")
         TYPE_NAMES = {
-            "notice": "通知", "announcement": "公告", "report": "报告",
-            "request": "请示", "reply": "批复", "instruction": "意见",
-            "decision": "决定", "resolution": "决议", "command": "命令",
-            "bill": "议案", "minutes": "会议纪要", "meeting": "会议纪要",
-            "communique": "公报", "regulation": "条例", "work_plan": "工作方案",
-            "summary": "总结", "letter": "函", "bulletin": "通报",
-            "notice_public": "公示", "opinion": "意见", "table_sign": "签发单",
+            "notice": "通知",
+            "announcement": "公告",
+            "report": "报告",
+            "request": "请示",
+            "reply": "批复",
+            "instruction": "意见",
+            "decision": "决定",
+            "resolution": "决议",
+            "command": "命令",
+            "bill": "议案",
+            "minutes": "会议纪要",
+            "meeting": "会议纪要",
+            "communique": "公报",
+            "regulation": "条例",
+            "work_plan": "工作方案",
+            "summary": "总结",
+            "letter": "函",
+            "bulletin": "通报",
+            "notice_public": "公示",
+            "opinion": "意见",
+            "table_sign": "签发单",
         }
         type_name = TYPE_NAMES.get(document_type, document_type)
 
@@ -186,7 +199,10 @@ class OpenAIProvider(AIProvider):
 4. 根据【{type_name}】的特殊规则判断，不要套用其他文种的规则"""
 
         messages = [
-            {"role": "system", "content": "你是公文格式审核专家，严格按照GB/T 9704标准检查文档。只返回JSON，不要任何解释文字。"},
+            {
+                "role": "system",
+                "content": "你是公文格式审核专家，严格按照GB/T 9704标准检查文档。只返回JSON，不要任何解释文字。",
+            },
             {"role": "user", "content": prompt},
         ]
         result = await self._call_api(messages)
@@ -208,7 +224,7 @@ class OpenAIProvider(AIProvider):
             pass
 
         # Strategy 2: extract JSON from markdown code block
-        m = re.search(r'```(?:json)?\s*\n?(.*?)\n?```', raw, re.DOTALL)
+        m = re.search(r"```(?:json)?\s*\n?(.*?)\n?```", raw, re.DOTALL)
         if m:
             try:
                 data = json.loads(m.group(1).strip())
@@ -223,7 +239,7 @@ class OpenAIProvider(AIProvider):
             try:
                 # Fix common JSON errors
                 candidate = m.group(0)
-                candidate = re.sub(r',\s*([}\]])', r'\1', candidate)  # trailing commas
+                candidate = re.sub(r",\s*([}\]])", r"\1", candidate)  # trailing commas
                 data = json.loads(candidate)
                 if isinstance(data, dict) and "issues" in data:
                     return AIAnalysisResult(issues=data["issues"], raw_response=raw)
@@ -231,10 +247,10 @@ class OpenAIProvider(AIProvider):
                 pass
 
         # Strategy 4: try to find a JSON array of issues directly
-        m = re.search(r'\[\s*\{[\s\S]*\}\s*\]', raw)
+        m = re.search(r"\[\s*\{[\s\S]*\}\s*\]", raw)
         if m:
             try:
-                candidate = re.sub(r',\s*([}\]])', r'\1', m.group(0))
+                candidate = re.sub(r",\s*([}\]])", r"\1", m.group(0))
                 issues = json.loads(candidate)
                 if isinstance(issues, list) and len(issues) > 0:
                     return AIAnalysisResult(issues=issues, raw_response=raw)
@@ -244,14 +260,16 @@ class OpenAIProvider(AIProvider):
         # Strategy 5: fallback — wrap raw text as a single issue
         logger.warning("AI response is not valid JSON, using raw text as single issue")
         return AIAnalysisResult(
-            issues=[{
-                "type": "AI分析",
-                "location": "全文",
-                "original": "",
-                "suggestion": raw[:500],
-                "reason": "AI 综合建议",
-                "severity": "low",
-            }],
+            issues=[
+                {
+                    "type": "AI分析",
+                    "location": "全文",
+                    "original": "",
+                    "suggestion": raw[:500],
+                    "reason": "AI 综合建议",
+                    "severity": "low",
+                }
+            ],
             raw_response=raw,
         )
 

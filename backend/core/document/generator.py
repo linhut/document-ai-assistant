@@ -10,6 +10,7 @@ Document generator: converts DocumentModel back into a .docx file.
 - 所有字体设置必须经过 font_utils 统一入口
 - 支持表格写入、页眉/页脚写入
 """
+
 from __future__ import annotations
 from pathlib import Path
 from typing import Any
@@ -21,8 +22,10 @@ from docx.oxml.ns import qn
 
 from core.document.models import DocumentModel, Paragraph, Run, Table as TableModel, HeaderFooter
 from core.document.font_utils import (
-    set_run_font, validate_document_fonts,
-    BODY_FONT, LATIN_FONT,
+    set_run_font,
+    validate_document_fonts,
+    BODY_FONT,
+    LATIN_FONT,
 )
 from utils.logger import logger
 
@@ -99,6 +102,7 @@ def generate_docx(model: DocumentModel, output_path: Path | str) -> Path:
 #  Document Defaults & Page Setup
 # ---------------------------------------------------------------------------
 
+
 def _auto_fix_fonts(doc: Document, font_issues: list[dict]):
     """自动替换检测到的无效字体（MS Gothic 等）为合规字体。"""
     from core.document.font_utils import FONT_FALLBACK_MAP
@@ -139,30 +143,30 @@ def _apply_document_defaults(doc: Document):
     """
     try:
         styles_element = doc.styles.element
-        doc_defaults = styles_element.find(qn('w:docDefaults'))
+        doc_defaults = styles_element.find(qn("w:docDefaults"))
         if doc_defaults is None:
-            doc_defaults = OxmlElement('w:docDefaults')
+            doc_defaults = OxmlElement("w:docDefaults")
             styles_element.insert(0, doc_defaults)
 
-        rPrDefault = doc_defaults.find(qn('w:rPrDefault'))
+        rPrDefault = doc_defaults.find(qn("w:rPrDefault"))
         if rPrDefault is None:
-            rPrDefault = OxmlElement('w:rPrDefault')
+            rPrDefault = OxmlElement("w:rPrDefault")
             doc_defaults.append(rPrDefault)
 
-        rPr = rPrDefault.find(qn('w:rPr'))
+        rPr = rPrDefault.find(qn("w:rPr"))
         if rPr is None:
-            rPr = OxmlElement('w:rPr')
+            rPr = OxmlElement("w:rPr")
             rPrDefault.append(rPr)
 
-        rFonts = rPr.find(qn('w:rFonts'))
+        rFonts = rPr.find(qn("w:rFonts"))
         if rFonts is None:
-            rFonts = OxmlElement('w:rFonts')
+            rFonts = OxmlElement("w:rFonts")
             rPr.insert(0, rFonts)
 
-        rFonts.set(qn('w:ascii'), LATIN_FONT)
-        rFonts.set(qn('w:hAnsi'), LATIN_FONT)
-        rFonts.set(qn('w:eastAsia'), BODY_FONT)
-        rFonts.set(qn('w:cs'), BODY_FONT)
+        rFonts.set(qn("w:ascii"), LATIN_FONT)
+        rFonts.set(qn("w:hAnsi"), LATIN_FONT)
+        rFonts.set(qn("w:eastAsia"), BODY_FONT)
+        rFonts.set(qn("w:cs"), BODY_FONT)
 
         logger.debug("Document default fonts applied: eastAsia=仿宋_GB2312, latin=Times New Roman")
     except Exception as e:
@@ -197,6 +201,7 @@ def _apply_page_setup(doc: Document, model: DocumentModel):
 #  Paragraph Replacement (in-place, preserving table positions)
 # ---------------------------------------------------------------------------
 
+
 def _replace_paragraphs(doc: Document, model: DocumentModel):
     """
     替换文档中的段落内容，同时保留表格在原始位置。
@@ -207,7 +212,7 @@ def _replace_paragraphs(doc: Document, model: DocumentModel):
     3. 表格 <w:tbl> 元素保持不动
     """
     body = doc.element.body
-    p_tag = qn('w:p')
+    p_tag = qn("w:p")
     # 只取 body 的直接子 <w:p>，排除表格单元格内的段落
     all_p_elements = [child for child in body if child.tag == p_tag]
 
@@ -232,9 +237,11 @@ def _replace_paragraphs(doc: Document, model: DocumentModel):
             except Exception:
                 pass  # 已被移除则跳过
 
-    logger.debug(f"Replaced {min(len(model_paras), len(all_p_elements))} paragraphs, "
-                 f"added {max(0, len(model_paras) - len(all_p_elements))}, "
-                 f"removed {max(0, len(all_p_elements) - len(model_paras))}")
+    logger.debug(
+        f"Replaced {min(len(model_paras), len(all_p_elements))} paragraphs, "
+        f"added {max(0, len(model_paras) - len(all_p_elements))}, "
+        f"removed {max(0, len(all_p_elements) - len(model_paras))}"
+    )
 
 
 def _replace_paragraph_content(doc: Document, p_element, para_model: Paragraph):
@@ -243,18 +250,18 @@ def _replace_paragraph_content(doc: Document, p_element, para_model: Paragraph):
     """
     # 清除文本 runs，但保留含图片/绘图的 runs
     for child in list(p_element):
-        tag = child.tag.split('}')[-1] if '}' in child.tag else child.tag
-        if tag == 'r':
+        tag = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+        if tag == "r":
             # 检查 run 是否包含图片（w:drawing 或 w:pict）
             has_image = False
             for sub in child:
-                sub_tag = sub.tag.split('}')[-1] if '}' in sub.tag else sub.tag
-                if sub_tag in ('drawing', 'pict'):
+                sub_tag = sub.tag.split("}")[-1] if "}" in sub.tag else sub.tag
+                if sub_tag in ("drawing", "pict"):
                     has_image = True
                     break
             if not has_image:
                 p_element.remove(child)
-        elif tag == 'hyperlink':
+        elif tag == "hyperlink":
             # 保留超链接（可能包含图片）
             pass
 
@@ -276,53 +283,53 @@ def _update_pPr(p_element, para_model: Paragraph):
     fmt = para_model.format
 
     # 获取或创建 pPr
-    pPr = p_element.find(qn('w:pPr'))
+    pPr = p_element.find(qn("w:pPr"))
     if pPr is None:
-        pPr = OxmlElement('w:pPr')
+        pPr = OxmlElement("w:pPr")
         p_element.insert(0, pPr)
 
     # 对齐方式：仅当 model 有值时替换
     if fmt.alignment:
-        jc = pPr.find(qn('w:jc'))
+        jc = pPr.find(qn("w:jc"))
         if jc is not None:
             pPr.remove(jc)
-        jc = OxmlElement('w:jc')
+        jc = OxmlElement("w:jc")
         alignment_map = {
-            "left": "left", "center": "center",
-            "right": "right", "justify": "both",
+            "left": "left",
+            "center": "center",
+            "right": "right",
+            "justify": "both",
         }
-        jc.set(qn('w:val'), alignment_map.get(fmt.alignment, "left"))
+        jc.set(qn("w:val"), alignment_map.get(fmt.alignment, "left"))
         pPr.append(jc)
 
     # 缩进：仅当 model 有值时替换，否则保留原文档缩进
-    has_indent = (fmt.first_line_indent_pt is not None or
-                  fmt.left_indent_pt is not None or
-                  fmt.right_indent_pt is not None)
+    has_indent = (
+        fmt.first_line_indent_pt is not None or fmt.left_indent_pt is not None or fmt.right_indent_pt is not None
+    )
     if has_indent:
-        ind = pPr.find(qn('w:ind'))
+        ind = pPr.find(qn("w:ind"))
         if ind is not None:
             pPr.remove(ind)
-        ind = OxmlElement('w:ind')
+        ind = OxmlElement("w:ind")
         if fmt.first_line_indent_pt is not None:
-            ind.set(qn('w:firstLine'), str(int(fmt.first_line_indent_pt * 20)))
+            ind.set(qn("w:firstLine"), str(int(fmt.first_line_indent_pt * 20)))
             chars = int(round(fmt.first_line_indent_pt / 16 * 100))
             if chars > 0:
-                ind.set(qn('w:firstLineChars'), str(chars))
+                ind.set(qn("w:firstLineChars"), str(chars))
         if fmt.left_indent_pt is not None:
-            ind.set(qn('w:left'), str(int(fmt.left_indent_pt * 20)))
+            ind.set(qn("w:left"), str(int(fmt.left_indent_pt * 20)))
         if fmt.right_indent_pt is not None:
-            ind.set(qn('w:right'), str(int(fmt.right_indent_pt * 20)))
+            ind.set(qn("w:right"), str(int(fmt.right_indent_pt * 20)))
         pPr.append(ind)
 
     # 行距：仅当 model 有值时替换，否则保留原文档行距
-    has_spacing = (fmt.line_spacing_pt is not None or
-                   fmt.space_before_pt is not None or
-                   fmt.space_after_pt is not None)
+    has_spacing = fmt.line_spacing_pt is not None or fmt.space_before_pt is not None or fmt.space_after_pt is not None
     if has_spacing:
-        spacing = pPr.find(qn('w:spacing'))
+        spacing = pPr.find(qn("w:spacing"))
         if spacing is not None:
             pPr.remove(spacing)
-        spacing = OxmlElement('w:spacing')
+        spacing = OxmlElement("w:spacing")
         if fmt.line_spacing_pt is not None:
             spacing_pt = max(6, min(200, fmt.line_spacing_pt))
             rule = fmt.line_spacing_rule or "exact"
@@ -332,19 +339,19 @@ def _update_pPr(p_element, para_model: Paragraph):
                 # 公文标准字号16pt，1倍行距=240（即 16pt * 15 = 240）
                 # pt → 240ths: value = spacing_pt / 16 * 240
                 line_val = int(round(spacing_pt / 16 * 240))
-                spacing.set(qn('w:line'), str(line_val))
-                spacing.set(qn('w:lineRule'), 'auto')
+                spacing.set(qn("w:line"), str(line_val))
+                spacing.set(qn("w:lineRule"), "auto")
             elif rule == "atLeast":
-                spacing.set(qn('w:line'), str(int(spacing_pt * 20)))
-                spacing.set(qn('w:lineRule'), 'atLeast')
+                spacing.set(qn("w:line"), str(int(spacing_pt * 20)))
+                spacing.set(qn("w:lineRule"), "atLeast")
             else:
                 # exact (默认，符合GB/T 9704标准)
-                spacing.set(qn('w:line'), str(int(spacing_pt * 20)))
-                spacing.set(qn('w:lineRule'), 'exact')
+                spacing.set(qn("w:line"), str(int(spacing_pt * 20)))
+                spacing.set(qn("w:lineRule"), "exact")
         if fmt.space_before_pt is not None:
-            spacing.set(qn('w:before'), str(int(fmt.space_before_pt * 20)))
+            spacing.set(qn("w:before"), str(int(fmt.space_before_pt * 20)))
         if fmt.space_after_pt is not None:
-            spacing.set(qn('w:after'), str(int(fmt.space_after_pt * 20)))
+            spacing.set(qn("w:after"), str(int(fmt.space_after_pt * 20)))
         pPr.append(spacing)
 
 
@@ -387,7 +394,7 @@ def _add_runs_to_paragraph(para, para_model: Paragraph):
             if para_model.runs and para_model.runs[0].format:
                 fmt_font = para_model.runs[0].format.font_name
             if not fmt_font and para_model.format:
-                fmt_font = getattr(para_model.format, 'font_name', None)
+                fmt_font = getattr(para_model.format, "font_name", None)
             set_run_font(run, fmt_font or BODY_FONT)
 
 
@@ -395,46 +402,46 @@ def _add_runs_via_xml(p_element, para_model: Paragraph):
     """直接通过 XML 添加 runs（当无法找到 python-docx Paragraph 对象时的回退方案）。"""
     if para_model.runs:
         for run_model in para_model.runs:
-            r = OxmlElement('w:r')
+            r = OxmlElement("w:r")
             # 添加 run 格式属性
-            rPr = OxmlElement('w:rPr')
+            rPr = OxmlElement("w:rPr")
             fmt = run_model.format
             if fmt.font_name:
                 # 使用统一的字体设置，区分拉丁/中文字体
-                rFonts = OxmlElement('w:rFonts')
-                rFonts.set(qn('w:ascii'), LATIN_FONT)
-                rFonts.set(qn('w:hAnsi'), LATIN_FONT)
-                rFonts.set(qn('w:eastAsia'), fmt.font_name)
-                rFonts.set(qn('w:cs'), LATIN_FONT)
+                rFonts = OxmlElement("w:rFonts")
+                rFonts.set(qn("w:ascii"), LATIN_FONT)
+                rFonts.set(qn("w:hAnsi"), LATIN_FONT)
+                rFonts.set(qn("w:eastAsia"), fmt.font_name)
+                rFonts.set(qn("w:cs"), LATIN_FONT)
                 rPr.append(rFonts)
             if fmt.font_size_pt:
-                sz = OxmlElement('w:sz')
-                sz.set(qn('w:val'), str(int(fmt.font_size_pt * 2)))  # half-points
+                sz = OxmlElement("w:sz")
+                sz.set(qn("w:val"), str(int(fmt.font_size_pt * 2)))  # half-points
                 rPr.append(sz)
             if fmt.bold:
-                rPr.append(OxmlElement('w:b'))
+                rPr.append(OxmlElement("w:b"))
             if fmt.italic:
-                rPr.append(OxmlElement('w:i'))
+                rPr.append(OxmlElement("w:i"))
             if len(rPr) > 0:
                 r.append(rPr)
-            t = OxmlElement('w:t')
+            t = OxmlElement("w:t")
             t.text = run_model.text
-            t.set(qn('xml:space'), 'preserve')
+            t.set(qn("xml:space"), "preserve")
             r.append(t)
             p_element.append(r)
     elif para_model.text:
-        r = OxmlElement('w:r')
-        rPr = OxmlElement('w:rPr')
-        rFonts = OxmlElement('w:rFonts')
-        rFonts.set(qn('w:ascii'), LATIN_FONT)
-        rFonts.set(qn('w:hAnsi'), LATIN_FONT)
-        rFonts.set(qn('w:eastAsia'), BODY_FONT)
-        rFonts.set(qn('w:cs'), LATIN_FONT)
+        r = OxmlElement("w:r")
+        rPr = OxmlElement("w:rPr")
+        rFonts = OxmlElement("w:rFonts")
+        rFonts.set(qn("w:ascii"), LATIN_FONT)
+        rFonts.set(qn("w:hAnsi"), LATIN_FONT)
+        rFonts.set(qn("w:eastAsia"), BODY_FONT)
+        rFonts.set(qn("w:cs"), LATIN_FONT)
         rPr.append(rFonts)
         r.append(rPr)
-        t = OxmlElement('w:t')
+        t = OxmlElement("w:t")
         t.text = para_model.text
-        t.set(qn('xml:space'), 'preserve')
+        t.set(qn("xml:space"), "preserve")
         r.append(t)
         p_element.append(r)
 
@@ -442,6 +449,7 @@ def _add_runs_via_xml(p_element, para_model: Paragraph):
 # ---------------------------------------------------------------------------
 #  Table Writing
 # ---------------------------------------------------------------------------
+
 
 def _update_tables(doc: Document, model: DocumentModel):
     """
@@ -460,8 +468,10 @@ def _update_tables(doc: Document, model: DocumentModel):
             # 添加新表格
             _add_table(doc, table_model)
 
-    logger.debug(f"Updated {min(len(model_tables), len(existing_tables))} tables, "
-                 f"added {max(0, len(model_tables) - len(existing_tables))}")
+    logger.debug(
+        f"Updated {min(len(model_tables), len(existing_tables))} tables, "
+        f"added {max(0, len(model_tables) - len(existing_tables))}"
+    )
 
 
 def _smart_align_cell(cell_text: str, is_header: bool, col_idx: int, total_cols: int) -> str:
@@ -476,25 +486,26 @@ def _smart_align_cell(cell_text: str, is_header: bool, col_idx: int, total_cols:
     """
     text = cell_text.strip()
     if not text:
-        return 'left'
+        return "left"
     if is_header:
-        return 'center'
+        return "center"
     # 序号列居中（优先级最高，避免被数字规则覆盖）
     if col_idx == 0:
-        return 'center'
+        return "center"
     # 短文本居中
     if len(text) <= 4:
-        return 'center'
+        return "center"
     # 数字右对齐（含小数、百分比、逗号分隔数字）
     import re
-    if re.match(r'^[\d.,%‰]+$', text):
-        return 'right'
-    return 'left'
+
+    if re.match(r"^[\d.,%‰]+$", text):
+        return "right"
+    return "left"
 
 
 def _update_table_content(table, table_model: TableModel):
     """更新已有表格的单元格内容（带智能对齐）。"""
-    total_cols = len(table.columns) if hasattr(table, 'columns') else 0
+    total_cols = len(table.columns) if hasattr(table, "columns") else 0
     for cell_model in table_model.cells:
         try:
             cell = table.cell(cell_model.row, cell_model.col)
@@ -527,7 +538,11 @@ def _update_table_content(table, table_model: TableModel):
                     # 智能对齐
                     is_header = cell_model.row == 0
                     align = _smart_align_cell(cell_model.text, is_header, cell_model.col, total_cols)
-                    para.alignment = {'left': WD_ALIGN_PARAGRAPH.LEFT, 'center': WD_ALIGN_PARAGRAPH.CENTER, 'right': WD_ALIGN_PARAGRAPH.RIGHT}.get(align, WD_ALIGN_PARAGRAPH.LEFT)
+                    para.alignment = {
+                        "left": WD_ALIGN_PARAGRAPH.LEFT,
+                        "center": WD_ALIGN_PARAGRAPH.CENTER,
+                        "right": WD_ALIGN_PARAGRAPH.RIGHT,
+                    }.get(align, WD_ALIGN_PARAGRAPH.LEFT)
         except Exception as e:
             logger.warning(f"Failed to update table cell ({cell_model.row},{cell_model.col}): {e}")
 
@@ -540,15 +555,16 @@ def _add_table(doc: Document, table_model: TableModel):
         table = doc.add_table(rows=rows, cols=cols)
 
         # 按 insert_after_index 移动表格到正确位置
-        insert_idx = getattr(table_model, 'insert_after_index', -1)
+        insert_idx = getattr(table_model, "insert_after_index", -1)
         if insert_idx >= 0:
             from lxml import etree
+
             body = doc.element.body
             para_count = 0
             target_elem = None
             for child in body:
-                tag = etree.QName(child.tag).localname if child.tag else ''
-                if tag == 'p':
+                tag = etree.QName(child.tag).localname if child.tag else ""
+                if tag == "p":
                     if para_count == insert_idx:
                         target_elem = child
                         break
@@ -560,20 +576,24 @@ def _add_table(doc: Document, table_model: TableModel):
 
         # 设置表格样式（带边框）
         try:
-            table.style = 'Table Grid'
+            table.style = "Table Grid"
         except KeyError:
             # 文档中没有 'Table Grid' 样式时，手动添加边框
             from docx.oxml.ns import qn
+
             tbl = table._tbl
             tblPr = tbl.tblPr if tbl.tblPr is not None else tbl._add_tblPr()
-            borders = tblPr.makeelement(qn('w:tblBorders'), {})
-            for edge in ('top', 'left', 'bottom', 'right', 'insideH', 'insideV'):
-                border = borders.makeelement(qn(f'w:{edge}'), {
-                    qn('w:val'): 'single',
-                    qn('w:sz'): '4',
-                    qn('w:space'): '0',
-                    qn('w:color'): '000000',
-                })
+            borders = tblPr.makeelement(qn("w:tblBorders"), {})
+            for edge in ("top", "left", "bottom", "right", "insideH", "insideV"):
+                border = borders.makeelement(
+                    qn(f"w:{edge}"),
+                    {
+                        qn("w:val"): "single",
+                        qn("w:sz"): "4",
+                        qn("w:space"): "0",
+                        qn("w:color"): "000000",
+                    },
+                )
                 borders.append(border)
             tblPr.append(borders)
 
@@ -599,9 +619,13 @@ def _add_table(doc: Document, table_model: TableModel):
                             _apply_paragraph_format(para, para_model)
                     # 智能对齐（表头居中加粗，数据行按内容类型）
                     is_header = cell_model.row == 0
-                    cell_text = cell_model.text or (cell_model.paragraphs[0].text if cell_model.paragraphs else '')
+                    cell_text = cell_model.text or (cell_model.paragraphs[0].text if cell_model.paragraphs else "")
                     align = _smart_align_cell(cell_text, is_header, cell_model.col, total_cols)
-                    align_map = {'left': WD_ALIGN_PARAGRAPH.LEFT, 'center': WD_ALIGN_PARAGRAPH.CENTER, 'right': WD_ALIGN_PARAGRAPH.RIGHT}
+                    align_map = {
+                        "left": WD_ALIGN_PARAGRAPH.LEFT,
+                        "center": WD_ALIGN_PARAGRAPH.CENTER,
+                        "right": WD_ALIGN_PARAGRAPH.RIGHT,
+                    }
                     for para in cell.paragraphs:
                         para.alignment = align_map.get(align, WD_ALIGN_PARAGRAPH.LEFT)
                     if is_header:
@@ -615,7 +639,11 @@ def _add_table(doc: Document, table_model: TableModel):
                         # 智能对齐
                         is_header = cell_model.row == 0
                         align = _smart_align_cell(cell_model.text, is_header, cell_model.col, total_cols)
-                        align_map = {'left': WD_ALIGN_PARAGRAPH.LEFT, 'center': WD_ALIGN_PARAGRAPH.CENTER, 'right': WD_ALIGN_PARAGRAPH.RIGHT}
+                        align_map = {
+                            "left": WD_ALIGN_PARAGRAPH.LEFT,
+                            "center": WD_ALIGN_PARAGRAPH.CENTER,
+                            "right": WD_ALIGN_PARAGRAPH.RIGHT,
+                        }
                         cell.paragraphs[0].alignment = align_map.get(align, WD_ALIGN_PARAGRAPH.LEFT)
                         if is_header:
                             run.bold = True
@@ -630,6 +658,7 @@ def _add_table(doc: Document, table_model: TableModel):
 # ---------------------------------------------------------------------------
 #  Headers & Footers
 # ---------------------------------------------------------------------------
+
 
 def _update_headers_footers(doc: Document, model: DocumentModel):
     """更新页眉和页脚内容。"""
@@ -690,7 +719,7 @@ def _add_page_number_field(para, para_model: Paragraph) -> None:
     """
     在段落中写入 Word 页码域代码（{ PAGE } / { NUMPAGES }）。
     使用 Word XML 域代码实现动态页码，而非静态文本。
-    
+
     支持格式：
     - "{PAGE}" → 当前页码
     - "{NUMPAGES}" → 总页数
@@ -702,92 +731,93 @@ def _add_page_number_field(para, para_model: Paragraph) -> None:
     # 格式: 文本 + PAGE域 + 文本 + NUMPAGES域 + 文本
     parts = []
     import re
+
     # 拆分文本中的 {PAGE} 和 {NUMPAGES} 占位符
     remaining = run_text
     while remaining:
-        m = re.search(r'\{PAGE\}|\{NUMPAGES\}', remaining)
+        m = re.search(r"\{PAGE\}|\{NUMPAGES\}", remaining)
         if not m:
             if remaining.strip():
-                parts.append(('text', remaining))
+                parts.append(("text", remaining))
             break
-        
+
         # 前置文本
-        prefix = remaining[:m.start()]
+        prefix = remaining[: m.start()]
         if prefix.strip():
-            parts.append(('text', prefix))
-        
+            parts.append(("text", prefix))
+
         # 域代码
-        parts.append(('field', m.group()))
-        remaining = remaining[m.end():]
+        parts.append(("field", m.group()))
+        remaining = remaining[m.end() :]
 
     # 写入 Word XML
     for part_type, content in parts:
-        if part_type == 'text':
-            run_el = OxmlElement('w:r')
-            rPr = OxmlElement('w:rPr')
-            rFonts = OxmlElement('w:rFonts')
-            rFonts.set(qn('w:eastAsia'), '宋体')
-            rFonts.set(qn('w:ascii'), 'Times New Roman')
+        if part_type == "text":
+            run_el = OxmlElement("w:r")
+            rPr = OxmlElement("w:rPr")
+            rFonts = OxmlElement("w:rFonts")
+            rFonts.set(qn("w:eastAsia"), "宋体")
+            rFonts.set(qn("w:ascii"), "Times New Roman")
             rPr.append(rFonts)
-            sz = OxmlElement('w:sz')
-            sz.set(qn('w:val'), '28')  # 14pt
+            sz = OxmlElement("w:sz")
+            sz.set(qn("w:val"), "28")  # 14pt
             rPr.append(sz)
             run_el.append(rPr)
-            t = OxmlElement('w:t')
-            t.set(qn('xml:space'), 'preserve')
+            t = OxmlElement("w:t")
+            t.set(qn("xml:space"), "preserve")
             t.text = content
             run_el.append(t)
             para._element.append(run_el)
-        elif part_type == 'field':
+        elif part_type == "field":
             # 创建 fldChar begin
-            fld_begin = OxmlElement('w:r')
-            fldChar_begin = OxmlElement('w:fldChar')
-            fldChar_begin.set(qn('w:fldCharType'), 'begin')
+            fld_begin = OxmlElement("w:r")
+            fldChar_begin = OxmlElement("w:fldChar")
+            fldChar_begin.set(qn("w:fldCharType"), "begin")
             fld_begin.append(fldChar_begin)
             para._element.append(fld_begin)
 
             # 创建 instrText (域代码指令)
-            instr = OxmlElement('w:r')
-            rPr_instr = OxmlElement('w:rPr')
-            rFonts_instr = OxmlElement('w:rFonts')
-            rFonts_instr.set(qn('w:eastAsia'), '宋体')
+            instr = OxmlElement("w:r")
+            rPr_instr = OxmlElement("w:rPr")
+            rFonts_instr = OxmlElement("w:rFonts")
+            rFonts_instr.set(qn("w:eastAsia"), "宋体")
             rPr_instr.append(rFonts_instr)
             instr.append(rPr_instr)
-            instrText = OxmlElement('w:instrText')
-            instrText.set(qn('xml:space'), 'preserve')
+            instrText = OxmlElement("w:instrText")
+            instrText.set(qn("xml:space"), "preserve")
             field_name = content[1:-1]  # Remove { } → PAGE or NUMPAGES
-            instrText.text = f' {field_name} '
+            instrText.text = f" {field_name} "
             instr.append(instrText)
             para._element.append(instr)
 
             # 创建 fldChar separate
-            fld_sep = OxmlElement('w:r')
-            fldChar_sep = OxmlElement('w:fldChar')
-            fldChar_sep.set(qn('w:fldCharType'), 'separate')
+            fld_sep = OxmlElement("w:r")
+            fldChar_sep = OxmlElement("w:fldChar")
+            fldChar_sep.set(qn("w:fldCharType"), "separate")
             fld_sep.append(fldChar_sep)
             para._element.append(fld_sep)
 
             # 创建默认显示值
-            fld_default = OxmlElement('w:r')
-            rPr_def = OxmlElement('w:rPr')
-            rFonts_def = OxmlElement('w:rFonts')
-            rFonts_def.set(qn('w:eastAsia'), '宋体')
-            rFonts_def.set(qn('w:ascii'), 'Times New Roman')
+            fld_default = OxmlElement("w:r")
+            rPr_def = OxmlElement("w:rPr")
+            rFonts_def = OxmlElement("w:rFonts")
+            rFonts_def.set(qn("w:eastAsia"), "宋体")
+            rFonts_def.set(qn("w:ascii"), "Times New Roman")
             rPr_def.append(rFonts_def)
-            sz_def = OxmlElement('w:sz')
-            sz_def.set(qn('w:val'), '28')
+            sz_def = OxmlElement("w:sz")
+            sz_def.set(qn("w:val"), "28")
             rPr_def.append(sz_def)
             fld_default.append(rPr_def)
-            t_def = OxmlElement('w:t')
-            t_def.set(qn('xml:space'), 'preserve')
-            t_def.text = '1'  # 默认显示值
+            t_def = OxmlElement("w:t")
+            t_def.set(qn("xml:space"), "preserve")
+            t_def.text = "1"  # 默认显示值
             fld_default.append(t_def)
             para._element.append(fld_default)
 
             # 创建 fldChar end
-            fld_end = OxmlElement('w:r')
-            fldChar_end = OxmlElement('w:fldChar')
-            fldChar_end.set(qn('w:fldCharType'), 'end')
+            fld_end = OxmlElement("w:r")
+            fldChar_end = OxmlElement("w:fldChar")
+            fldChar_end.set(qn("w:fldCharType"), "end")
             fld_end.append(fldChar_end)
             para._element.append(fld_end)
 
@@ -795,6 +825,7 @@ def _add_page_number_field(para, para_model: Paragraph) -> None:
 # ---------------------------------------------------------------------------
 #  Metadata
 # ---------------------------------------------------------------------------
+
 
 def _update_metadata(doc: Document, model: DocumentModel):
     """更新文档核心属性（元数据）。"""
@@ -817,6 +848,7 @@ def _update_metadata(doc: Document, model: DocumentModel):
 # ---------------------------------------------------------------------------
 #  Format Helpers
 # ---------------------------------------------------------------------------
+
 
 def _apply_paragraph_format(para, para_model: Paragraph):
     """Apply formatting to a paragraph using python-docx API."""

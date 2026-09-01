@@ -9,10 +9,11 @@ PyInstaller 打包入口
 
 支持 --force 参数：端口被占用时自动杀死旧进程。
 """
+
 import sys
 import os
 
-if getattr(sys, 'frozen', False):
+if getattr(sys, "frozen", False):
     # PyInstaller 打包模式
     # exe 位于 resources/backend_server/backend_server.exe
     # 工作目录设为 resources/（即 BASE_DIR）

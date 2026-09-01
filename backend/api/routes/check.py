@@ -4,13 +4,12 @@
 """
 Check API routes: format checking and issue management.
 """
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from db.database import get_db
-from api.schemas.api_models import (
-    CheckRequest, CheckResultResponse, CheckIssueResponse, IssueActionRequest
-)
+from api.schemas.api_models import CheckRequest, CheckResultResponse, CheckIssueResponse, IssueActionRequest
 from services import document_service as svc
 
 router = APIRouter()
@@ -26,6 +25,7 @@ async def run_check(doc_id: int, req: CheckRequest | None = None, db: Session = 
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         from utils.logger import logger
+
         logger.error(f"Check failed for doc {doc_id}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="文档检查失败，请稍后重试")
 
@@ -38,11 +38,17 @@ async def run_check(doc_id: int, req: CheckRequest | None = None, db: Session = 
         p2_count=result["p2_count"],
         issues=[
             CheckIssueResponse(
-                id=i.id, check_type=i.check_type, severity=i.severity,
-                rule_id=i.rule_id, location=i.location,
-                original_text=i.original_text, suggested_fix=i.suggested_fix,
-                reason=i.reason, status=i.status,
-            ) for i in issues
+                id=i.id,
+                check_type=i.check_type,
+                severity=i.severity,
+                rule_id=i.rule_id,
+                location=i.location,
+                original_text=i.original_text,
+                suggested_fix=i.suggested_fix,
+                reason=i.reason,
+                status=i.status,
+            )
+            for i in issues
         ],
     )
 
@@ -53,17 +59,24 @@ async def get_results(doc_id: int, db: Session = Depends(get_db)):
     issues = svc.get_check_results(db, doc_id)
     return [
         CheckIssueResponse(
-            id=i.id, check_type=i.check_type, severity=i.severity,
-            rule_id=i.rule_id, location=i.location,
-            original_text=i.original_text, suggested_fix=i.suggested_fix,
-            reason=i.reason, status=i.status,
-        ) for i in issues
+            id=i.id,
+            check_type=i.check_type,
+            severity=i.severity,
+            rule_id=i.rule_id,
+            location=i.location,
+            original_text=i.original_text,
+            suggested_fix=i.suggested_fix,
+            reason=i.reason,
+            status=i.status,
+        )
+        for i in issues
     ]
 
 
 @router.put("/{doc_id}/issues/{issue_id}")
 async def update_issue(
-    doc_id: int, issue_id: int,
+    doc_id: int,
+    issue_id: int,
     req: IssueActionRequest,
     db: Session = Depends(get_db),
 ):

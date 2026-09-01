@@ -5,6 +5,7 @@
 Claude Provider (Anthropic).
 Uses Anthropic Messages API.
 """
+
 import json
 import httpx
 from typing import Any
@@ -14,13 +15,27 @@ from utils.logger import logger
 
 # 文档类型中文名映射（与 OpenAIProvider 保持一致）
 _TYPE_NAMES = {
-    "notice": "通知", "announcement": "公告", "report": "报告",
-    "request": "请示", "reply": "批复", "instruction": "意见",
-    "decision": "决定", "resolution": "决议", "command": "命令",
-    "bill": "议案", "minutes": "会议纪要", "meeting": "会议纪要",
-    "communique": "公报", "regulation": "条例", "work_plan": "工作方案",
-    "summary": "总结", "letter": "函", "bulletin": "通报",
-    "notice_public": "公示", "opinion": "意见", "table_sign": "签发单",
+    "notice": "通知",
+    "announcement": "公告",
+    "report": "报告",
+    "request": "请示",
+    "reply": "批复",
+    "instruction": "意见",
+    "decision": "决定",
+    "resolution": "决议",
+    "command": "命令",
+    "bill": "议案",
+    "minutes": "会议纪要",
+    "meeting": "会议纪要",
+    "communique": "公报",
+    "regulation": "条例",
+    "work_plan": "工作方案",
+    "summary": "总结",
+    "letter": "函",
+    "bulletin": "通报",
+    "notice_public": "公示",
+    "opinion": "意见",
+    "table_sign": "签发单",
 }
 
 
@@ -45,9 +60,11 @@ class ClaudeProvider(AIProvider):
             timeout=httpx.Timeout(self.timeout, connect=10.0),
         )
 
-    async def _call_api(self, messages: list[dict], system: str = "",
-                         temperature: float = 0.3, max_tokens: int = 2000) -> str:
+    async def _call_api(
+        self, messages: list[dict], system: str = "", temperature: float = 0.3, max_tokens: int = 2000
+    ) -> str:
         import asyncio
+
         last_error = None
         for attempt in range(self.max_retries):
             try:
@@ -68,7 +85,7 @@ class ClaudeProvider(AIProvider):
                 status = e.response.status_code
                 last_error = e
                 if status in (429, 500, 502, 503) and attempt < self.max_retries - 1:
-                    await asyncio.sleep(2 ** attempt)
+                    await asyncio.sleep(2**attempt)
                     continue
                 raise Exception(f"Claude API error {status}: {e.response.text[:200]}")
             except httpx.ConnectError:
@@ -98,13 +115,14 @@ class ClaudeProvider(AIProvider):
     def _parse_analyze_response(raw: str) -> AIAnalysisResult:
         """Robust JSON parsing with multiple fallback strategies."""
         import re
+
         try:
             data = json.loads(raw)
             if isinstance(data, dict) and "issues" in data:
                 return AIAnalysisResult(issues=data["issues"], raw_response=raw)
         except json.JSONDecodeError:
             pass
-        m = re.search(r'```(?:json)?\s*\n?(.*?)\n?```', raw, re.DOTALL)
+        m = re.search(r"```(?:json)?\s*\n?(.*?)\n?```", raw, re.DOTALL)
         if m:
             try:
                 data = json.loads(m.group(1).strip())
@@ -115,15 +133,23 @@ class ClaudeProvider(AIProvider):
         m = re.search(r'\{[\s\S]*"issues"\s*:[\s\S]*\}', raw)
         if m:
             try:
-                candidate = re.sub(r',\s*([}\]])', r'\1', m.group(0))
+                candidate = re.sub(r",\s*([}\]])", r"\1", m.group(0))
                 data = json.loads(candidate)
                 if isinstance(data, dict) and "issues" in data:
                     return AIAnalysisResult(issues=data["issues"], raw_response=raw)
             except json.JSONDecodeError:
                 pass
         return AIAnalysisResult(
-            issues=[{"type": "AI分析", "location": "全文", "original": "",
-                     "suggestion": raw[:500], "reason": "AI 综合建议", "severity": "low"}],
+            issues=[
+                {
+                    "type": "AI分析",
+                    "location": "全文",
+                    "original": "",
+                    "suggestion": raw[:500],
+                    "reason": "AI 综合建议",
+                    "severity": "low",
+                }
+            ],
             raw_response=raw,
         )
 
@@ -145,11 +171,7 @@ class ClaudeProvider(AIProvider):
             # context 包含完整指令时直接作为用户消息
             prompt = context
         else:
-            prompt = (
-                "优化以下公文文本表达，保持原意，使用规范公文表达：\n"
-                f"{text}\n"
-                "只返回优化后的文本，不要解释。"
-            )
+            prompt = f"优化以下公文文本表达，保持原意，使用规范公文表达：\n{text}\n只返回优化后的文本，不要解释。"
         return await self._call_api([{"role": "user", "content": prompt}])
 
     async def test_connection(self) -> bool:

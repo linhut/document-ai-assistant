@@ -6,6 +6,7 @@ Rule Manager: unified rule loading with priority layering.
 
 Priority: user > custom > official
 """
+
 from __future__ import annotations
 import copy
 import re
@@ -40,14 +41,16 @@ def list_rule_files(source: str = "all") -> list[dict]:
         for f in sorted(d.glob("*.yaml")):
             if f.stem.startswith("_"):
                 continue
-            result.append({
-                "key": f.stem,
-                "name": f.stem,
-                "source_type": source_type,
-                "path": str(f),
-                "size": f.stat().st_size,
-                "enabled": True,
-            })
+            result.append(
+                {
+                    "key": f.stem,
+                    "name": f.stem,
+                    "source_type": source_type,
+                    "path": str(f),
+                    "size": f.stat().st_size,
+                    "enabled": True,
+                }
+            )
     return result
 
 
@@ -135,7 +138,7 @@ def save_rule(key: str, content: dict, source_type: str = "user") -> bool:
     _ensure_dirs()
 
     # 验证key只包含安全字符
-    if not re.match(r'^[a-zA-Z0-9_-]+$', key):
+    if not re.match(r"^[a-zA-Z0-9_-]+$", key):
         logger.error(f"Invalid rule key: {key}")
         return False
 
@@ -170,7 +173,7 @@ def delete_rule(key: str, source_type: str = "user") -> bool:
     _ensure_dirs()
 
     # 验证key只包含安全字符
-    if not re.match(r'^[a-zA-Z0-9_-]+$', key):
+    if not re.match(r"^[a-zA-Z0-9_-]+$", key):
         logger.error(f"Invalid rule key: {key}")
         return False
 
@@ -255,9 +258,7 @@ def validate_rule(rule: dict) -> None:
     has_format = any(k in rule for k in ("title", "body", "page_setup"))
     has_rules = any(k in rule for k in ("check_rules", "fix_rules"))
     if not has_format and not has_rules:
-        raise ValueError(
-            "Rule must have at least one of: title, body, page_setup, check_rules, fix_rules"
-        )
+        raise ValueError("Rule must have at least one of: title, body, page_setup, check_rules, fix_rules")
 
     # Validate check_rules structure
     for cr in rule.get("check_rules", []):

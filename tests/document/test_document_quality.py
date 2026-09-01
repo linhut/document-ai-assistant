@@ -4,6 +4,7 @@
 """
 文档质量测试体系 — 模板生成、字体XML、格式规则、优化前后对比
 """
+
 import zipfile
 from pathlib import Path
 from xml.etree import ElementTree as ET
@@ -14,8 +15,11 @@ from core.document.parser import parse_docx
 from core.document.generator import generate_docx
 from core.document.models import DocumentModel, Paragraph, Run, RunFormat, ParagraphFormat, PageSetup
 from core.document.font_utils import (
-    set_run_font, validate_document_fonts, detect_font_from_run,
-    TITLE_FONT, BODY_FONT,
+    set_run_font,
+    validate_document_fonts,
+    detect_font_from_run,
+    TITLE_FONT,
+    BODY_FONT,
 )
 from core.rules.engine import RuleEngine
 from core.rules.loader import load_rules_for_type
@@ -68,9 +72,16 @@ def _create_minimal_document_model() -> DocumentModel:
                 is_heading=True,
                 heading_level=1,
                 format=ParagraphFormat(alignment="center"),
-                runs=[Run(index=0, text="测试标题", format=RunFormat(
-                    font_name=TITLE_FONT, font_size_pt=22,
-                ))],
+                runs=[
+                    Run(
+                        index=0,
+                        text="测试标题",
+                        format=RunFormat(
+                            font_name=TITLE_FONT,
+                            font_size_pt=22,
+                        ),
+                    )
+                ],
             ),
             Paragraph(
                 text="正文第一段内容。用于测试公文格式是否正确生成。",
@@ -80,17 +91,31 @@ def _create_minimal_document_model() -> DocumentModel:
                     first_line_indent_pt=32,
                     line_spacing_pt=28.95,
                 ),
-                runs=[Run(index=0, text="正文第一段内容。用于测试公文格式是否正确生成。", format=RunFormat(
-                    font_name=BODY_FONT, font_size_pt=16,
-                ))],
+                runs=[
+                    Run(
+                        index=0,
+                        text="正文第一段内容。用于测试公文格式是否正确生成。",
+                        format=RunFormat(
+                            font_name=BODY_FONT,
+                            font_size_pt=16,
+                        ),
+                    )
+                ],
             ),
             Paragraph(
                 text="落款单位",
                 index=2,
                 format=ParagraphFormat(alignment="right"),
-                runs=[Run(index=0, text="落款单位", format=RunFormat(
-                    font_name=BODY_FONT, font_size_pt=16,
-                ))],
+                runs=[
+                    Run(
+                        index=0,
+                        text="落款单位",
+                        format=RunFormat(
+                            font_name=BODY_FONT,
+                            font_size_pt=16,
+                        ),
+                    )
+                ],
             ),
         ],
     )
@@ -99,6 +124,7 @@ def _create_minimal_document_model() -> DocumentModel:
 # ===========================================================================
 #  Test 1: 模板生成测试
 # ===========================================================================
+
 
 class TestTemplateGeneration:
     """测试模板生成功能。"""
@@ -140,10 +166,7 @@ class TestTemplateGeneration:
 
     def test_all_template_types_generate(self, tmp_path):
         """所有模板类型都有对应的规则文件且包含必要配置。"""
-        doc_types = [
-            "notice", "request", "report", "letter", "meeting",
-            "decision", "announcement", "notice_public"
-        ]
+        doc_types = ["notice", "request", "report", "letter", "meeting", "decision", "announcement", "notice_public"]
         for dtype in doc_types:
             try:
                 rules = load_rules_for_type(dtype)
@@ -158,6 +181,7 @@ class TestTemplateGeneration:
 # ===========================================================================
 #  Test 2: 字体 XML 测试
 # ===========================================================================
+
 
 class TestFontXml:
     """测试生成的 docx XML 中的字体设置。"""
@@ -260,14 +284,14 @@ class TestFontXml:
 #  Test 3: 格式规则测试
 # ===========================================================================
 
+
 class TestFormatRules:
     """测试规则是否正确影响生成流程。"""
 
     def test_rule_engine_loads_all_types(self):
         """所有文档类型的规则都能加载。"""
         engine = RuleEngine()
-        for dtype in ["notice", "request", "report", "letter", "meeting",
-                       "decision", "announcement", "notice_public"]:
+        for dtype in ["notice", "request", "report", "letter", "meeting", "decision", "announcement", "notice_public"]:
             rules = engine.load_rules(dtype)
             assert rules, f"Failed to load rules for {dtype}"
             assert "check_rules" in rules, f"No check_rules for {dtype}"
@@ -275,8 +299,7 @@ class TestFormatRules:
 
     def test_check_rules_have_required_fields(self):
         """所有 check_rules 都有必要的字段。"""
-        for dtype in ["notice", "request", "report", "letter", "meeting",
-                       "decision", "announcement", "notice_public"]:
+        for dtype in ["notice", "request", "report", "letter", "meeting", "decision", "announcement", "notice_public"]:
             rules = load_rules_for_type(dtype)
             for rule in rules.get("check_rules", []):
                 assert "id" in rule, f"Missing id in {dtype} rule: {rule}"
@@ -286,14 +309,15 @@ class TestFormatRules:
     def test_fix_rules_use_supported_actions(self):
         """所有 fix_rules 的 action 是受支持的（以 fixer._ACTION_MAP 为准）。"""
         from core.rules.fixer import _ACTION_MAP
+
         supported_actions = set(_ACTION_MAP.keys())
-        for dtype in ["notice", "request", "report", "letter", "meeting",
-                       "decision", "announcement", "notice_public"]:
+        for dtype in ["notice", "request", "report", "letter", "meeting", "decision", "announcement", "notice_public"]:
             rules = load_rules_for_type(dtype)
             for rule in rules.get("fix_rules", []):
                 action = rule.get("action", "")
-                assert action in supported_actions, \
+                assert action in supported_actions, (
                     f"Unsupported action '{action}' in {dtype} rule {rule.get('id', '?')}"
+                )
 
     def test_notice_check_finds_issues(self):
         """通知模板检查应该能返回issue列表。"""
@@ -315,6 +339,7 @@ class TestFormatRules:
 #  Test 4: 优化前后对比测试
 # ===========================================================================
 
+
 class TestOptimizationComparison:
     """优化前后对比测试。"""
 
@@ -329,8 +354,7 @@ class TestOptimizationComparison:
         fixed_texts = [p.text for p in fixed_model.paragraphs]
         for i, (orig, fixed) in enumerate(zip(original_texts, fixed_texts)):
             if len(orig.strip()) > 0:
-                assert len(fixed.strip()) > 0, \
-                    f"Paragraph {i} lost content during optimization"
+                assert len(fixed.strip()) > 0, f"Paragraph {i} lost content during optimization"
 
     def test_optimization_generates_valid_docx(self, tmp_path):
         """优化后的文档可以正常生成并重新解析。"""
@@ -377,8 +401,8 @@ class TestOptimizationComparison:
         para = doc.add_paragraph()
         run = para.add_run("测试")
         rPr = run._element.get_or_add_rPr()
-        rFonts = OxmlElement('w:rFonts')
-        rFonts.set(qn('w:eastAsia'), 'MS Gothic')
+        rFonts = OxmlElement("w:rFonts")
+        rFonts.set(qn("w:eastAsia"), "MS Gothic")
         rPr.insert(0, rFonts)
 
         issues = validate_document_fonts(doc)
@@ -389,6 +413,7 @@ class TestOptimizationComparison:
 # ===========================================================================
 #  Test 5: 字体工具单元测试
 # ===========================================================================
+
 
 class TestFontUtilsUnit:
     """字体工具函数的单元测试。"""
@@ -404,15 +429,15 @@ class TestFontUtilsUnit:
 
         set_run_font(run, "仿宋_GB2312")
 
-        rPr = run._element.find(qn('w:rPr'))
+        rPr = run._element.find(qn("w:rPr"))
         assert rPr is not None
 
-        rFonts = rPr.find(qn('w:rFonts'))
+        rFonts = rPr.find(qn("w:rFonts"))
         assert rFonts is not None
-        assert rFonts.get(qn('w:eastAsia')) == "仿宋_GB2312"
-        assert rFonts.get(qn('w:ascii')) == "Times New Roman"
-        assert rFonts.get(qn('w:hAnsi')) == "Times New Roman"
-        assert rFonts.get(qn('w:cs')) == "仿宋_GB2312"
+        assert rFonts.get(qn("w:eastAsia")) == "仿宋_GB2312"
+        assert rFonts.get(qn("w:ascii")) == "Times New Roman"
+        assert rFonts.get(qn("w:hAnsi")) == "Times New Roman"
+        assert rFonts.get(qn("w:cs")) == "仿宋_GB2312"
 
     def test_validate_font_name_rejects_ms_gothic(self):
         """validate_font_name 拒绝 MS Gothic 系列。"""

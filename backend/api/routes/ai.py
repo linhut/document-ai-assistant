@@ -5,6 +5,7 @@
 AI API routes: AI-powered analysis and suggestions.
 支持多模型管理、模型列表获取、连接测试。
 """
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -12,8 +13,11 @@ from pydantic import BaseModel
 from db.database import get_db
 from db.models import AIConfig
 from ai.manager import (
-    create_provider, available_providers, fetch_models,
-    get_default_config, mask_api_key,
+    create_provider,
+    available_providers,
+    fetch_models,
+    get_default_config,
+    mask_api_key,
 )
 from services import document_service as doc_svc
 from api.schemas.api_models import ApplyAIRequest
@@ -59,6 +63,7 @@ async def list_ai_providers():
 async def get_ai_model_status():
     """获取所有已配置 AI 模型的可用性状态（每 60 秒自动检测）。"""
     from services.model_health import get_all_statuses
+
     statuses = get_all_statuses()
     return {"statuses": statuses, "total": len(statuses)}
 
@@ -163,6 +168,7 @@ async def delete_ai_config(provider: str, db: Session = Depends(get_db)):
     # 同步清理模型健康检测缓存，避免状态列表残留已删除的服务商
     try:
         from services import model_health
+
         model_health._provider_statuses.pop(provider, None)
     except Exception:
         pass
@@ -322,6 +328,7 @@ async def ai_analyze(doc_id: int, provider: str = "openai", document_type: str =
     try:
         # 解析文档内容
         from core.document.parser import parse_docx
+
         doc_model = parse_docx(doc.file_path)
         doc_text = "\n".join([p.text for p in doc_model.paragraphs if p.text.strip()])
 

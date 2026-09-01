@@ -9,6 +9,7 @@ Configuration:
 - Retry logic for SQLITE_BUSY / database is locked errors
 - Singleton engine with connection pooling
 """
+
 import time
 import functools
 from typing import Callable, Any
@@ -27,6 +28,7 @@ _DB_RETRY_DELAY = 0.05  # initial delay in seconds (exponential backoff)
 
 def _retry_on_locked(func: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator: retry on 'database is locked' errors with exponential backoff."""
+
     @functools.wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         last_exc = None
@@ -43,11 +45,13 @@ def _retry_on_locked(func: Callable[..., Any]) -> Callable[..., Any]:
                         continue
                 raise
         raise last_exc  # type: ignore[misc]
+
     return wrapper
 
 
 class Base(DeclarativeBase):
     """Declarative base for all ORM models."""
+
     pass
 
 
@@ -77,6 +81,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 def init_db() -> None:
     """Create all tables if they do not exist."""
     from db.models import Document, DocumentVersion, CheckResult, AIConfig, Rule  # noqa: F401
+
     Base.metadata.create_all(bind=engine)
 
 
@@ -87,4 +92,3 @@ def get_db():
         yield db
     finally:
         db.close()
-

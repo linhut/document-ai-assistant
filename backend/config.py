@@ -11,6 +11,7 @@
 开发模式：两者相同，均指向项目根目录。
 生产模式：BASE_DIR 指向安装目录 resources/，APP_DATA_DIR 指向 Electron userData。
 """
+
 import os
 import sys
 from pathlib import Path
@@ -18,7 +19,7 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 #  BASE_DIR: 只读资源根目录
 # ---------------------------------------------------------------------------
-if getattr(sys, 'frozen', False):
+if getattr(sys, "frozen", False):
     # PyInstaller 打包后：exe 在 resources/backend_server/ 中，
     # BASE_DIR 指向上级 resources/ 目录（与 rules/、templates/、TTF/ 同级）
     BASE_DIR = Path(sys.executable).resolve().parent.parent
@@ -39,10 +40,7 @@ else:
 # ---------------------------------------------------------------------------
 #  数据库
 # ---------------------------------------------------------------------------
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    f"sqlite:///{APP_DATA_DIR / 'app.db'}"
-)
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{APP_DATA_DIR / 'app.db'}")
 
 # ---------------------------------------------------------------------------
 #  可写目录（运行时数据 → APP_DATA_DIR）
@@ -70,8 +68,13 @@ API_PORT = int(os.getenv("API_PORT", "8765"))
 #  自动创建所有必需目录
 # ---------------------------------------------------------------------------
 _writable_dirs = [
-    UPLOAD_DIR, OUTPUT_DIR, LOG_DIR, TEMP_DIR,
-    USER_RULES_DIR, CUSTOM_RULES_DIR, USER_TEMPLATES_DIR,
+    UPLOAD_DIR,
+    OUTPUT_DIR,
+    LOG_DIR,
+    TEMP_DIR,
+    USER_RULES_DIR,
+    CUSTOM_RULES_DIR,
+    USER_TEMPLATES_DIR,
 ]
 for _d in _writable_dirs:
     _d.mkdir(parents=True, exist_ok=True)

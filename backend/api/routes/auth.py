@@ -8,6 +8,7 @@ Authentication API routes.
 Provides token management endpoints (view / refresh).
 All endpoints in this router require a valid Bearer token.
 """
+
 from fastapi import APIRouter
 
 from auth import get_auth_token, regenerate_token

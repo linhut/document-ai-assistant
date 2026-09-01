@@ -10,17 +10,27 @@ Rule-based fixer: interprets YAML fix_rules and delegates to DocumentModifier.
 流程：
   YAML fix_rules → apply_fixes() → modifier.*() → DocumentModel
 """
+
 from __future__ import annotations
 from typing import Any
 
 from core.document.models import DocumentModel
 from core.document.modifier import (
-    modify_font, modify_size, modify_alignment, modify_line_spacing,
-    modify_first_line_indent, modify_margins, modify_bold,
-    remove_extra_spaces, remove_extra_blank_lines,
-    normalize_punctuation, normalize_heading_content,
-    convert_markdown, fix_bold_range,
-    _parse_pt_value, _parse_indent_value,
+    modify_font,
+    modify_size,
+    modify_alignment,
+    modify_line_spacing,
+    modify_first_line_indent,
+    modify_margins,
+    modify_bold,
+    remove_extra_spaces,
+    remove_extra_blank_lines,
+    normalize_punctuation,
+    normalize_heading_content,
+    convert_markdown,
+    fix_bold_range,
+    _parse_pt_value,
+    _parse_indent_value,
 )
 from utils.logger import logger
 
@@ -38,8 +48,12 @@ _ACTION_MAP = {
     "set_line_spacing_multiple": lambda model, target, value, _rules: modify_line_spacing(
         model, target, _parse_pt_value(value), spacing_rule="multiple"
     ),
-    "set_first_line_indent": lambda model, target, value, _rules: modify_first_line_indent(model, target, _parse_indent_value(value)),
-    "set_indent": lambda model, target, value, _rules: modify_first_line_indent(model, target, _parse_indent_value(value)),
+    "set_first_line_indent": lambda model, target, value, _rules: modify_first_line_indent(
+        model, target, _parse_indent_value(value)
+    ),
+    "set_indent": lambda model, target, value, _rules: modify_first_line_indent(
+        model, target, _parse_indent_value(value)
+    ),
     "set_margins": lambda model, target, value, _rules: modify_margins(model, value),
     "set_page_margins": lambda model, target, value, _rules: modify_margins(model, value),
     "remove_extra_spaces": lambda model, _target, _value, _rules: remove_extra_spaces(model),
@@ -53,7 +67,9 @@ _ACTION_MAP = {
 }
 
 
-def apply_fixes(model: DocumentModel, rules: dict[str, Any], selected_rule_ids: list[str] | None = None) -> DocumentModel:
+def apply_fixes(
+    model: DocumentModel, rules: dict[str, Any], selected_rule_ids: list[str] | None = None
+) -> DocumentModel:
     """
     Apply fix_rules from the rule set to the document model.
 
@@ -70,6 +86,7 @@ def apply_fixes(model: DocumentModel, rules: dict[str, Any], selected_rule_ids: 
         A new DocumentModel with fixes applied
     """
     import copy
+
     fixed = copy.deepcopy(model)
     fix_rules = rules.get("fix_rules", [])
 
@@ -77,7 +94,9 @@ def apply_fixes(model: DocumentModel, rules: dict[str, Any], selected_rule_ids: 
     if selected_rule_ids is not None:
         selected_set = set(selected_rule_ids)
         fix_rules = [r for r in fix_rules if r.get("id") in selected_set]
-        logger.info(f"Applying {len(fix_rules)} of {len(rules.get('fix_rules', []))} fix rules (selected: {len(selected_set)} IDs)")
+        logger.info(
+            f"Applying {len(fix_rules)} of {len(rules.get('fix_rules', []))} fix rules (selected: {len(selected_set)} IDs)"
+        )
     else:
         logger.info(f"Applying {len(fix_rules)} fix rules")
 
@@ -97,9 +116,12 @@ def apply_fixes(model: DocumentModel, rules: dict[str, Any], selected_rule_ids: 
 
         # 需要 value 的动作（排除 remove_* 和 normalize_* 类动作）
         if value is None and action not in (
-            "remove_extra_spaces", "remove_extra_blank_lines",
-            "normalize_punctuation", "normalize_headings",
-            "strip_markdown", "convert_markdown",
+            "remove_extra_spaces",
+            "remove_extra_blank_lines",
+            "normalize_punctuation",
+            "normalize_headings",
+            "strip_markdown",
+            "convert_markdown",
             "fix_bold_range",  # fix_bold_range 不需要 value 参数
         ):
             logger.warning(f"Fix rule {rule_id} missing required 'value' field, skipping")
@@ -120,7 +142,7 @@ def apply_fixes(model: DocumentModel, rules: dict[str, Any], selected_rule_ids: 
 def _apply_page_number(model: DocumentModel, target: str, value: dict) -> None:
     """
     Apply page number formatting to the document footer.
-    
+
     value format:
         {
             "font": "宋体",
@@ -158,6 +180,7 @@ def _apply_page_number(model: DocumentModel, target: str, value: dict) -> None:
     # 如果没有 footer 段落，创建一个新的
     if not model.footers:
         from core.document.models import HeaderFooter, Paragraph, Run, RunFormat
+
         hf = HeaderFooter(
             section_index=0,
             type="footer",
@@ -167,10 +190,17 @@ def _apply_page_number(model: DocumentModel, target: str, value: dict) -> None:
                 Paragraph(
                     index=0,
                     text=fmt,
-                    runs=[Run(index=0, text=fmt, format=RunFormat(
-                        font_name=font, font_size_pt=size_pt,
-                    ))],
-                    format=__import__('core.document.models', fromlist=['ParagraphFormat']).ParagraphFormat(
+                    runs=[
+                        Run(
+                            index=0,
+                            text=fmt,
+                            format=RunFormat(
+                                font_name=font,
+                                font_size_pt=size_pt,
+                            ),
+                        )
+                    ],
+                    format=__import__("core.document.models", fromlist=["ParagraphFormat"]).ParagraphFormat(
                         alignment=alignment,
                     ),
                 )

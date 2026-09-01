@@ -15,6 +15,7 @@ Licensed under the MIT License. See the LICENSE file for details.
   python wfp_cli.py check input.docx --doc-type notice
   python wfp_cli.py optimize input.docx --doc-type notice -o output.docx
 """
+
 import argparse
 import sys
 from pathlib import Path
@@ -33,22 +34,24 @@ def cmd_format(args):
 
     engine = RuleEngine()
     input_path = Path(args.input)
-    output_path = Path(args.output) if args.output else input_path.with_stem(input_path.stem + '_formatted')
+    output_path = Path(args.output) if args.output else input_path.with_stem(input_path.stem + "_formatted")
 
     try:
         model = parse_docx(str(input_path))
-        doc_type = args.doc_type or 'notice'
+        doc_type = args.doc_type or "notice"
 
         if args.apply_fixes:
-            issues, fixed_model = engine.check_and_fix(model, doc_type, args.selected_rules.split(',') if args.selected_rules else None)
+            issues, fixed_model = engine.check_and_fix(
+                model, doc_type, args.selected_rules.split(",") if args.selected_rules else None
+            )
         else:
             issues = engine.check(model, doc_type)
             fixed_model = model
 
         generate_docx(fixed_model, str(output_path))
-        print(f'格式化完成: {output_path} (修复 {len(issues)} 项)')
+        print(f"格式化完成: {output_path} (修复 {len(issues)} 项)")
     except Exception as e:
-        logger.error(f'格式化失败: {e}')
+        logger.error(f"格式化失败: {e}")
         sys.exit(1)
 
 
@@ -59,7 +62,7 @@ def cmd_check(args):
 
     engine = RuleEngine()
     input_path = Path(args.input)
-    doc_type = args.doc_type or 'notice'
+    doc_type = args.doc_type or "notice"
 
     try:
         model = parse_docx(str(input_path))
@@ -68,23 +71,31 @@ def cmd_check(args):
         if args.severity:
             issues = [i for i in issues if i.severity == args.severity]
 
-        print(f'检查完成: {len(issues)} 个问题')
+        print(f"检查完成: {len(issues)} 个问题")
         for issue in issues:
-            print(f'  [{issue.severity}] {issue.rule_id}: {issue.name} @ {issue.location}')
-            print(f'    期望: {issue.suggested_fix}')
-            print(f'    实际: {issue.original_text}')
+            print(f"  [{issue.severity}] {issue.rule_id}: {issue.name} @ {issue.location}")
+            print(f"    期望: {issue.suggested_fix}")
+            print(f"    实际: {issue.original_text}")
 
         if args.json:
             import json
-            results = [{
-                'severity': i.severity, 'rule_id': i.rule_id, 'name': i.name,
-                'location': i.location, 'original': i.original_text,
-                'suggested': i.suggested_fix, 'reason': i.reason,
-            } for i in issues]
+
+            results = [
+                {
+                    "severity": i.severity,
+                    "rule_id": i.rule_id,
+                    "name": i.name,
+                    "location": i.location,
+                    "original": i.original_text,
+                    "suggested": i.suggested_fix,
+                    "reason": i.reason,
+                }
+                for i in issues
+            ]
             print(json.dumps(results, ensure_ascii=False, indent=2))
 
     except Exception as e:
-        logger.error(f'检查失败: {e}')
+        logger.error(f"检查失败: {e}")
         sys.exit(1)
 
 
@@ -96,55 +107,55 @@ def cmd_optimize(args):
 
     engine = RuleEngine()
     input_path = Path(args.input)
-    output_path = Path(args.output) if args.output else input_path.with_stem(input_path.stem + '_optimized')
+    output_path = Path(args.output) if args.output else input_path.with_stem(input_path.stem + "_optimized")
 
     try:
         model = parse_docx(str(input_path))
-        doc_type = args.doc_type or 'notice'
+        doc_type = args.doc_type or "notice"
         issues, fixed_model = engine.check_and_fix(model, doc_type)
 
         generate_docx(fixed_model, str(output_path))
 
-        p0 = sum(1 for i in issues if i.severity == 'P0')
-        p1 = sum(1 for i in issues if i.severity == 'P1')
-        p2 = sum(1 for i in issues if i.severity == 'P2')
+        p0 = sum(1 for i in issues if i.severity == "P0")
+        p1 = sum(1 for i in issues if i.severity == "P1")
+        p2 = sum(1 for i in issues if i.severity == "P2")
 
-        print(f'优化完成: {output_path}')
-        print(f'  修复 {len(issues)} 项 (P0:{p0}, P1:{p1}, P2:{p2})')
+        print(f"优化完成: {output_path}")
+        print(f"  修复 {len(issues)} 项 (P0:{p0}, P1:{p1}, P2:{p2})")
     except Exception as e:
-        logger.error(f'优化失败: {e}')
+        logger.error(f"优化失败: {e}")
         sys.exit(1)
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description='公文文档优化器 CLI',
+        description="公文文档优化器 CLI",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    subparsers = parser.add_subparsers(dest='command', help='子命令')
+    subparsers = parser.add_subparsers(dest="command", help="子命令")
 
     # format 子命令
-    fmt_parser = subparsers.add_parser('format', help='格式化文档')
-    fmt_parser.add_argument('input', help='输入文件路径')
-    fmt_parser.add_argument('-o', '--output', help='输出文件路径')
-    fmt_parser.add_argument('-t', '--doc-type', default='notice', help='文档类型 (默认: notice)')
-    fmt_parser.add_argument('--apply-fixes', action='store_true', default=True, help='应用修复 (默认: True)')
-    fmt_parser.add_argument('--selected-rules', help='仅应用指定规则ID，逗号分隔')
+    fmt_parser = subparsers.add_parser("format", help="格式化文档")
+    fmt_parser.add_argument("input", help="输入文件路径")
+    fmt_parser.add_argument("-o", "--output", help="输出文件路径")
+    fmt_parser.add_argument("-t", "--doc-type", default="notice", help="文档类型 (默认: notice)")
+    fmt_parser.add_argument("--apply-fixes", action="store_true", default=True, help="应用修复 (默认: True)")
+    fmt_parser.add_argument("--selected-rules", help="仅应用指定规则ID，逗号分隔")
     fmt_parser.set_defaults(func=cmd_format)
 
     # check 子命令
-    chk_parser = subparsers.add_parser('check', help='检查文档格式')
-    chk_parser.add_argument('input', help='输入文件路径')
-    chk_parser.add_argument('-t', '--doc-type', default='notice', help='文档类型')
-    chk_parser.add_argument('-s', '--severity', choices=['P0', 'P1', 'P2'], help='仅显示指定严重级别')
-    chk_parser.add_argument('--json', action='store_true', help='输出JSON格式')
+    chk_parser = subparsers.add_parser("check", help="检查文档格式")
+    chk_parser.add_argument("input", help="输入文件路径")
+    chk_parser.add_argument("-t", "--doc-type", default="notice", help="文档类型")
+    chk_parser.add_argument("-s", "--severity", choices=["P0", "P1", "P2"], help="仅显示指定严重级别")
+    chk_parser.add_argument("--json", action="store_true", help="输出JSON格式")
     chk_parser.set_defaults(func=cmd_check)
 
     # optimize 子命令
-    opt_parser = subparsers.add_parser('optimize', help='优化文档')
-    opt_parser.add_argument('input', help='输入文件路径')
-    opt_parser.add_argument('-o', '--output', help='输出文件路径')
-    opt_parser.add_argument('-t', '--doc-type', default='notice', help='文档类型')
+    opt_parser = subparsers.add_parser("optimize", help="优化文档")
+    opt_parser.add_argument("input", help="输入文件路径")
+    opt_parser.add_argument("-o", "--output", help="输出文件路径")
+    opt_parser.add_argument("-t", "--doc-type", default="notice", help="文档类型")
     opt_parser.set_defaults(func=cmd_optimize)
 
     args = parser.parse_args()
@@ -155,5 +166,5 @@ def main():
     args.func(args)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

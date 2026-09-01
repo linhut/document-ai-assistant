@@ -13,6 +13,7 @@ Style Generator: 将 YAML 模板转换为 Word 模板文件（.dotx / .docx）�
   - 样式写入 Word 样式库
   - 用户新建文档时自动继承样式
 """
+
 from __future__ import annotations
 from pathlib import Path
 
@@ -35,8 +36,7 @@ _ALIGN_MAP = {
 }
 
 
-def generate_docx_template(template_id: str, output_path: Path | str,
-                            content: dict | None = None) -> Path:
+def generate_docx_template(template_id: str, output_path: Path | str, content: dict | None = None) -> Path:
     """
     从 YAML 模板生成 .docx 模板文档。
 
@@ -116,6 +116,7 @@ def generate_dotx_template(template_id: str, output_path: Path | str) -> Path:
     # 重命名为 .dotx 并修正 Content Type
     if output_path.suffix == ".dotx":
         import shutil
+
         shutil.move(str(temp_docx), str(output_path))
         _fix_dotx_content_type(output_path)
     else:
@@ -133,29 +134,30 @@ def _fix_dotx_content_type(dotx_path: Path) -> None:
     """
     import zipfile
 
-    content_types_xml = '[Content_Types].xml'
+    content_types_xml = "[Content_Types].xml"
     # document → template 的替换对
     replacements = [
         (
-            'wordprocessingml.document.main+xml',
-            'wordprocessingml.template.main+xml',
+            "wordprocessingml.document.main+xml",
+            "wordprocessingml.template.main+xml",
         ),
     ]
 
-    tmp_path = dotx_path.with_suffix('.dotx.tmp')
+    tmp_path = dotx_path.with_suffix(".dotx.tmp")
     try:
-        with zipfile.ZipFile(dotx_path, 'r') as zin:
-            with zipfile.ZipFile(tmp_path, 'w', zipfile.ZIP_DEFLATED) as zout:
+        with zipfile.ZipFile(dotx_path, "r") as zin:
+            with zipfile.ZipFile(tmp_path, "w", zipfile.ZIP_DEFLATED) as zout:
                 for item in zin.infolist():
                     data = zin.read(item.filename)
                     if item.filename == content_types_xml:
-                        text = data.decode('utf-8')
+                        text = data.decode("utf-8")
                         for old, new in replacements:
                             text = text.replace(old, new)
-                        data = text.encode('utf-8')
+                        data = text.encode("utf-8")
                     zout.writestr(item, data)
         # 替换原文件
         import shutil
+
         shutil.move(str(tmp_path), str(dotx_path))
     except Exception as e:
         logger.warning(f"Failed to fix dotx content type: {e}")
@@ -167,6 +169,7 @@ def _fix_dotx_content_type(dotx_path: Path) -> None:
 # ---------------------------------------------------------------------------
 #  Internal helpers
 # ---------------------------------------------------------------------------
+
 
 def _apply_page_setup(doc: Document, page_config: dict):
     """应用页面设置。"""
@@ -247,15 +250,15 @@ def _apply_style(style, style_def: dict):
         from docx.oxml.ns import qn
 
         rPr = style.element.get_or_add_rPr()
-        rFonts = rPr.find(qn('w:rFonts'))
+        rFonts = rPr.find(qn("w:rFonts"))
         if rFonts is None:
-            rFonts = OxmlElement('w:rFonts')
+            rFonts = OxmlElement("w:rFonts")
             rPr.insert(0, rFonts)
 
-        rFonts.set(qn('w:ascii'), font_latin)
-        rFonts.set(qn('w:hAnsi'), font_latin)
-        rFonts.set(qn('w:eastAsia'), font_ea)
-        rFonts.set(qn('w:cs'), font_ea)
+        rFonts.set(qn("w:ascii"), font_latin)
+        rFonts.set(qn("w:hAnsi"), font_latin)
+        rFonts.set(qn("w:eastAsia"), font_ea)
+        rFonts.set(qn("w:cs"), font_ea)
 
     # 对齐
     pf = style.paragraph_format
@@ -354,7 +357,7 @@ def _add_sample_content(doc: Document, template: dict):
             set_run_font(run, body_font)
 
 
-def _parse_margin(value) -> 'Mm':
+def _parse_margin(value) -> "Mm":
     """解析页边距值。"""
     value = str(value).strip()
     if "cm" in value:

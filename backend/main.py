@@ -9,6 +9,7 @@ AI 公文智能优化助手 - FastAPI 后端入口
   --port PORT    监听端口 (默认 8765)
   --force        端口被占用时自动杀死旧进程
 """
+
 import argparse
 import os
 import signal
@@ -36,13 +37,16 @@ DEFAULT_PORT = 8765
 # 端口占用检测 & 旧进程清理
 # ---------------------------------------------------------------------------
 
+
 def _find_pid_on_port(port: int) -> int | None:
     """查找占用指定端口的进程 PID (仅 Windows)。"""
     if sys.platform != "win32":
         return None
     try:
         output = subprocess.check_output(
-            ["netstat", "-ano"], text=True, stderr=subprocess.DEVNULL,
+            ["netstat", "-ano"],
+            text=True,
+            stderr=subprocess.DEVNULL,
         )
         for line in output.splitlines():
             if f":{port}" in line and "LISTENING" in line:
@@ -62,7 +66,9 @@ def _kill_pid(pid: int) -> bool:
     try:
         subprocess.run(
             ["taskkill", "/F", "/T", "/PID", str(pid)],
-            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
         return True
     except subprocess.CalledProcessError:
@@ -93,6 +99,7 @@ def _check_and_free_port(port: int, force: bool) -> None:
         if _kill_pid(pid):
             # 等待端口释放（最多 3 秒）
             import time
+
             for _ in range(30):
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                     if s.connect_ex((HOST, port)) != 0:
@@ -107,6 +114,7 @@ def _check_and_free_port(port: int, force: bool) -> None:
 
 def _setup_signal_handlers() -> None:
     """注册信号处理，确保 Ctrl+C 时优雅退出。"""
+
     def _shutdown(signum, frame):
         print("\n[shutdown] 收到终止信号，正在关闭...")
         sys.exit(0)
@@ -165,6 +173,7 @@ async def startup():
     _log_directory_status()
     # 启动 AI 模型可用性定时检测（每 60 秒）
     from services.model_health import start_health_checker
+
     await start_health_checker()
 
 
@@ -235,7 +244,9 @@ def _init_default_ai_config():
                     db.commit()
                     logger.info("Fixed incomplete AI config")
                 else:
-                    print(f"[startup] AI config: {existing.provider} @ {existing.base_url} (active={existing.is_active})")
+                    print(
+                        f"[startup] AI config: {existing.provider} @ {existing.base_url} (active={existing.is_active})"
+                    )
         finally:
             db.close()
     except Exception as e:
@@ -244,12 +255,7 @@ def _init_default_ai_config():
 
 @app.get("/")
 async def root():
-    return {
-        "app": "Official Document AI Assistant",
-        "version": app.version,
-        "docs": "/docs",
-        "health": "/api/health"
-    }
+    return {"app": "Official Document AI Assistant", "version": app.version, "docs": "/docs", "health": "/api/health"}
 
 
 @app.get("/api/health")
@@ -271,6 +277,7 @@ if __name__ == "__main__":
             cfg_path = Path(__file__).resolve().parent.parent / "data" / "network_config.json"
             if cfg_path.exists():
                 import json as _json
+
                 cfg = _json.loads(cfg_path.read_text(encoding="utf-8"))
                 bind_host = "0.0.0.0" if cfg.get("web_access_enabled", True) else HOST
             else:

@@ -5,6 +5,7 @@
 一键验证脚本 — 测试文档生成 + 字体 + 后端API
 用法：cd backend && python verify_all.py
 """
+
 import sys
 import zipfile
 from pathlib import Path
@@ -17,9 +18,9 @@ WORD_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 
 
 def section(title):
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  {title}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
 
 def check(ok, msg):
@@ -39,28 +40,50 @@ def test_font_generation():
     model = DocumentModel(
         filename="verify_test.docx",
         page_setup=PageSetup(
-            paper_width_mm=210, paper_height_mm=297,
-            margin_top_mm=37, margin_bottom_mm=35,
-            margin_left_mm=28, margin_right_mm=26,
+            paper_width_mm=210,
+            paper_height_mm=297,
+            margin_top_mm=37,
+            margin_bottom_mm=35,
+            margin_left_mm=28,
+            margin_right_mm=26,
         ),
         paragraphs=[
             Paragraph(
-                text="关于XXX工作的通知", index=0, is_heading=True, heading_level=1,
+                text="关于XXX工作的通知",
+                index=0,
+                is_heading=True,
+                heading_level=1,
                 format=ParagraphFormat(alignment="center"),
-                runs=[Run(index=0, text="关于XXX工作的通知", format=RunFormat(
-                    font_name=TITLE_FONT, font_size_pt=22,
-                ))],
+                runs=[
+                    Run(
+                        index=0,
+                        text="关于XXX工作的通知",
+                        format=RunFormat(
+                            font_name=TITLE_FONT,
+                            font_size_pt=22,
+                        ),
+                    )
+                ],
             ),
             Paragraph(
-                text="各部门、各单位：根据上级要求，现将有关事项通知如下。", index=1,
+                text="各部门、各单位：根据上级要求，现将有关事项通知如下。",
+                index=1,
                 format=ParagraphFormat(alignment="justify", first_line_indent_pt=32, line_spacing_pt=28.95),
-                runs=[Run(index=0, text="各部门、各单位：根据上级要求，现将有关事项通知如下。", format=RunFormat(
-                    font_name=BODY_FONT, font_size_pt=16,
-                ))],
+                runs=[
+                    Run(
+                        index=0,
+                        text="各部门、各单位：根据上级要求，现将有关事项通知如下。",
+                        format=RunFormat(
+                            font_name=BODY_FONT,
+                            font_size_pt=16,
+                        ),
+                    )
+                ],
             ),
             # 无 run 的段落（测试默认字体回退）
             Paragraph(
-                text="", index=2,
+                text="",
+                index=2,
                 format=ParagraphFormat(),
                 runs=[],
             ),
@@ -113,6 +136,7 @@ def test_font_generation():
     # --- 全面格式验证 ---
     section("1b. 页面设置 + 段落格式验证")
     from docx import Document as DocxDocument
+
     doc = DocxDocument(str(output))
     sec = doc.sections[0]
 

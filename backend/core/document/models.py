@@ -5,6 +5,7 @@
 Pydantic data models for the intermediate document representation.
 All operations work on this JSON model -- never directly on python-docx objects.
 """
+
 from __future__ import annotations
 from pydantic import BaseModel, Field
 from typing import Optional
@@ -14,8 +15,10 @@ from typing import Optional
 #  Primitives
 # ---------------------------------------------------------------------------
 
+
 class RunFormat(BaseModel):
     """Formatting information for a single text run."""
+
     font_name: Optional[str] = None
     font_size_pt: Optional[float] = None
     bold: Optional[bool] = None
@@ -26,6 +29,7 @@ class RunFormat(BaseModel):
 
 class Run(BaseModel):
     """A contiguous span of text sharing the same formatting."""
+
     index: int = 0
     text: str
     format: RunFormat = Field(default_factory=RunFormat)
@@ -33,7 +37,8 @@ class Run(BaseModel):
 
 class ParagraphFormat(BaseModel):
     """Paragraph-level formatting."""
-    alignment: Optional[str] = None          # left / center / right / justify
+
+    alignment: Optional[str] = None  # left / center / right / justify
     first_line_indent_pt: Optional[float] = None
     left_indent_pt: Optional[float] = None
     right_indent_pt: Optional[float] = None
@@ -45,18 +50,20 @@ class ParagraphFormat(BaseModel):
 
 class Paragraph(BaseModel):
     """A single paragraph in the document."""
+
     index: int
     text: str
     style_name: Optional[str] = None
     is_heading: bool = False
-    heading_level: Optional[int] = None      # 1-9 for Word heading levels
-    role: Optional[str] = None               # 段落角色: title/recipient/body/signature/date/attachment/cc/notes
+    heading_level: Optional[int] = None  # 1-9 for Word heading levels
+    role: Optional[str] = None  # 段落角色: title/recipient/body/signature/date/attachment/cc/notes
     runs: list[Run] = Field(default_factory=list)
     format: ParagraphFormat = Field(default_factory=ParagraphFormat)
 
 
 class TableCell(BaseModel):
     """A single cell inside a table."""
+
     row: int
     col: int
     text: str
@@ -65,6 +72,7 @@ class TableCell(BaseModel):
 
 class Table(BaseModel):
     """A table in the document."""
+
     index: int
     rows: int
     cols: int
@@ -74,19 +82,22 @@ class Table(BaseModel):
 
 class HeaderFooter(BaseModel):
     """Content in a page header or footer."""
+
     section_index: int = 0
-    type: str = "header"                     # header / footer
+    type: str = "header"  # header / footer
     text: str = ""
     paragraphs: list[Paragraph] = Field(default_factory=list)
-    has_page_number: bool = False            # 是否包含页码域
+    has_page_number: bool = False  # 是否包含页码域
 
 
 # ---------------------------------------------------------------------------
 #  Page setup
 # ---------------------------------------------------------------------------
 
+
 class PageSetup(BaseModel):
     """Page layout settings."""
+
     paper_width_mm: Optional[float] = None
     paper_height_mm: Optional[float] = None
     margin_top_mm: Optional[float] = None
@@ -100,8 +111,10 @@ class PageSetup(BaseModel):
 #  Metadata
 # ---------------------------------------------------------------------------
 
+
 class DocumentMetadata(BaseModel):
     """Document-level metadata."""
+
     title: Optional[str] = None
     author: Optional[str] = None
     subject: Optional[str] = None
@@ -114,11 +127,13 @@ class DocumentMetadata(BaseModel):
 #  Top-level Document Model
 # ---------------------------------------------------------------------------
 
+
 class DocumentModel(BaseModel):
     """
     The canonical intermediate representation of a Word document.
     All rule engine checks and modifications operate on this model.
     """
+
     metadata: DocumentMetadata = Field(default_factory=DocumentMetadata)
     page_setup: PageSetup = Field(default_factory=PageSetup)
     paragraphs: list[Paragraph] = Field(default_factory=list)

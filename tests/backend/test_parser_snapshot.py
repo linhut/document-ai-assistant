@@ -8,6 +8,7 @@ Usage:
     pytest tests/backend/test_parser_snapshot.py -v --snapshot-update  (to update snapshots)
     pytest tests/backend/test_parser_snapshot.py -v                  (to verify)
 """
+
 import json
 import pytest
 from pathlib import Path
@@ -25,6 +26,7 @@ SAMPLE_FILE = FIXTURES_DIR / "test_notice.docx"
 
 
 # === Helpers ===
+
 
 def _normalize_model(model: DocumentModel) -> dict:
     """Serialize DocumentModel to a JSON-safe dict, excluding transient fields."""
@@ -49,6 +51,7 @@ def _save_snapshot(model: DocumentModel) -> None:
 
 
 # === Tests ===
+
 
 @pytest.mark.skipif(not SAMPLE_FILE.exists(), reason=f"Sample file not found: {SAMPLE_FILE}")
 def test_parse_snapshot():
@@ -97,10 +100,12 @@ def test_generate_roundtrip():
     model2 = parse_docx(result_path)
 
     # Compare basic structure
-    assert len(model1.paragraphs) == len(model2.paragraphs), \
+    assert len(model1.paragraphs) == len(model2.paragraphs), (
         f"Paragraph count mismatch: {len(model1.paragraphs)} vs {len(model2.paragraphs)}"
-    assert len(model1.tables) == len(model2.tables), \
+    )
+    assert len(model1.tables) == len(model2.tables), (
         f"Table count mismatch: {len(model1.tables)} vs {len(model2.tables)}"
+    )
 
     # Compare text content of paragraphs
     for i, (p1, p2) in enumerate(zip(model1.paragraphs, model2.paragraphs)):
@@ -140,9 +145,11 @@ def test_page_setup_preserved():
     ps = model.page_setup
     assert ps is not None, "PageSetup should not be None"
 
-    print(f"Page setup: width={ps.paper_width_mm}, height={ps.paper_height_mm}, "
-          f"margin_top={ps.margin_top_mm}, margin_bottom={ps.margin_bottom_mm}, "
-          f"margin_left={ps.margin_left_mm}, margin_right={ps.margin_right_mm}")
+    print(
+        f"Page setup: width={ps.paper_width_mm}, height={ps.paper_height_mm}, "
+        f"margin_top={ps.margin_top_mm}, margin_bottom={ps.margin_bottom_mm}, "
+        f"margin_left={ps.margin_left_mm}, margin_right={ps.margin_right_mm}"
+    )
 
     # Roundtrip
     ROUNDTRIP_FILE.parent.mkdir(parents=True, exist_ok=True)

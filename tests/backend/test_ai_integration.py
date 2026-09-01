@@ -4,6 +4,7 @@
 """
 Test suite for AI Integration (Phase 5).
 """
+
 import asyncio
 from ai.manager import create_provider, available_providers
 
@@ -23,11 +24,7 @@ def test_openai_provider_mock():
     """Test OpenAI provider with mock API (will fail without real API key)."""
     # This is a structure test - real API test requires valid key
     try:
-        provider = create_provider(
-            "openai",
-            api_key="sk-test-key-mock",
-            model="gpt-4o-mini"
-        )
+        provider = create_provider("openai", api_key="sk-test-key-mock", model="gpt-4o-mini")
         assert provider.name == "openai"
         assert provider.model == "gpt-4o-mini"
         print(f"OpenAI provider created: {provider.name}")
@@ -37,11 +34,7 @@ def test_openai_provider_mock():
 
 def test_deepseek_provider_structure():
     """Test DeepSeek provider structure."""
-    provider = create_provider(
-        "deepseek",
-        api_key="test-key",
-        model="deepseek-chat"
-    )
+    provider = create_provider("deepseek", api_key="test-key", model="deepseek-chat")
     assert provider.name == "deepseek"
     print(f"DeepSeek provider created: {provider.name}")
 
@@ -49,10 +42,7 @@ def test_deepseek_provider_structure():
 def test_custom_provider_structure():
     """Test Custom provider structure."""
     provider = create_provider(
-        "custom",
-        api_key="test-key",
-        base_url="https://api.example.com/v1",
-        model="custom-model"
+        "custom", api_key="test-key", base_url="https://api.example.com/v1", model="custom-model"
     )
     assert provider.name == "custom"
     print(f"Custom provider created: {provider.name}")

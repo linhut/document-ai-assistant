@@ -4,6 +4,7 @@
 """
 YAML rule file loader. Reads rule definitions from the rules/ directory.
 """
+
 from pathlib import Path
 from typing import Any
 import yaml

@@ -4,6 +4,7 @@
 """
 Document service: business logic for document upload, check, optimize operations.
 """
+
 from __future__ import annotations
 import re
 import shutil
@@ -25,12 +26,14 @@ def clear_rule_cache() -> None:
     """清除规则引擎缓存，供外部模块调用。"""
     _rule_engine.clear_cache()
 
+
 # 输出文件名后缀
 _OPTIMIZED_SUFFIX = "_optimized.docx"
 
 # 文件名→文档类型映射（基于关键词）
 _TYPE_KEYWORDS: dict[str, str] = {
-    "命令": "command", "令": "command",
+    "命令": "command",
+    "令": "command",
     "决定": "decision",
     "公告": "notice_public",
     "通告": "announcement",
@@ -41,14 +44,16 @@ _TYPE_KEYWORDS: dict[str, str] = {
     "请示": "request",
     "批复": "reply",
     "函": "letter",
-    "纪要": "minutes", "会议纪要": "meeting",
+    "纪要": "minutes",
+    "会议纪要": "meeting",
     "决议": "resolution",
     "指示": "instruction",
     "制度": "regulation",
     "公报": "communique",
     "意见": "opinion",
     "总结": "summary",
-    "方案": "work_plan", "计划": "work_plan",
+    "方案": "work_plan",
+    "计划": "work_plan",
     "桌签": "table_sign",
     "技术方案": "technical_proposal",
 }
@@ -69,7 +74,7 @@ def _safe_filename(filename: str) -> str:
     # 取最后一个路径分隔符之后的部分
     name = Path(filename).name
     # 移除危险字符，保留中文、字母、数字、下划线、点、连字符
-    safe = re.sub(r'[^\w一-鿿._-]', '_', name)
+    safe = re.sub(r"[^\w一-鿿._-]", "_", name)
     return safe or "upload.docx"
 
 
@@ -148,16 +153,18 @@ def check_document(db: Session, doc_id: int, doc_type: str | None = None) -> dic
                 p1 += 1
             else:
                 p2 += 1
-            db.add(CheckResult(
-                document_id=doc_id,
-                check_type=issue.check_type,
-                severity=issue.severity,
-                rule_id=issue.rule_id,
-                location=issue.location,
-                original_text=issue.original_text,
-                suggested_fix=issue.suggested_fix,
-                reason=issue.reason,
-            ))
+            db.add(
+                CheckResult(
+                    document_id=doc_id,
+                    check_type=issue.check_type,
+                    severity=issue.severity,
+                    rule_id=issue.rule_id,
+                    location=issue.location,
+                    original_text=issue.original_text,
+                    suggested_fix=issue.suggested_fix,
+                    reason=issue.reason,
+                )
+            )
         doc.status = "checked"
         db.commit()
     except Exception as e:
@@ -190,7 +197,10 @@ def update_issue_status(db: Session, issue_id: int, status: str) -> bool:
 
 
 def optimize_document(
-    db: Session, doc_id: int, doc_type: str | None = None, apply_fixes: bool = True,
+    db: Session,
+    doc_id: int,
+    doc_type: str | None = None,
+    apply_fixes: bool = True,
     selected_rule_ids: list[str] | None = None,
     header_config: dict | None = None,
     footer_note_config: dict | None = None,
@@ -233,11 +243,12 @@ def optimize_document(
     # 版头/版记注入
     try:
         from api.routes.optimize import _inject_header_to_docx, _inject_footer_to_docx, _inject_page_number_to_docx
-        if header_config and header_config.get('enabled', True):
+
+        if header_config and header_config.get("enabled", True):
             _inject_header_to_docx(str(out_path), header_config)
-        if footer_note_config and footer_note_config.get('enabled', True):
+        if footer_note_config and footer_note_config.get("enabled", True):
             _inject_footer_to_docx(str(out_path), footer_note_config)
-        if page_number_config and page_number_config.get('enabled', True):
+        if page_number_config and page_number_config.get("enabled", True):
             _inject_page_number_to_docx(str(out_path), page_number_config)
     except Exception as e:
         logger.warning(f"Header/footer/page-number injection failed (non-fatal): {e}", exc_info=True)

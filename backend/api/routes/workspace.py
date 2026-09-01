@@ -6,6 +6,7 @@
 工作台 API — 列出 website/tmp 目录中的文件，供前端展示和打开。
 同时同步写入 website/tmp/files.json，使纯静态部署也能获取最新清单。
 """
+
 import json
 import time
 from datetime import datetime
@@ -21,7 +22,7 @@ router = APIRouter(tags=["workspace"])
 WEBSITE_TMP_DIR = BASE_DIR / "website" / "tmp"
 # 静态索引文件（前端 JS 直接读取）
 STATIC_JSON = WEBSITE_TMP_DIR / "files.json"
-STATIC_JS   = WEBSITE_TMP_DIR / "files.js"
+STATIC_JS = WEBSITE_TMP_DIR / "files.js"
 
 
 @router.get("/api/workspace/files")
@@ -58,14 +59,16 @@ async def list_workspace_files():
                 else:
                     file_type = "other"
 
-                files.append({
-                    "name": entry.name,
-                    "size": stat.st_size,
-                    "size_display": _format_size(stat.st_size),
-                    "mtime": stat.st_mtime,
-                    "mtime_display": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
-                    "type": file_type,
-                })
+                files.append(
+                    {
+                        "name": entry.name,
+                        "size": stat.st_size,
+                        "size_display": _format_size(stat.st_size),
+                        "mtime": stat.st_mtime,
+                        "mtime_display": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
+                        "type": file_type,
+                    }
+                )
 
         payload = {"files": files, "count": len(files), "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S")}
 

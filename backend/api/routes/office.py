@@ -7,6 +7,7 @@ Office Bridge API: Word/WPS 插件共用的 REST 接口。
 所有 Office 插件通过此 API 与本地 Python Core Engine 通信。
 插件端只需要做 HTTP 调用，不需要实现任何业务逻辑。
 """
+
 import re
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
@@ -36,8 +37,10 @@ _BRIDGE_TMP.mkdir(parents=True, exist_ok=True)
 #  Request / Response Models
 # ---------------------------------------------------------------------------
 
+
 class DocumentPayload(BaseModel):
     """文档传输格式：base64 编码的 docx 文件。"""
+
     document_base64: str
     document_type: str = "notice"
     filename: str = "document.docx"
@@ -67,6 +70,7 @@ class TemplateApplyRequest(BaseModel):
 #  Health
 # ---------------------------------------------------------------------------
 
+
 @router.get("/health")
 async def office_health():
     """Office 插件健康检查。"""
@@ -81,6 +85,7 @@ async def office_health():
 # ---------------------------------------------------------------------------
 #  Document Check
 # ---------------------------------------------------------------------------
+
 
 @router.post("/check", response_model=CheckResponse)
 async def office_check(payload: DocumentPayload):
@@ -124,6 +129,7 @@ async def office_check(payload: DocumentPayload):
 #  Document Fix
 # ---------------------------------------------------------------------------
 
+
 @router.post("/fix", response_model=FixResponse)
 async def office_fix(payload: DocumentPayload):
     """
@@ -162,6 +168,7 @@ async def office_fix(payload: DocumentPayload):
 #  AI Optimize
 # ---------------------------------------------------------------------------
 
+
 @router.post("/ai-optimize")
 async def office_ai_optimize(payload: DocumentPayload):
     """
@@ -193,6 +200,7 @@ async def office_ai_optimize(payload: DocumentPayload):
 #  Templates
 # ---------------------------------------------------------------------------
 
+
 @router.get("/templates")
 async def office_list_templates(source: str = "all"):
     """获取样式模板列表。"""
@@ -211,6 +219,7 @@ async def office_get_template(template_id: str):
 # ---------------------------------------------------------------------------
 #  Apply Template / Generate Template
 # ---------------------------------------------------------------------------
+
 
 @router.post("/apply-template")
 async def office_apply_template(payload: TemplateApplyRequest):
@@ -294,6 +303,7 @@ async def office_generate_template(template_id: str, format: str = "docx"):
 #  Helpers
 # ---------------------------------------------------------------------------
 
+
 def _decode_to_temp(b64_data: str, filename: str) -> Path:
     """将 base64 数据解码为临时文件。
 
@@ -303,7 +313,7 @@ def _decode_to_temp(b64_data: str, filename: str) -> Path:
     3. 使用UUID前缀防止文件名冲突
     """
     # 清理文件名：只保留安全字符
-    safe_name = re.sub(r'[^\w一-鿿._-]', '_', filename)
+    safe_name = re.sub(r"[^\w一-鿿._-]", "_", filename)
     if not safe_name:
         safe_name = "document.docx"
 

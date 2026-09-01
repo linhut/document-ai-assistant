@@ -4,15 +4,20 @@
 """
 Document Modifier 测试：验证文档修改器的各种操作
 """
+
 import pytest
-from core.document.models import (
-    DocumentModel, Paragraph, Run, RunFormat, ParagraphFormat, PageSetup
-)
+from core.document.models import DocumentModel, Paragraph, Run, RunFormat, ParagraphFormat, PageSetup
 from core.document.modifier import (
-    modify_font, modify_size, modify_alignment, modify_line_spacing,
-    modify_first_line_indent, modify_margins,
-    remove_extra_spaces, remove_extra_blank_lines,
-    replace_paragraph_text, apply_modifications,
+    modify_font,
+    modify_size,
+    modify_alignment,
+    modify_line_spacing,
+    modify_first_line_indent,
+    modify_margins,
+    remove_extra_spaces,
+    remove_extra_blank_lines,
+    replace_paragraph_text,
+    apply_modifications,
 )
 
 
@@ -20,59 +25,120 @@ def _make_model() -> DocumentModel:
     """创建测试用的 DocumentModel。"""
     return DocumentModel(
         page_setup=PageSetup(
-            paper_width_mm=210, paper_height_mm=297,
-            margin_top_mm=37, margin_bottom_mm=35,
-            margin_left_mm=28, margin_right_mm=26,
+            paper_width_mm=210,
+            paper_height_mm=297,
+            margin_top_mm=37,
+            margin_bottom_mm=35,
+            margin_left_mm=28,
+            margin_right_mm=26,
         ),
         paragraphs=[
             Paragraph(
-                text="测试标题", index=0, is_heading=True, heading_level=1,
+                text="测试标题",
+                index=0,
+                is_heading=True,
+                heading_level=1,
                 format=ParagraphFormat(alignment="center"),
-                runs=[Run(text="测试标题", index=0, format=RunFormat(
-                    font_name="Arial", font_size_pt=18,
-                ))],
+                runs=[
+                    Run(
+                        text="测试标题",
+                        index=0,
+                        format=RunFormat(
+                            font_name="Arial",
+                            font_size_pt=18,
+                        ),
+                    )
+                ],
             ),
             Paragraph(
-                text="正文内容第一段。", index=1,
+                text="正文内容第一段。",
+                index=1,
                 format=ParagraphFormat(alignment="left", first_line_indent_pt=0),
-                runs=[Run(text="正文内容第一段。", index=0, format=RunFormat(
-                    font_name="Arial", font_size_pt=12,
-                ))],
+                runs=[
+                    Run(
+                        text="正文内容第一段。",
+                        index=0,
+                        format=RunFormat(
+                            font_name="Arial",
+                            font_size_pt=12,
+                        ),
+                    )
+                ],
             ),
             Paragraph(
-                text="正文内容第二段。", index=2,
+                text="正文内容第二段。",
+                index=2,
                 format=ParagraphFormat(alignment="left"),
-                runs=[Run(text="正文内容第二段。", index=0, format=RunFormat(
-                    font_name="Arial", font_size_pt=12,
-                ))],
+                runs=[
+                    Run(
+                        text="正文内容第二段。",
+                        index=0,
+                        format=RunFormat(
+                            font_name="Arial",
+                            font_size_pt=12,
+                        ),
+                    )
+                ],
             ),
             Paragraph(
-                text="正文内容第三段。", index=3,
+                text="正文内容第三段。",
+                index=3,
                 format=ParagraphFormat(alignment="left"),
-                runs=[Run(text="正文内容第三段。", index=0, format=RunFormat(
-                    font_name="Arial", font_size_pt=12,
-                ))],
+                runs=[
+                    Run(
+                        text="正文内容第三段。",
+                        index=0,
+                        format=RunFormat(
+                            font_name="Arial",
+                            font_size_pt=12,
+                        ),
+                    )
+                ],
             ),
             Paragraph(
-                text="正文内容第四段。", index=4,
+                text="正文内容第四段。",
+                index=4,
                 format=ParagraphFormat(alignment="left"),
-                runs=[Run(text="正文内容第四段。", index=0, format=RunFormat(
-                    font_name="Arial", font_size_pt=12,
-                ))],
+                runs=[
+                    Run(
+                        text="正文内容第四段。",
+                        index=0,
+                        format=RunFormat(
+                            font_name="Arial",
+                            font_size_pt=12,
+                        ),
+                    )
+                ],
             ),
             Paragraph(
-                text="（单位名称）", index=5,
+                text="（单位名称）",
+                index=5,
                 format=ParagraphFormat(alignment="left"),
-                runs=[Run(text="（单位名称）", index=0, format=RunFormat(
-                    font_name="Arial", font_size_pt=12,
-                ))],
+                runs=[
+                    Run(
+                        text="（单位名称）",
+                        index=0,
+                        format=RunFormat(
+                            font_name="Arial",
+                            font_size_pt=12,
+                        ),
+                    )
+                ],
             ),
             Paragraph(
-                text="2026年6月25日", index=6,
+                text="2026年6月25日",
+                index=6,
                 format=ParagraphFormat(alignment="left"),
-                runs=[Run(text="2026年6月25日", index=0, format=RunFormat(
-                    font_name="Arial", font_size_pt=12,
-                ))],
+                runs=[
+                    Run(
+                        text="2026年6月25日",
+                        index=0,
+                        format=RunFormat(
+                            font_name="Arial",
+                            font_size_pt=12,
+                        ),
+                    )
+                ],
             ),
         ],
     )

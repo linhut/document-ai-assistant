@@ -5,6 +5,7 @@
 Abstract base class for AI providers.
 All provider implementations must inherit from AIProvider.
 """
+
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -14,6 +15,7 @@ from typing import Any
 @dataclass
 class AIAnalysisResult:
     """Unified result from AI analysis."""
+
     issues: list[dict[str, Any]] = field(default_factory=list)
     raw_response: str = ""
 

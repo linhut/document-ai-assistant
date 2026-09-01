@@ -10,6 +10,7 @@ Uses python-docx to read the file structure.
 - 解析过程中禁止丢失任何格式数据
 - 使用 font_utils.detect_font_from_run 正确获取中文字体（eastAsia）
 """
+
 from __future__ import annotations
 from pathlib import Path
 import re
@@ -18,8 +19,16 @@ from docx import Document
 from docx.oxml.ns import qn
 
 from core.document.models import (
-    DocumentModel, DocumentMetadata, Paragraph, Run, RunFormat,
-    ParagraphFormat, PageSetup, Table, TableCell, HeaderFooter
+    DocumentModel,
+    DocumentMetadata,
+    Paragraph,
+    Run,
+    RunFormat,
+    ParagraphFormat,
+    PageSetup,
+    Table,
+    TableCell,
+    HeaderFooter,
 )
 from core.document.font_utils import get_effective_font
 from core.document.parser_format import parse_paragraph_format, parse_run, _safe_pt2
@@ -29,21 +38,21 @@ from utils.logger import logger
 _HEADING_FONT_MAP = {
     "方正小标宋简体": 0,  # 公文大标题
     "小标宋": 0,
-    "黑体": 1,            # 一级标题
+    "黑体": 1,  # 一级标题
     "SimHei": 1,
-    "楷体": 2,            # 二级标题
+    "楷体": 2,  # 二级标题
     "楷体_gb2312": 2,
     "KaiTi": 2,
 }
 
 # 一级标题序号模式（"一、""二、"等）
-_H1_PATTERN = re.compile(r'^[一二三四五六七八九十]+、')
+_H1_PATTERN = re.compile(r"^[一二三四五六七八九十]+、")
 # 二级标题序号模式（"（一）""（二）"等）
-_H2_PATTERN = re.compile(r'^（[一二三四五六七八九十]+）')
+_H2_PATTERN = re.compile(r"^（[一二三四五六七八九十]+）")
 # 三级标题序号模式（"1.""2."等阿拉伯数字+句点）
-_H3_PATTERN = re.compile(r'^\d+[.]')
+_H3_PATTERN = re.compile(r"^\d+[.]")
 # 四级标题序号模式（"（1）""（2）"等半角/全角括号+阿拉伯数字）
-_H4_PATTERN = re.compile(r'^[（(]\d+[）)]')
+_H4_PATTERN = re.compile(r"^[（(]\d+[）)]")
 
 
 def parse_docx(file_path: Path | str) -> DocumentModel:
@@ -86,13 +95,14 @@ def parse_docx(file_path: Path | str) -> DocumentModel:
     # 5. 解析表格（含 insert_after_index 定位）
     # 先遍历 doc body 元素，建立每个表格在段落流中的位置
     from lxml import etree
+
     para_count = 0
     table_position_map = {}  # {table_element_id: last_para_index_before_it}
     for child in doc.element.body:
-        tag = etree.QName(child.tag).localname if child.tag else ''
-        if tag == 'p':
+        tag = etree.QName(child.tag).localname if child.tag else ""
+        if tag == "p":
             para_count += 1
-        elif tag == 'tbl':
+        elif tag == "tbl":
             table_position_map[id(child)] = para_count - 1  # 紧跟在哪个段落之后
 
     tables = []
@@ -114,12 +124,14 @@ def parse_docx(file_path: Path | str) -> DocumentModel:
         filename=file_path.name,
     )
 
-    logger.info(f"Parsed: {len(paragraphs)} paragraphs, {len(tables)} tables, "
-                f"{len(headers)} headers, {len(footers)} footers")
+    logger.info(
+        f"Parsed: {len(paragraphs)} paragraphs, {len(tables)} tables, {len(headers)} headers, {len(footers)} footers"
+    )
 
     # 6. AI辅助结构分析（当启发式检测不足时尝试）
     try:
         from core.document.ai_structure_analyzer import should_use_ai_analysis, classify_with_ai
+
         if should_use_ai_analysis(model):
             logger.info("Heading detection insufficient, attempting AI structure analysis...")
             if classify_with_ai(model):
@@ -134,6 +146,7 @@ def parse_docx(file_path: Path | str) -> DocumentModel:
 # ---------------------------------------------------------------------------
 #  Metadata
 # ---------------------------------------------------------------------------
+
 
 def _parse_metadata(doc: Document) -> DocumentMetadata:
     """Parse document metadata (core properties)."""
@@ -151,6 +164,7 @@ def _parse_metadata(doc: Document) -> DocumentMetadata:
 # ---------------------------------------------------------------------------
 #  Page Setup
 # ---------------------------------------------------------------------------
+
 
 def _parse_page_setup(doc: Document) -> PageSetup:
     """Parse full page setup from document section."""
@@ -186,6 +200,7 @@ def _safe_mm(value, default: float) -> float:
 #  Headers / Footers
 # ---------------------------------------------------------------------------
 
+
 def _parse_headers_footers(doc: Document, hf_type: str) -> list[HeaderFooter]:
     """Parse headers or footers from all sections, including page number detection."""
     result = []
@@ -206,13 +221,15 @@ def _parse_headers_footers(doc: Document, hf_type: str) -> list[HeaderFooter]:
             if _paragraph_has_page_field(para):
                 has_page_num = True
 
-        result.append(HeaderFooter(
-            section_index=sec_idx,
-            type=hf_type,
-            text="\n".join(texts),
-            paragraphs=paras,
-            has_page_number=has_page_num,
-        ))
+        result.append(
+            HeaderFooter(
+                section_index=sec_idx,
+                type=hf_type,
+                text="\n".join(texts),
+                paragraphs=paras,
+                has_page_number=has_page_num,
+            )
+        )
 
     return result
 
@@ -223,18 +240,18 @@ def _paragraph_has_page_field(para) -> bool:
     通过解析 XML 层的 w:fldSimple 或 w:fldChar/w:instrText 元素判断。
     """
     try:
-        nsmap = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
+        nsmap = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
         xml = para._element
 
         # 方式1: 简单域 <w:fldSimple w:instr=" PAGE ">
-        for fld_simple in xml.findall('.//w:fldSimple', nsmap):
-            instr = fld_simple.get('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}instr', '')
-            if 'PAGE' in instr.upper():
+        for fld_simple in xml.findall(".//w:fldSimple", nsmap):
+            instr = fld_simple.get("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}instr", "")
+            if "PAGE" in instr.upper():
                 return True
 
         # 方式2: 复杂域 <w:instrText> PAGE </w:instrText>
-        for instr_text in xml.findall('.//w:instrText', nsmap):
-            if instr_text.text and 'PAGE' in instr_text.text.upper():
+        for instr_text in xml.findall(".//w:instrText", nsmap):
+            if instr_text.text and "PAGE" in instr_text.text.upper():
                 return True
 
     except Exception:
@@ -246,6 +263,7 @@ def _paragraph_has_page_field(para) -> bool:
 #  Paragraph
 # ---------------------------------------------------------------------------
 
+
 def _parse_paragraph(para, index: int) -> Paragraph:
     """Parse a single paragraph with full format preservation."""
     # 样式信息
@@ -255,11 +273,11 @@ def _parse_paragraph(para, index: int) -> Paragraph:
 
     if style_name:
         style_lower = style_name.lower()
-        if style_lower.startswith('heading') or style_name.startswith('标题') or style_name.startswith('Heading'):
+        if style_lower.startswith("heading") or style_name.startswith("标题") or style_name.startswith("Heading"):
             is_heading = True
             # 提取层级：只在确认是 heading 样式时才提取数字
             for i in range(9, 0, -1):
-                if f'heading {i}' in style_lower or f'heading{i}' in style_lower:
+                if f"heading {i}" in style_lower or f"heading{i}" in style_lower:
                     heading_level = i
                     break
             if heading_level is None:
@@ -276,11 +294,13 @@ def _parse_paragraph(para, index: int) -> Paragraph:
 
     # 如果没有 run 但有文本，创建一个文本 run
     if not runs and para.text:
-        runs.append(Run(
-            text=para.text,
-            index=0,
-            format=RunFormat(),
-        ))
+        runs.append(
+            Run(
+                text=para.text,
+                index=0,
+                format=RunFormat(),
+            )
+        )
 
     # ---- 段落样式 fallback：当 run 没有直接格式时，从段落样式读取 ----
     _apply_style_fallback(para, runs, para_format)
@@ -293,9 +313,7 @@ def _parse_paragraph(para, index: int) -> Paragraph:
         has_content_signal = False
         if text_stripped:
             has_content_signal = bool(
-                _H1_PATTERN.match(text_stripped) or
-                _H2_PATTERN.match(text_stripped) or
-                _H3_PATTERN.match(text_stripped)
+                _H1_PATTERN.match(text_stripped) or _H2_PATTERN.match(text_stripped) or _H3_PATTERN.match(text_stripped)
             )
         # 检查是否有标题格式信号（加粗或标题字体）
         has_format_signal = False
@@ -337,9 +355,7 @@ def _parse_paragraph(para, index: int) -> Paragraph:
     )
 
 
-def _detect_heading_heuristic(
-    text: str, runs: list[Run], para_format: ParagraphFormat
-) -> tuple[bool, int | None]:
+def _detect_heading_heuristic(text: str, runs: list[Run], para_format: ParagraphFormat) -> tuple[bool, int | None]:
     """
     中文公文标题启发式检测（v2: 支持未排版文档）。
 
@@ -450,7 +466,7 @@ def _post_detect_headings(paragraphs: list[Paragraph]) -> None:
         # 第一个非空段落：若短于30字符且无句末标点，视为标题
         first = non_empty[0]
         t = first.text.strip()
-        if len(t) < 30 and not t.endswith(('。', '；', '，', '！', '？', '.', ';', ',')):
+        if len(t) < 30 and not t.endswith(("。", "；", "，", "！", "？", ".", ";", ",")):
             first.is_heading = True
             first.heading_level = 0
             logger.info(f"[后处理] 将首段识别为公文标题: {t[:30]!r}")
@@ -491,23 +507,35 @@ def _post_detect_headings(paragraphs: list[Paragraph]) -> None:
 # ---------------------------------------------------------------------------
 
 # 日期模式
-_DATE_RE = re.compile(r'^\d{4}年\d{1,2}月\d{1,2}日$')
-_DATE_ALT_RE = re.compile(r'^\d{4}[.\-/]\d{1,2}[.\-/]\d{1,2}$')
+_DATE_RE = re.compile(r"^\d{4}年\d{1,2}月\d{1,2}日$")
+_DATE_ALT_RE = re.compile(r"^\d{4}[.\-/]\d{1,2}[.\-/]\d{1,2}$")
 
 # 主送机关特征词
 _RECIPIENT_KEYWORDS = [
-    '各部门', '各科室', '各单位', '全体', '各有关', '各相关',
-    '局', '办', '委', '厅', '处', '室', '院', '中心',
+    "各部门",
+    "各科室",
+    "各单位",
+    "全体",
+    "各有关",
+    "各相关",
+    "局",
+    "办",
+    "委",
+    "厅",
+    "处",
+    "室",
+    "院",
+    "中心",
 ]
 
 # 附件模式
-_ATTACHMENT_RE = re.compile(r'^附件[：:]')
+_ATTACHMENT_RE = re.compile(r"^附件[：:]")
 
 # 抄送模式
-_CC_RE = re.compile(r'^抄送[：:]')
+_CC_RE = re.compile(r"^抄送[：:]")
 
 # 印发模式
-_PRINT_RE = re.compile(r'^印发机关|^印发日期')
+_PRINT_RE = re.compile(r"^印发机关|^印发日期")
 
 
 def _assign_paragraph_roles(paragraphs: list[Paragraph]) -> None:
@@ -522,9 +550,9 @@ def _assign_paragraph_roles(paragraphs: list[Paragraph]) -> None:
     # 第一段非空段落 = 标题
     first_idx, first_para = non_empty[0]
     if first_para.is_heading and first_para.heading_level == 0:
-        first_para.role = 'title'
+        first_para.role = "title"
     elif not first_para.is_heading and len(first_para.text.strip()) < 30:
-        first_para.role = 'title'
+        first_para.role = "title"
 
     # 最后几段：日期、落款、抄送、印发
     for i in range(len(non_empty) - 1, max(len(non_empty) - 6, 0), -1):
@@ -533,21 +561,21 @@ def _assign_paragraph_roles(paragraphs: list[Paragraph]) -> None:
 
         # 日期
         if _DATE_RE.match(text) or _DATE_ALT_RE.match(text):
-            para.role = 'date'
+            para.role = "date"
             continue
 
         # 抄送
         if _CC_RE.match(text):
-            para.role = 'cc'
+            para.role = "cc"
             continue
 
         # 印发
         if _PRINT_RE.match(text):
-            para.role = 'cc'
+            para.role = "cc"
             continue
 
     # 落款：日期前的短文本（< 20 字，或含机关关键词）
-    date_indices = [i for i, p in non_empty if p.role == 'date']
+    date_indices = [i for i, p in non_empty if p.role == "date"]
     if date_indices:
         date_idx = date_indices[-1]
         for i in range(len(non_empty)):
@@ -555,35 +583,36 @@ def _assign_paragraph_roles(paragraphs: list[Paragraph]) -> None:
             if idx == date_idx - 1 and not para.is_heading:
                 text = para.text.strip()
                 if len(text) < 20:
-                    para.role = 'signature'
-                elif any(kw in text for kw in ['人民政府', '委员会', '办公厅', '办公室', '管理局', '局', '部']):
+                    para.role = "signature"
+                elif any(kw in text for kw in ["人民政府", "委员会", "办公厅", "办公室", "管理局", "局", "部"]):
                     if len(text) < 40:
-                        para.role = 'signature'
+                        para.role = "signature"
 
     # 主送机关：标题后第一段，以冒号结尾
     if len(non_empty) >= 2:
         second_idx, second_para = non_empty[1]
         if not second_para.role:
             text = second_para.text.strip()
-            if text.endswith(('：', ':')) and len(text) < 50:
-                second_para.role = 'recipient'
-            elif any(kw in text for kw in _RECIPIENT_KEYWORDS) and text.endswith(('：', ':')):
-                second_para.role = 'recipient'
+            if text.endswith(("：", ":")) and len(text) < 50:
+                second_para.role = "recipient"
+            elif any(kw in text for kw in _RECIPIENT_KEYWORDS) and text.endswith(("：", ":")):
+                second_para.role = "recipient"
 
     # 附件
     for idx, para in non_empty:
         if not para.role and _ATTACHMENT_RE.match(para.text.strip()):
-            para.role = 'attachment'
+            para.role = "attachment"
 
     # 其余非空段落默认为 body
     for idx, para in non_empty:
         if not para.role:
-            para.role = 'body'
+            para.role = "body"
 
 
 # ---------------------------------------------------------------------------
 #  Paragraph Format
 # ---------------------------------------------------------------------------
+
 
 def _apply_style_fallback(para, runs: list[Run], para_format: ParagraphFormat) -> None:
     """
@@ -616,6 +645,7 @@ def _apply_style_fallback(para, runs: list[Run], para_format: ParagraphFormat) -
         try:
             if style.paragraph_format and style.paragraph_format.line_spacing:
                 from docx.shared import Length
+
                 sp = style.paragraph_format.line_spacing
                 if isinstance(sp, (int, float)) and sp > 100:
                     # 很可能是 EMU 值
@@ -634,6 +664,7 @@ def _apply_style_fallback(para, runs: list[Run], para_format: ParagraphFormat) -
         try:
             if style.paragraph_format and style.paragraph_format.alignment is not None:
                 from docx.enum.text import WD_ALIGN_PARAGRAPH
+
                 _map = {
                     WD_ALIGN_PARAGRAPH.LEFT: "left",
                     WD_ALIGN_PARAGRAPH.CENTER: "center",
@@ -649,6 +680,7 @@ def _apply_style_fallback(para, runs: list[Run], para_format: ParagraphFormat) -
         try:
             if style.paragraph_format and style.paragraph_format.first_line_indent:
                 from docx.shared import Length as L
+
                 style_indent = round(L(style.paragraph_format.first_line_indent, 0).pt, 1)
         except Exception:
             pass
@@ -685,9 +717,9 @@ def _parse_paragraph_format(para) -> ParagraphFormat:
         try:
             pPr = para._element.pPr
             if pPr is not None:
-                ind = pPr.find(qn('w:ind'))
+                ind = pPr.find(qn("w:ind"))
                 if ind is not None:
-                    chars_val = ind.get(qn('w:firstLineChars'))
+                    chars_val = ind.get(qn("w:firstLineChars"))
                     if chars_val:
                         # firstLineChars 单位为百分之一字符，200 = 2字符
                         # 1字符 = 1字号 = 16pt（公文正文标准字号）
@@ -696,10 +728,10 @@ def _parse_paragraph_format(para) -> ParagraphFormat:
             pass
 
 
-
 # ---------------------------------------------------------------------------
 #  Table
 # ---------------------------------------------------------------------------
+
 
 def _parse_run(run, index: int) -> Run:
     """Parse a single text run with full font information."""
@@ -740,6 +772,7 @@ def _parse_run(run, index: int) -> Run:
 #  Table
 # ---------------------------------------------------------------------------
 
+
 def _parse_table(table, index: int) -> Table:
     """Parse a table with cell-level paragraph preservation."""
     cells = []
@@ -750,12 +783,14 @@ def _parse_table(table, index: int) -> Table:
             for p_idx, para in enumerate(cell.paragraphs):
                 cell_paras.append(_parse_paragraph(para, p_idx))
 
-            cells.append(TableCell(
-                text=cell.text,
-                row=row_idx,
-                col=col_idx,
-                paragraphs=cell_paras,
-            ))
+            cells.append(
+                TableCell(
+                    text=cell.text,
+                    row=row_idx,
+                    col=col_idx,
+                    paragraphs=cell_paras,
+                )
+            )
 
     return Table(
         index=index,
@@ -763,4 +798,3 @@ def _parse_table(table, index: int) -> Table:
         cols=len(table.columns) if table.rows else 0,
         cells=cells,
     )
-

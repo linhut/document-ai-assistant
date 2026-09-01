@@ -5,6 +5,7 @@
 Format checker: validates a DocumentModel against loaded rules.
 Returns a list of CheckIssue objects.
 """
+
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
@@ -16,11 +17,12 @@ from utils.logger import logger
 @dataclass
 class CheckIssue:
     """A single issue found during format checking."""
+
     rule_id: str
-    check_type: str        # format / typo / expression / logic
-    severity: str          # P0 / P1 / P2
+    check_type: str  # format / typo / expression / logic
+    severity: str  # P0 / P1 / P2
     name: str
-    location: str          # e.g. "paragraph:3"
+    location: str  # e.g. "paragraph:3"
     original_text: str = ""
     suggested_fix: str = ""
     reason: str = ""
@@ -70,13 +72,25 @@ def check_document(model: DocumentModel, rules: dict[str, Any]) -> list[CheckIss
             # 修复：从文档模型读取实际值，而不是从规则字典读取
             model_dict = {
                 "title": {
-                    "font": model.paragraphs[0].runs[0].format.font_name if model.paragraphs and model.paragraphs[0].runs else None,
-                    "size": model.paragraphs[0].runs[0].format.font_size_pt if model.paragraphs and model.paragraphs[0].runs else None,
-                } if model.paragraphs else {},
+                    "font": model.paragraphs[0].runs[0].format.font_name
+                    if model.paragraphs and model.paragraphs[0].runs
+                    else None,
+                    "size": model.paragraphs[0].runs[0].format.font_size_pt
+                    if model.paragraphs and model.paragraphs[0].runs
+                    else None,
+                }
+                if model.paragraphs
+                else {},
                 "body": {
-                    "font": model.paragraphs[1].runs[0].format.font_name if len(model.paragraphs) > 1 and model.paragraphs[1].runs else None,
-                    "size": model.paragraphs[1].runs[0].format.font_size_pt if len(model.paragraphs) > 1 and model.paragraphs[1].runs else None,
-                } if len(model.paragraphs) > 1 else {},
+                    "font": model.paragraphs[1].runs[0].format.font_name
+                    if len(model.paragraphs) > 1 and model.paragraphs[1].runs
+                    else None,
+                    "size": model.paragraphs[1].runs[0].format.font_size_pt
+                    if len(model.paragraphs) > 1 and model.paragraphs[1].runs
+                    else None,
+                }
+                if len(model.paragraphs) > 1
+                else {},
                 "page_setup": {
                     "margins": {
                         "top": model.page_setup.margin_top_mm,
@@ -90,12 +104,18 @@ def check_document(model: DocumentModel, rules: dict[str, Any]) -> list[CheckIss
             }
             actual = _get_nested(model_dict, field_path)
             if actual is not None and str(actual) != str(expected):
-                issues.append(CheckIssue(
-                    rule_id=rule_id, check_type="format", severity=severity,
-                    name=name, location="document",
-                    original_text=str(actual), suggested_fix=str(expected),
-                    reason=message,
-                ))
+                issues.append(
+                    CheckIssue(
+                        rule_id=rule_id,
+                        check_type="format",
+                        severity=severity,
+                        name=name,
+                        location="document",
+                        original_text=str(actual),
+                        suggested_fix=str(expected),
+                        reason=message,
+                    )
+                )
 
     # Additional heuristic checks (not from YAML)
     issues.extend(_check_common_issues(model))
@@ -107,6 +127,7 @@ def check_document(model: DocumentModel, rules: dict[str, Any]) -> list[CheckIss
 # ---------------------------------------------------------------------------
 #  Sub-checkers
 # ---------------------------------------------------------------------------
+
 
 def _get_nested(d: dict, path: str) -> Any:
     """Traverse a nested dict by dot-separated path."""
@@ -131,13 +152,18 @@ def _check_title(model, rule_id, severity, name, field_path, expected, message) 
         # Check if first non-empty paragraph could be the title
         non_empty = [p for p in model.paragraphs if p.text.strip()]
         if non_empty:
-            issues.append(CheckIssue(
-                rule_id=rule_id, check_type="format", severity=severity,
-                name=name, location="paragraph:0",
-                original_text=non_empty[0].text[:80],
-                suggested_fix="使用标题样式或设置方正小标宋简体字体",
-                reason="未检测到公文标题（方正小标宋简体/居中22pt），请检查标题格式",
-            ))
+            issues.append(
+                CheckIssue(
+                    rule_id=rule_id,
+                    check_type="format",
+                    severity=severity,
+                    name=name,
+                    location="paragraph:0",
+                    original_text=non_empty[0].text[:80],
+                    suggested_fix="使用标题样式或设置方正小标宋简体字体",
+                    reason="未检测到公文标题（方正小标宋简体/居中22pt），请检查标题格式",
+                )
+            )
         return issues
 
     title_para = headings[0]
@@ -146,33 +172,50 @@ def _check_title(model, rule_id, severity, name, field_path, expected, message) 
     if sub_field == "font":
         for run in title_para.runs:
             if run.format.font_name is None or run.format.font_name != expected:
-                issues.append(CheckIssue(
-                    rule_id=rule_id, check_type="format", severity=severity,
-                    name=name, location=f"paragraph:{title_para.index}",
-                    original_text=run.format.font_name, suggested_fix=str(expected),
-                    reason=message,
-                ))
+                issues.append(
+                    CheckIssue(
+                        rule_id=rule_id,
+                        check_type="format",
+                        severity=severity,
+                        name=name,
+                        location=f"paragraph:{title_para.index}",
+                        original_text=run.format.font_name,
+                        suggested_fix=str(expected),
+                        reason=message,
+                    )
+                )
                 break
     elif sub_field == "size":
         for run in title_para.runs:
             if run.format.font_size_pt and abs(run.format.font_size_pt - float(str(expected).replace("pt", ""))) > 0.5:
-                issues.append(CheckIssue(
-                    rule_id=rule_id, check_type="format", severity=severity,
-                    name=name, location=f"paragraph:{title_para.index}",
-                    original_text=f"{run.format.font_size_pt}pt",
-                    suggested_fix=str(expected),
-                    reason=message,
-                ))
+                issues.append(
+                    CheckIssue(
+                        rule_id=rule_id,
+                        check_type="format",
+                        severity=severity,
+                        name=name,
+                        location=f"paragraph:{title_para.index}",
+                        original_text=f"{run.format.font_size_pt}pt",
+                        suggested_fix=str(expected),
+                        reason=message,
+                    )
+                )
                 break
     elif sub_field == "align":
         actual = title_para.format.alignment
         if actual and actual != str(expected).lower():
-            issues.append(CheckIssue(
-                rule_id=rule_id, check_type="format", severity=severity,
-                name=name, location=f"paragraph:{title_para.index}",
-                original_text=actual, suggested_fix=str(expected),
-                reason=message,
-            ))
+            issues.append(
+                CheckIssue(
+                    rule_id=rule_id,
+                    check_type="format",
+                    severity=severity,
+                    name=name,
+                    location=f"paragraph:{title_para.index}",
+                    original_text=actual,
+                    suggested_fix=str(expected),
+                    reason=message,
+                )
+            )
 
     return issues
 
@@ -192,13 +235,18 @@ def _check_heading_level(model, rule_id, severity, name, field_path, expected, m
         if level == 0:
             non_empty = [p for p in model.paragraphs if p.text.strip()]
             if non_empty:
-                issues.append(CheckIssue(
-                    rule_id=rule_id, check_type="format", severity=severity,
-                    name=name, location=f"paragraph:{non_empty[0].index}",
-                    original_text=non_empty[0].text[:80],
-                    suggested_fix="使用标题样式或设置标题字体",
-                    reason=f"未检测到{level}级标题",
-                ))
+                issues.append(
+                    CheckIssue(
+                        rule_id=rule_id,
+                        check_type="format",
+                        severity=severity,
+                        name=name,
+                        location=f"paragraph:{non_empty[0].index}",
+                        original_text=non_empty[0].text[:80],
+                        suggested_fix="使用标题样式或设置标题字体",
+                        reason=f"未检测到{level}级标题",
+                    )
+                )
         return issues
 
     sub_field = field_path.split(".", 1)[1] if "." in field_path else ""
@@ -217,57 +265,83 @@ def _check_heading_level(model, rule_id, severity, name, field_path, expected, m
 
     # 检查该级别的所有标题段落
     for title_para in headings:
-
         if sub_field == "font":
             for run in title_para.runs:
                 if run.format.font_name is None or run.format.font_name != expected:
-                    issues.append(CheckIssue(
-                        rule_id=rule_id, check_type="format", severity=severity,
-                        name=name, location=f"paragraph:{title_para.index}",
-                        original_text=run.format.font_name, suggested_fix=str(expected),
-                        reason=message,
-                    ))
+                    issues.append(
+                        CheckIssue(
+                            rule_id=rule_id,
+                            check_type="format",
+                            severity=severity,
+                            name=name,
+                            location=f"paragraph:{title_para.index}",
+                            original_text=run.format.font_name,
+                            suggested_fix=str(expected),
+                            reason=message,
+                        )
+                    )
                     break
         elif sub_field == "size":
             for run in title_para.runs:
                 if run.format.font_size_pt and expected_val and abs(run.format.font_size_pt - expected_val) > 0.5:
-                    issues.append(CheckIssue(
-                        rule_id=rule_id, check_type="format", severity=severity,
-                        name=name, location=f"paragraph:{title_para.index}",
-                        original_text=f"{run.format.font_size_pt}pt",
-                        suggested_fix=str(expected),
-                        reason=message,
-                    ))
+                    issues.append(
+                        CheckIssue(
+                            rule_id=rule_id,
+                            check_type="format",
+                            severity=severity,
+                            name=name,
+                            location=f"paragraph:{title_para.index}",
+                            original_text=f"{run.format.font_size_pt}pt",
+                            suggested_fix=str(expected),
+                            reason=message,
+                        )
+                    )
                     break
         elif sub_field == "align":
             actual = title_para.format.alignment
             if actual and actual != str(expected).lower():
-                issues.append(CheckIssue(
-                    rule_id=rule_id, check_type="format", severity=severity,
-                    name=name, location=f"paragraph:{title_para.index}",
-                    original_text=actual, suggested_fix=str(expected),
-                    reason=message,
-                ))
+                issues.append(
+                    CheckIssue(
+                        rule_id=rule_id,
+                        check_type="format",
+                        severity=severity,
+                        name=name,
+                        location=f"paragraph:{title_para.index}",
+                        original_text=actual,
+                        suggested_fix=str(expected),
+                        reason=message,
+                    )
+                )
         elif sub_field == "first_line_indent":
             if title_para.format.first_line_indent_pt is not None and expected_val:
                 if abs(title_para.format.first_line_indent_pt - expected_val) > 4:
-                    issues.append(CheckIssue(
-                        rule_id=rule_id, check_type="format", severity=severity,
-                        name=name, location=f"paragraph:{title_para.index}",
-                        original_text=f"{title_para.format.first_line_indent_pt}pt",
-                        suggested_fix=str(expected),
-                        reason=message,
-                    ))
+                    issues.append(
+                        CheckIssue(
+                            rule_id=rule_id,
+                            check_type="format",
+                            severity=severity,
+                            name=name,
+                            location=f"paragraph:{title_para.index}",
+                            original_text=f"{title_para.format.first_line_indent_pt}pt",
+                            suggested_fix=str(expected),
+                            reason=message,
+                        )
+                    )
         elif sub_field == "line_spacing":
             if title_para.format.line_spacing_pt and expected_val:
                 if abs(title_para.format.line_spacing_pt - expected_val) > 1:
-                    issues.append(CheckIssue(
-                        rule_id=rule_id, check_type="format", severity=severity,
-                        name=name, location=f"paragraph:{title_para.index}",
-                        original_text=f"{title_para.format.line_spacing_pt}pt",
-                        suggested_fix=str(expected),
-                        reason=message,
-                    ))
+                    issues.append(
+                        CheckIssue(
+                            rule_id=rule_id,
+                            check_type="format",
+                            severity=severity,
+                            name=name,
+                            location=f"paragraph:{title_para.index}",
+                            original_text=f"{title_para.format.line_spacing_pt}pt",
+                            suggested_fix=str(expected),
+                            reason=message,
+                        )
+                    )
 
     return issues
 
@@ -275,9 +349,8 @@ def _check_heading_level(model, rule_id, severity, name, field_path, expected, m
 def _check_body(model, rule_id, severity, name, field_path, expected, message) -> list[CheckIssue]:
     """Check body paragraph formatting (excluding signature/date)."""
     issues = []
-    _EXCLUDE_ROLES = {'signature', 'date'}
-    body_paras = [p for p in model.paragraphs
-                  if not p.is_heading and p.text.strip() and p.role not in _EXCLUDE_ROLES]
+    _EXCLUDE_ROLES = {"signature", "date"}
+    body_paras = [p for p in model.paragraphs if not p.is_heading and p.text.strip() and p.role not in _EXCLUDE_ROLES]
     if not body_paras:
         return issues
 
@@ -302,74 +375,111 @@ def _check_body(model, rule_id, severity, name, field_path, expected, message) -
         if sub_field == "font":
             for run in para.runs:
                 if run.format.font_name is None or run.format.font_name != expected:
-                    issues.append(CheckIssue(
-                        rule_id=rule_id, check_type="format", severity=severity,
-                        name=name, location=f"paragraph:{para.index}",
-                        original_text=run.format.font_name, suggested_fix=str(expected),
-                        reason=message,
-                    ))
+                    issues.append(
+                        CheckIssue(
+                            rule_id=rule_id,
+                            check_type="format",
+                            severity=severity,
+                            name=name,
+                            location=f"paragraph:{para.index}",
+                            original_text=run.format.font_name,
+                            suggested_fix=str(expected),
+                            reason=message,
+                        )
+                    )
                     break
         elif sub_field == "size":
             for run in para.runs:
                 if run.format.font_size_pt and expected_val and abs(run.format.font_size_pt - expected_val) > 0.5:
-                    issues.append(CheckIssue(
-                        rule_id=rule_id, check_type="format", severity=severity,
-                        name=name, location=f"paragraph:{para.index}",
-                        original_text=f"{run.format.font_size_pt}pt",
-                        suggested_fix=str(expected),
-                        reason=message,
-                    ))
+                    issues.append(
+                        CheckIssue(
+                            rule_id=rule_id,
+                            check_type="format",
+                            severity=severity,
+                            name=name,
+                            location=f"paragraph:{para.index}",
+                            original_text=f"{run.format.font_size_pt}pt",
+                            suggested_fix=str(expected),
+                            reason=message,
+                        )
+                    )
                     break
         elif sub_field == "line_spacing":
             if para.format.line_spacing_pt and expected_val:
                 if abs(para.format.line_spacing_pt - expected_val) > 1:
-                    issues.append(CheckIssue(
-                        rule_id=rule_id, check_type="format", severity=severity,
-                        name=name, location=f"paragraph:{para.index}",
-                        original_text=f"{para.format.line_spacing_pt}pt",
-                        suggested_fix=str(expected),
-                        reason=message,
-                    ))
+                    issues.append(
+                        CheckIssue(
+                            rule_id=rule_id,
+                            check_type="format",
+                            severity=severity,
+                            name=name,
+                            location=f"paragraph:{para.index}",
+                            original_text=f"{para.format.line_spacing_pt}pt",
+                            suggested_fix=str(expected),
+                            reason=message,
+                        )
+                    )
         elif sub_field == "first_line_indent":
             if expected_val:
                 if para.format.first_line_indent_pt is None:
                     # 未检测到首行缩进 — 视为格式缺失
-                    issues.append(CheckIssue(
-                        rule_id=rule_id, check_type="format", severity=severity,
-                        name=name, location=f"paragraph:{para.index}",
-                        original_text="无缩进",
-                        suggested_fix=str(expected),
-                        reason=f"正文首行缺少缩进（期望{expected}）",
-                    ))
+                    issues.append(
+                        CheckIssue(
+                            rule_id=rule_id,
+                            check_type="format",
+                            severity=severity,
+                            name=name,
+                            location=f"paragraph:{para.index}",
+                            original_text="无缩进",
+                            suggested_fix=str(expected),
+                            reason=f"正文首行缺少缩进（期望{expected}）",
+                        )
+                    )
                 elif abs(para.format.first_line_indent_pt - expected_val) > 4:
-                    issues.append(CheckIssue(
-                        rule_id=rule_id, check_type="format", severity=severity,
-                        name=name, location=f"paragraph:{para.index}",
-                        original_text=f"{para.format.first_line_indent_pt}pt",
-                        suggested_fix=str(expected),
-                        reason=message,
-                    ))
+                    issues.append(
+                        CheckIssue(
+                            rule_id=rule_id,
+                            check_type="format",
+                            severity=severity,
+                            name=name,
+                            location=f"paragraph:{para.index}",
+                            original_text=f"{para.format.first_line_indent_pt}pt",
+                            suggested_fix=str(expected),
+                            reason=message,
+                        )
+                    )
         elif sub_field == "align":
             actual = para.format.alignment
             if actual and actual != str(expected).lower():
-                issues.append(CheckIssue(
-                    rule_id=rule_id, check_type="format", severity=severity,
-                    name=name, location=f"paragraph:{para.index}",
-                    original_text=actual, suggested_fix=str(expected),
-                    reason=message,
-                ))
+                issues.append(
+                    CheckIssue(
+                        rule_id=rule_id,
+                        check_type="format",
+                        severity=severity,
+                        name=name,
+                        location=f"paragraph:{para.index}",
+                        original_text=actual,
+                        suggested_fix=str(expected),
+                        reason=message,
+                    )
+                )
         elif sub_field == "bold_range":
             # 检查正文段落是否整段加粗（通常只有首句/点题词应加粗）
             if len(para.text.strip()) > 30 and para.runs:
                 all_bold = all(r.format.bold for r in para.runs if r.text.strip())
                 if all_bold:
-                    issues.append(CheckIssue(
-                        rule_id=rule_id, check_type="content", severity=severity,
-                        name=name, location=f"paragraph:{para.index}",
-                        original_text=para.text[:60],
-                        suggested_fix="仅首句/点题词加粗",
-                        reason=message or "整段加粗不符合公文规范，通常仅首句或点题词需要加粗",
-                    ))
+                    issues.append(
+                        CheckIssue(
+                            rule_id=rule_id,
+                            check_type="content",
+                            severity=severity,
+                            name=name,
+                            location=f"paragraph:{para.index}",
+                            original_text=para.text[:60],
+                            suggested_fix="仅首句/点题词加粗",
+                            reason=message or "整段加粗不符合公文规范，通常仅首句或点题词需要加粗",
+                        )
+                    )
 
     return issues
 
@@ -405,12 +515,18 @@ def _check_page_setup(model, rule_id, severity, name, field_path, expected, mess
             except (ValueError, TypeError):
                 exp_mm = None
             if exp_mm is not None and abs(actual - exp_mm) > 2:
-                issues.append(CheckIssue(
-                    rule_id=rule_id, check_type="format", severity=severity,
-                    name=name, location="page_setup",
-                    original_text=f"{actual}mm", suggested_fix=str(expected),
-                    reason=message,
-                ))
+                issues.append(
+                    CheckIssue(
+                        rule_id=rule_id,
+                        check_type="format",
+                        severity=severity,
+                        name=name,
+                        location="page_setup",
+                        original_text=f"{actual}mm",
+                        suggested_fix=str(expected),
+                        reason=message,
+                    )
+                )
 
     return issues
 
@@ -429,12 +545,18 @@ def _check_signature_area(model, rule_id, severity, name, field_path, expected, 
     for para in sig_paras:
         if sub_field == "align":
             if para.format.alignment and para.format.alignment != str(expected).lower():
-                issues.append(CheckIssue(
-                    rule_id=rule_id, check_type="format", severity=severity,
-                    name=name, location=f"paragraph:{para.index}",
-                    original_text=para.format.alignment, suggested_fix=str(expected),
-                    reason=message,
-                ))
+                issues.append(
+                    CheckIssue(
+                        rule_id=rule_id,
+                        check_type="format",
+                        severity=severity,
+                        name=name,
+                        location=f"paragraph:{para.index}",
+                        original_text=para.format.alignment,
+                        suggested_fix=str(expected),
+                        reason=message,
+                    )
+                )
 
     return issues
 
@@ -448,27 +570,35 @@ def _check_common_issues(model: DocumentModel) -> list[CheckIssue]:
 
         # Extra spaces (2+ consecutive spaces)
         if "  " in text:
-            issues.append(CheckIssue(
-                rule_id="CHK-HEUR-001", check_type="format", severity="P1",
-                name="多余空格",
-                location=f"paragraph:{para.index}",
-                original_text=text[:80],
-                suggested_fix="移除多余空格",
-                reason="段落中存在连续空格",
-            ))
+            issues.append(
+                CheckIssue(
+                    rule_id="CHK-HEUR-001",
+                    check_type="format",
+                    severity="P1",
+                    name="多余空格",
+                    location=f"paragraph:{para.index}",
+                    original_text=text[:80],
+                    suggested_fix="移除多余空格",
+                    reason="段落中存在连续空格",
+                )
+            )
 
         # Extra blank lines (empty paragraphs)
         if not text.strip() and para.index > 0:
             prev = model.paragraphs[para.index - 1] if para.index - 1 < len(model.paragraphs) else None
             if prev and not prev.text.strip():
-                issues.append(CheckIssue(
-                    rule_id="CHK-HEUR-002", check_type="format", severity="P2",
-                    name="多余空行",
-                    location=f"paragraph:{para.index}",
-                    original_text="(空行)",
-                    suggested_fix="移除多余空行",
-                    reason="连续出现多个空行",
-                ))
+                issues.append(
+                    CheckIssue(
+                        rule_id="CHK-HEUR-002",
+                        check_type="format",
+                        severity="P2",
+                        name="多余空行",
+                        location=f"paragraph:{para.index}",
+                        original_text="(空行)",
+                        suggested_fix="移除多余空行",
+                        reason="连续出现多个空行",
+                    )
+                )
 
     # --- 页码检查（GB/T 9704: 公文应标注页码）---
     has_page_num = False
@@ -478,13 +608,17 @@ def _check_common_issues(model: DocumentModel) -> list[CheckIssue]:
             break
     if not has_page_num and model.footers:
         # 有页脚但没有检测到页码域
-        issues.append(CheckIssue(
-            rule_id="CHK-HEUR-004", check_type="format", severity="P1",
-            name="页码检查",
-            location="page_footer",
-            original_text="未检测到页码",
-            suggested_fix="在页脚中插入页码（半角阿拉伯数字）",
-            reason="GB/T 9704要求公文标注页码，版心下边缘居中",
-        ))
+        issues.append(
+            CheckIssue(
+                rule_id="CHK-HEUR-004",
+                check_type="format",
+                severity="P1",
+                name="页码检查",
+                location="page_footer",
+                original_text="未检测到页码",
+                suggested_fix="在页脚中插入页码（半角阿拉伯数字）",
+                reason="GB/T 9704要求公文标注页码，版心下边缘居中",
+            )
+        )
 
     return issues

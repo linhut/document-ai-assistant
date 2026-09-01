@@ -4,6 +4,7 @@
 """
 Pydantic models for API request/response schemas.
 """
+
 from __future__ import annotations
 from pydantic import BaseModel, Field
 from typing import Optional, Any
@@ -71,9 +72,15 @@ class OptimizeRequest(BaseModel):
     apply_fixes: bool = True
     apply_ai_suggestions: bool = False
     selected_rule_ids: Optional[list[str]] = Field(default=None, description="仅应用指定规则ID的修复，为None时应用全部")
-    header_config: Optional[dict[str, Any]] = Field(default=None, description="版头配置：{org_name, doc_number, signer, enabled}")
-    footer_note_config: Optional[dict[str, Any]] = Field(default=None, description="版记配置：{cc, printer, printDate, enabled}")
-    page_number_config: Optional[dict[str, Any]] = Field(default=None, description="页码配置：{show/enabled, position, font, format, size, alignment}")
+    header_config: Optional[dict[str, Any]] = Field(
+        default=None, description="版头配置：{org_name, doc_number, signer, enabled}"
+    )
+    footer_note_config: Optional[dict[str, Any]] = Field(
+        default=None, description="版记配置：{cc, printer, printDate, enabled}"
+    )
+    page_number_config: Optional[dict[str, Any]] = Field(
+        default=None, description="页码配置：{show/enabled, position, font, format, size, alignment}"
+    )
 
 
 class OptimizeResponse(BaseModel):
@@ -121,12 +128,14 @@ class AITestResponse(BaseModel):
 
 class AISuggestion(BaseModel):
     """单条 AI 建议，用于应用到文档。"""
+
     original: str = Field(description="原文片段")
     suggestion: str = Field(description="建议修改后的内容")
 
 
 class ApplyAIRequest(BaseModel):
     """AI 建议应用请求。"""
+
     suggestions: list[AISuggestion] = Field(description="要应用的 AI 建议列表")
 
 

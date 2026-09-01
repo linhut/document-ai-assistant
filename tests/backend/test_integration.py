@@ -5,6 +5,7 @@
 End-to-end integration test for Phase 4.
 Tests the complete workflow: upload -> check -> fix -> download
 """
+
 import time
 import requests
 import pytest
@@ -34,6 +35,7 @@ def _get_auth_headers():
     """获取认证 headers。"""
     try:
         from config import APP_DATA_DIR
+
         token_file = APP_DATA_DIR / ".auth_token"
         if token_file.exists():
             token = token_file.read_text(encoding="utf-8").strip()
@@ -71,11 +73,7 @@ def test_complete_workflow():
 
     # Step 2: Run format check
     print("Step 2: Running format check...")
-    response = requests.post(
-        f"{BASE_URL}/api/check/{doc_id}",
-        json={"document_type": "notice"},
-        headers=headers
-    )
+    response = requests.post(f"{BASE_URL}/api/check/{doc_id}", json={"document_type": "notice"}, headers=headers)
 
     assert response.status_code == 200, f"Check failed: {response.text}"
     check_data = response.json()
@@ -101,12 +99,7 @@ def test_complete_workflow():
     # Step 4: Apply automatic fixes
     print("Step 4: Applying automatic fixes...")
     response = requests.post(
-        f"{BASE_URL}/api/optimize/{doc_id}",
-        json={
-            "document_type": "notice",
-            "apply_fixes": True
-        },
-        headers=headers
+        f"{BASE_URL}/api/optimize/{doc_id}", json={"document_type": "notice", "apply_fixes": True}, headers=headers
     )
 
     assert response.status_code == 200, f"Optimize failed: {response.text}"
@@ -157,4 +150,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Test failed: {e}")
         import traceback
+
         traceback.print_exc()

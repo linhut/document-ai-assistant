@@ -7,6 +7,7 @@ Test AI integration with real API.
 默认跳过（需要真实 API Key 与网络），通过环境变量启用：
     RUN_REAL_AI_TESTS=1 ANYROUTER_API_KEY=sk-xxx pytest tests/backend/test_real_ai.py
 """
+
 import asyncio
 import os
 import sys
@@ -14,7 +15,7 @@ import sys
 import pytest
 
 # Add backend to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'backend'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "backend"))
 
 from ai.manager import create_provider
 
@@ -33,12 +34,7 @@ async def test_anyrouter_api():
     print(f"Base URL: {base_url}")
 
     # Test with custom provider
-    provider = create_provider(
-        "custom",
-        api_key,
-        base_url,
-        "gpt-3.5-turbo"
-    )
+    provider = create_provider("custom", api_key, base_url, "gpt-3.5-turbo")
 
     print("\n1. Testing connection...")
     try:

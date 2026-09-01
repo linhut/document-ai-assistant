@@ -11,6 +11,7 @@ Usage:
         else:
             # another process is already handling this document
 """
+
 import os
 import time
 import atexit
@@ -23,9 +24,9 @@ from utils.logger import logger
 
 # --- Configuration ---
 _LOCK_DIR = Path(tempfile.gettempdir()) / ".doc_optimizer_locks"
-_LOCK_TIMEOUT = 300       # 5 minutes max lock hold time
+_LOCK_TIMEOUT = 300  # 5 minutes max lock hold time
 _LOCK_RETRY_INTERVAL = 0.1  # 100ms between lock attempts
-_LOCK_RETRY_MAX = 50       # 5 seconds total retry (50 × 100ms)
+_LOCK_RETRY_MAX = 50  # 5 seconds total retry (50 × 100ms)
 
 
 def _lock_path(doc_id: int) -> Path:
