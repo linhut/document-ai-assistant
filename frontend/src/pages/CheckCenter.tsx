@@ -8,7 +8,7 @@
  * 左侧：问题列表（点击选中 + 筛选 + 批量操作）
  * 右侧：AI 分析结果面板（调用已配置的AI进行智能分析）
  */
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Download, Loader2, CheckSquare, Square, FileText,
@@ -132,7 +132,47 @@ export default function CheckCenter() {
   const [a4RefreshKey, setA4RefreshKey] = useState(0);
   const aiTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  /* ---- 初始化 ---- */
+  /* ---- 初始化：URL 参数 → 状态（渲染期调整，避免 effect 内同步 setState） ---- */
+  // 用 null 作为首帧哨兵：保证首次渲染必然进入一次调整分支（即使参数为空串）
+  const paramsKey = searchParams.toString();
+  const [prevParamsKey, setPrevParamsKey] = useState<string | null>(null);
+  if (prevParamsKey !== paramsKey) {
+    setPrevParamsKey(paramsKey);
+    const docIdParam = searchParams.get('docId');
+    const typeParam = searchParams.get('type');
+    if (docIdParam) {
+      setDocId(parseInt(docIdParam, 10));
+      setDocumentType(typeParam || 'notice');
+    } else {
+      setErrorMessage('未找到文档 ID，请先上传文档');
+      setLoading(false);
+    }
+  }
+
+  /* ---- 加载检查结果（useCallback 稳定引用，供初始化 effect 使用） ---- */
+  const fetchResults = useCallback((id: number, signal?: AbortSignal) => {
+    // promise 链 + 回调内 setState（合规模式：effect 同步调用不触发 set-state-in-effect）
+    return apiClient.get<CheckIssue[]>(`/api/check/${id}/results`, { signal })
+      .then(resp => {
+        if (!signal?.aborted) {
+          setIssues(resp);
+        }
+      })
+      .catch((e: unknown) => {
+        const err = (e && typeof e === 'object') ? e as Record<string, any> : {};
+        if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
+        const resp = (err.response && typeof err.response === 'object') ? err.response as Record<string, any> : {};
+        const data = (resp.data && typeof resp.data === 'object') ? resp.data as Record<string, any> : {};
+        setErrorMessage((data.detail as string) || '获取检查结果失败');
+      })
+      .finally(() => {
+        if (!signal?.aborted) {
+          setLoading(false);
+        }
+      });
+  }, []);
+
+  /* ---- 初始化：数据加载（异步回调内的 setState 不违反 set-state-in-effect） ---- */
   useEffect(() => {
     const controller = new AbortController();
     const { signal } = controller;
@@ -146,47 +186,19 @@ export default function CheckCenter() {
       }
     });
 
-    const docIdParam = searchParams.get('docId');
-    const typeParam = searchParams.get('type');
-    if (docIdParam) {
-      const id = parseInt(docIdParam);
-      setDocId(id);
-      setDocumentType(typeParam || 'notice');
-      fetchResults(id, signal);
-      apiClient.get<{ status: string }>(`/api/documents/${id}`, { signal }).then(r => {
+    if (docId != null) {
+      fetchResults(docId, signal);
+      apiClient.get<{ status: string }>(`/api/documents/${docId}`, { signal }).then(r => {
         if (!signal.aborted) setIsOptimized(r.status === 'optimized');
       }).catch(err => {
         if (err?.name !== 'CanceledError' && err?.code !== 'ERR_CANCELED') {
           // silently ignore
         }
       });
-    } else {
-      setErrorMessage('未找到文档 ID，请先上传文档');
-      setLoading(false);
     }
 
     return () => controller.abort();
-  }, [searchParams]);
-
-  const fetchResults = async (id: number, signal?: AbortSignal) => {
-    try {
-      setLoading(true);
-      const resp = await apiClient.get<CheckIssue[]>(`/api/check/${id}/results`, { signal });
-      if (!signal?.aborted) {
-        setIssues(resp);
-      }
-    } catch (e: unknown) {
-      const err = (e && typeof e === 'object') ? e as Record<string, any> : {};
-      if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
-      const resp = (err.response && typeof err.response === 'object') ? err.response as Record<string, any> : {};
-      const data = (resp.data && typeof resp.data === 'object') ? resp.data as Record<string, any> : {};
-      setErrorMessage((data.detail as string) || '获取检查结果失败');
-    } finally {
-      if (!signal?.aborted) {
-        setLoading(false);
-      }
-    }
-  };
+  }, [docId, fetchResults]);
 
   /* ---- 筛选 + 分组 ---- */
   const filteredIssues = filter === 'all' ? issues : issues.filter(i => i.severity === filter);

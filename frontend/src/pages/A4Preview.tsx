@@ -33,24 +33,26 @@ export default function A4Preview() {
   const [error, setError] = useState('');
   const [zoom, setZoom] = useState(100);
 
+  const loadDocument = (id: number) => {
+    // 用 promise 链 + 回调内 setState，避免 effect 同步调用时触发 set-state-in-effect
+    apiClient.get<{ paragraphs?: DocParagraph[]; tables?: DocTable[]; page_setup?: typeof pageSetup }>(`/api/documents/${id}/preview`)
+      .then(resp => {
+        setParagraphs(resp.paragraphs || []);
+        setTables(resp.tables || []);
+        setPageSetup(resp.page_setup || pageSetup);
+      })
+      .catch(() => {
+        setError('无法加载文档预览');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
   useEffect(() => {
     if (docId) loadDocument(parseInt(docId));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docId]);
-
-  const loadDocument = async (id: number) => {
-    try {
-      setLoading(true);
-      const resp = await apiClient.get<{ paragraphs?: DocParagraph[]; tables?: DocTable[]; page_setup?: typeof pageSetup }>(`/api/documents/${id}/preview`);
-      setParagraphs(resp.paragraphs || []);
-      setTables(resp.tables || []);
-      setPageSetup(resp.page_setup || pageSetup);
-    } catch {
-      setError('无法加载文档预览');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   /* ---- 角色映射 ---- */
   const remappedParagraphs = useMemo(

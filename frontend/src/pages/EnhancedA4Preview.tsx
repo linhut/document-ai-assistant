@@ -14,7 +14,7 @@
  * - ?templateId=notice → 从后端加载模板规则生成预览
  * - ?from=markdown → 从 sessionStorage 加载 Markdown 模块传递的数据
  */
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Settings2, Eye, RotateCcw, Download, ChevronLeft,
@@ -26,7 +26,7 @@ import { apiClient } from '@/api/client';
 import { downloadFromPost, buildPreviewPayload } from '@/lib/download';
 import A4PageRenderer from '@/components/A4PageRenderer';
 import {
-  useDocumentConfig, DEFAULT_CONFIG,
+  useDocumentConfig, DEFAULT_CONFIG, type DocumentConfig,
 } from '@/hooks/useDocumentConfig';
 import { CN_FONT_OPTIONS, FONT_SIZE_OPTIONS, formatFontSizeLabel } from '@/lib/gb-t-9704';
 import type { DocParagraph, DocTable } from '@/lib/types';
@@ -96,8 +96,13 @@ function TextField({ label, value, onChange, placeholder, hint }: {
   label: string; value: string; onChange: (v: string) => void; placeholder?: string; hint?: string;
 }) {
   const [local, setLocal] = useState(value);
+  // 渲染期同步外部 value -> 本地文本（React 官方推荐模式，避免 effect 内同步 setState）
+  const [prevValue, setPrevValue] = useState(value);
+  if (prevValue !== value) {
+    setPrevValue(value);
+    setLocal(value);
+  }
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  useEffect(() => { setLocal(value); }, [value]);
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value;
     setLocal(v);
@@ -122,6 +127,219 @@ function TextField({ label, value, onChange, placeholder, hint }: {
 /* ------------------------------------------------------------------ */
 /*  主页面包装器                                                        */
 /* ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------ */
+/*  设置面板 / 规则预览（模块级组件，props 传参，避免渲染期创建组件）      */
+/* ------------------------------------------------------------------ */
+
+function SettingsPanel({ config, patch, reset, showAdvanced, setShowAdvanced }: {
+  config: DocumentConfig;
+  patch: (partial: Partial<DocumentConfig>) => void;
+  reset: () => void;
+  showAdvanced: boolean;
+  setShowAdvanced: (v: boolean) => void;
+}) {
+  const cfg = config;
+  const p = patch;
+  const rst = reset;
+  return (
+  <div className="space-y-4 text-sm">
+    {/* 页边距 */}
+    <SettingsSection title="页边距 (cm)">
+      <div className="grid grid-cols-2 gap-2">
+        <NumberField label="上" value={cfg.margins.top} onChange={v => p({ margins: { ...cfg.margins, top: v } })} min={1} max={5} step={0.1} />
+        <NumberField label="下" value={cfg.margins.bottom} onChange={v => p({ margins: { ...cfg.margins, bottom: v } })} min={1} max={5} step={0.1} />
+        <NumberField label="左" value={cfg.margins.left} onChange={v => p({ margins: { ...cfg.margins, left: v } })} min={1} max={5} step={0.1} />
+        <NumberField label="右" value={cfg.margins.right} onChange={v => p({ margins: { ...cfg.margins, right: v } })} min={1} max={5} step={0.1} />
+      </div>
+    </SettingsSection>
+
+    {/* 公文标题 */}
+    <SettingsSection title="公文标题">
+      <SelectField label="字体" value={cfg.title.fontFamily} options={CN_FONT_OPTIONS.slice(0, 6)} onChange={v => p({ title: { ...cfg.title, fontFamily: v } })} />
+      <FontSizeField label="字号" value={cfg.title.fontSize} onChange={v => p({ title: { ...cfg.title, fontSize: v } })} />
+    </SettingsSection>
+
+    {/* 正文 */}
+    <SettingsSection title="正文">
+      <SelectField label="字体" value={cfg.body.fontFamily} options={CN_FONT_OPTIONS.slice(2, 7)} onChange={v => p({ body: { ...cfg.body, fontFamily: v } })} />
+      <FontSizeField label="字号" value={cfg.body.fontSize} onChange={v => p({ body: { ...cfg.body, fontSize: v } })} />
+      <NumberField label="行距" value={cfg.body.lineSpacing} onChange={v => p({ body: { ...cfg.body, lineSpacing: v } })} min={20} max={40} step={0.5} suffix="pt" />
+      <NumberField label="缩进" value={cfg.body.firstLineIndent} onChange={v => p({ body: { ...cfg.body, firstLineIndent: v } })} min={0} max={4} step={0.5} suffix="em" />
+    </SettingsSection>
+
+    {/* 页码设置 */}
+    <SettingsSection title="页码设置">
+      <label className="flex items-center gap-2 mb-2">
+        <input type="checkbox" checked={cfg.pageNumber.show} onChange={e => p({ pageNumber: { ...cfg.pageNumber, show: e.target.checked } })} className="w-4 h-4" />
+        <span className="font-medium">显示页码</span>
+      </label>
+      {cfg.pageNumber.show && (
+        <div className="space-y-2 ml-1 pl-3 border-l-2 border-primary-100">
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-primary-600 w-14 shrink-0">字体</label>
+            <select value={cfg.pageNumber.font} onChange={e => p({ pageNumber: { ...cfg.pageNumber, font: e.target.value } })}
+              className="flex-1 border border-primary-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-accent">
+              <option value="宋体">宋体</option>
+              <option value="Times New Roman">Times New Roman</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-primary-600 w-14 shrink-0">样式</label>
+            <select value={cfg.pageNumber.position} onChange={e => p({ pageNumber: { ...cfg.pageNumber, position: e.target.value as 'center' | 'right-left' } })}
+              className="flex-1 border border-primary-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-accent">
+              <option value="center">居中（单面打印）</option>
+              <option value="right-left">单右双左（国标）</option>
+            </select>
+          </div>
+        </div>
+      )}
+    </SettingsSection>
+
+    {/* ====== 高级设置（折叠） ====== */}
+    <div>
+      <button
+        onClick={() => setShowAdvanced(!showAdvanced)}
+        className="w-full flex items-center justify-between py-2 text-xs font-semibold text-primary-500 uppercase tracking-wider"
+      >
+        <span>高级设置</span>
+        <span className={`transform transition-transform ${showAdvanced ? 'rotate-180' : ''}`}>▼</span>
+      </button>
+      {showAdvanced && (
+        <div className="space-y-4 pl-1 border-l-2 border-primary-100 ml-1">
+          {/* 版头设置 */}
+          <SettingsSection title="版头设置（GB/T 9704 §7.2）">
+            <label className="flex items-center gap-2 mb-2">
+              <input type="checkbox" checked={cfg.header.enabled} onChange={e => p({ header: { ...cfg.header, enabled: e.target.checked } })} className="w-4 h-4" />
+              <span className="font-medium">启用版头</span>
+            </label>
+            {cfg.header.enabled && (
+              <div className="space-y-2 ml-1 pl-3 border-l-2 border-primary-100">
+                <TextField label="发文机关" value={cfg.header.orgName} onChange={v => p({ header: { ...cfg.header, orgName: v } })} placeholder="国务院办公厅文件" hint="红色方正小标宋居中" />
+                <TextField label="发文字号" value={cfg.header.docNumber} onChange={v => p({ header: { ...cfg.header, docNumber: v } })} placeholder="国办发〔2026〕1号" hint="国办发〔2026〕1号" />
+                <TextField label="签发人" value={cfg.header.signer} onChange={v => p({ header: { ...cfg.header, signer: v } })} placeholder="张三" hint="仅上行文" />
+              </div>
+            )}
+          </SettingsSection>
+
+          {/* 版记设置 */}
+          <SettingsSection title="版记设置（GB/T 9704 §7.4）">
+            <label className="flex items-center gap-2 mb-2">
+              <input type="checkbox" checked={cfg.footerNote.enabled} onChange={e => p({ footerNote: { ...cfg.footerNote, enabled: e.target.checked } })} className="w-4 h-4" />
+              <span className="font-medium">启用版记</span>
+            </label>
+            {cfg.footerNote.enabled && (
+              <div className="space-y-2 ml-1 pl-3 border-l-2 border-primary-100">
+                <TextField label="抄送" value={cfg.footerNote.cc} onChange={v => p({ footerNote: { ...cfg.footerNote, cc: v } })} placeholder="XX局，XX办" hint="四号仿宋，左空一字" />
+                <TextField label="印发机关" value={cfg.footerNote.printer} onChange={v => p({ footerNote: { ...cfg.footerNote, printer: v } })} placeholder="XX市人民政府办公室" />
+                <TextField label="印发日期" value={cfg.footerNote.printDate} onChange={v => p({ footerNote: { ...cfg.footerNote, printDate: v } })} placeholder="2026年1月1日" />
+              </div>
+            )}
+          </SettingsSection>
+
+          {/* 特殊选项 */}
+          <SettingsSection title="特殊选项">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={cfg.special.firstParaBold} onChange={e => p({ special: { ...cfg.special, firstParaBold: e.target.checked } })} className="w-4 h-4" />
+              <span className="text-xs">正文首句加粗</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={cfg.special.heading3Bold} onChange={e => p({ special: { ...cfg.special, heading3Bold: e.target.checked } })} className="w-4 h-4" />
+              <span className="text-xs">三级标题加粗</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={cfg.special.stamp} onChange={e => p({ special: { ...cfg.special, stamp: e.target.checked } })} className="w-4 h-4" />
+              <span className="text-xs">加盖印章</span>
+            </label>
+            {cfg.special.stamp && (
+              <div className="ml-6 mt-2 space-y-2 p-2 bg-primary-50 rounded">
+                <div>
+                  <label className="text-[10px] text-primary-600 block mb-1">上传印章图片（透明底 PNG）</label>
+                  <input type="file" accept="image/png" onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (!file.type.includes('png')) { alert('请上传 PNG 格式图片'); return; }
+                    const reader = new FileReader();
+                    reader.onload = () => p({ special: { ...cfg.special, stampImage: reader.result as string } });
+                    reader.readAsDataURL(file);
+                  }} className="text-xs w-full" />
+                  {cfg.special.stampImage && (
+                    <div className="mt-1 flex items-center gap-2">
+                      <img src={cfg.special.stampImage} alt="印章预览" className="w-12 h-12 object-contain border rounded" />
+                      <button onClick={() => p({ special: { ...cfg.special, stampImage: '' } })} className="text-xs text-red-500 hover:underline">移除</button>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-[10px] text-primary-600 w-14 shrink-0">盖章页码</label>
+                  <input type="number" value={cfg.special.stampPage} onChange={e => p({ special: { ...cfg.special, stampPage: parseInt(e.target.value) || 0 } })} min={0} className="w-16 border border-primary-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-accent" />
+                  <span className="text-[10px] text-primary-400">0 = 最后一页</span>
+                </div>
+              </div>
+            )}
+          </SettingsSection>
+
+          {/* 各级标题字体配置 */}
+          <SettingsSection title="标题字体配置">
+            <p className="text-[10px] text-primary-400 mb-2">一级、二级、三级标题统一在此配置中文字体、英数字体和字号</p>
+            {([['heading1', '一级标题'], ['heading2', '二级标题'], ['heading3', '三级标题']] as const).map(([key, label]) => (
+              <div key={key} className="mb-3 p-2 bg-primary-50 rounded">
+                <p className="text-xs font-medium text-primary-700 mb-1.5">{label}</p>
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <label className="text-[10px] text-primary-600 w-14 shrink-0">中文字体</label>
+                    <select value={cfg[key].fontFamily} onChange={e => p({ [key]: { ...cfg[key], fontFamily: e.target.value } })}
+                      className="flex-1 border border-primary-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-accent">
+                      {CN_FONT_OPTIONS.map(f => <option key={f} value={f}>{f}</option>)}
+                    </select>
+                  </div>
+                  <FontSizeField label="字号" value={cfg[key].fontSize} onChange={v => p({ [key]: { ...cfg[key], fontSize: v } })} />
+                </div>
+              </div>
+            ))}
+          </SettingsSection>
+        </div>
+      )}
+    </div>
+
+    {/* 恢复默认 */}
+    <Button variant="outline" size="sm" className="w-full" onClick={rst}>
+      <RotateCcw className="h-3 w-3 mr-1" /> 恢复默认（GB/T 9704）
+    </Button>
+  </div>
+  );
+}
+
+function RulesPanel({ config }: { config: DocumentConfig }) {
+  const cfg = config;
+  const rules = [
+    { label: '标题', font: cfg.title.fontFamily, size: formatFontSizeLabel(cfg.title.fontSize) },
+    { label: '正文', font: cfg.body.fontFamily, size: formatFontSizeLabel(cfg.body.fontSize), spacing: `${cfg.body.lineSpacing}pt`, indent: `${cfg.body.firstLineIndent}em` },
+    { label: '一级标题', font: cfg.heading1.fontFamily, size: formatFontSizeLabel(cfg.heading1.fontSize) },
+    { label: '二级标题', font: cfg.heading2.fontFamily, size: formatFontSizeLabel(cfg.heading2.fontSize) },
+    { label: '三级标题', font: cfg.heading3.fontFamily, size: formatFontSizeLabel(cfg.heading3.fontSize), bold: cfg.special.heading3Bold ? '加粗' : '' },
+    { label: '页边距', value: `上${cfg.margins.top} 下${cfg.margins.bottom} 左${cfg.margins.left} 右${cfg.margins.right} cm` },
+    ...(cfg.header.enabled ? [{ label: '版头', value: cfg.header.orgName || '（未填写）' }] : []),
+    ...(cfg.footerNote.enabled ? [{ label: '版记', value: `抄送: ${cfg.footerNote.cc || '无'}` }] : []),
+  ];
+  return (
+    <div className="space-y-2">
+      {rules.map((r, i) => (
+        <div key={i} className="flex items-center justify-between py-1.5 px-2 bg-primary-50 rounded text-xs">
+          <span className="font-medium text-primary-700">{r.label}</span>
+          <span className="text-primary-500 text-right">
+            {r.font && `${r.font} `}
+            {r.size && `${r.size} `}
+            {r.spacing && `行距${r.spacing} `}
+            {r.indent && `缩进${r.indent} `}
+            {r.bold && `${r.bold} `}
+            {r.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function EnhancedA4Preview() {
   const [searchParams] = useSearchParams();
@@ -239,220 +457,9 @@ export default function EnhancedA4Preview() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docId, templateId, cacheKey, fromMarkdown]);
 
-  // 用 ref 绑定 config/patch/reset，让 SettingsPanel 函数引用完全稳定
-  const configRef = useRef(config);
-  configRef.current = config;
-  const patchRef = useRef(patch);
-  patchRef.current = patch;
-  const resetRef = useRef(reset);
-  resetRef.current = reset;
 
-  /* ---- 设置面板 ---- */
 
-  const SettingsPanel = useMemo(() => () => {
-    const cfg = configRef.current;
-    const p = patchRef.current;
-    const rst = resetRef.current;
-    return (
-    <div className="space-y-4 text-sm">
-      {/* 页边距 */}
-      <SettingsSection title="页边距 (cm)">
-        <div className="grid grid-cols-2 gap-2">
-          <NumberField label="上" value={cfg.margins.top} onChange={v => p({ margins: { ...cfg.margins, top: v } })} min={1} max={5} step={0.1} />
-          <NumberField label="下" value={cfg.margins.bottom} onChange={v => p({ margins: { ...cfg.margins, bottom: v } })} min={1} max={5} step={0.1} />
-          <NumberField label="左" value={cfg.margins.left} onChange={v => p({ margins: { ...cfg.margins, left: v } })} min={1} max={5} step={0.1} />
-          <NumberField label="右" value={cfg.margins.right} onChange={v => p({ margins: { ...cfg.margins, right: v } })} min={1} max={5} step={0.1} />
-        </div>
-      </SettingsSection>
 
-      {/* 公文标题 */}
-      <SettingsSection title="公文标题">
-        <SelectField label="字体" value={cfg.title.fontFamily} options={CN_FONT_OPTIONS.slice(0, 6)} onChange={v => p({ title: { ...cfg.title, fontFamily: v } })} />
-        <FontSizeField label="字号" value={cfg.title.fontSize} onChange={v => p({ title: { ...cfg.title, fontSize: v } })} />
-      </SettingsSection>
-
-      {/* 正文 */}
-      <SettingsSection title="正文">
-        <SelectField label="字体" value={cfg.body.fontFamily} options={CN_FONT_OPTIONS.slice(2, 7)} onChange={v => p({ body: { ...cfg.body, fontFamily: v } })} />
-        <FontSizeField label="字号" value={cfg.body.fontSize} onChange={v => p({ body: { ...cfg.body, fontSize: v } })} />
-        <NumberField label="行距" value={cfg.body.lineSpacing} onChange={v => p({ body: { ...cfg.body, lineSpacing: v } })} min={20} max={40} step={0.5} suffix="pt" />
-        <NumberField label="缩进" value={cfg.body.firstLineIndent} onChange={v => p({ body: { ...cfg.body, firstLineIndent: v } })} min={0} max={4} step={0.5} suffix="em" />
-      </SettingsSection>
-
-      {/* 页码设置 */}
-      <SettingsSection title="页码设置">
-        <label className="flex items-center gap-2 mb-2">
-          <input type="checkbox" checked={cfg.pageNumber.show} onChange={e => p({ pageNumber: { ...cfg.pageNumber, show: e.target.checked } })} className="w-4 h-4" />
-          <span className="font-medium">显示页码</span>
-        </label>
-        {cfg.pageNumber.show && (
-          <div className="space-y-2 ml-1 pl-3 border-l-2 border-primary-100">
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-primary-600 w-14 shrink-0">字体</label>
-              <select value={cfg.pageNumber.font} onChange={e => p({ pageNumber: { ...cfg.pageNumber, font: e.target.value } })}
-                className="flex-1 border border-primary-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-accent">
-                <option value="宋体">宋体</option>
-                <option value="Times New Roman">Times New Roman</option>
-              </select>
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-primary-600 w-14 shrink-0">样式</label>
-              <select value={cfg.pageNumber.position} onChange={e => p({ pageNumber: { ...cfg.pageNumber, position: e.target.value as 'center' | 'right-left' } })}
-                className="flex-1 border border-primary-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-accent">
-                <option value="center">居中（单面打印）</option>
-                <option value="right-left">单右双左（国标）</option>
-              </select>
-            </div>
-          </div>
-        )}
-      </SettingsSection>
-
-      {/* ====== 高级设置（折叠） ====== */}
-      <div>
-        <button
-          onClick={() => setShowAdvanced(!showAdvanced)}
-          className="w-full flex items-center justify-between py-2 text-xs font-semibold text-primary-500 uppercase tracking-wider"
-        >
-          <span>高级设置</span>
-          <span className={`transform transition-transform ${showAdvanced ? 'rotate-180' : ''}`}>▼</span>
-        </button>
-        {showAdvanced && (
-          <div className="space-y-4 pl-1 border-l-2 border-primary-100 ml-1">
-            {/* 版头设置 */}
-            <SettingsSection title="版头设置（GB/T 9704 §7.2）">
-              <label className="flex items-center gap-2 mb-2">
-                <input type="checkbox" checked={cfg.header.enabled} onChange={e => p({ header: { ...cfg.header, enabled: e.target.checked } })} className="w-4 h-4" />
-                <span className="font-medium">启用版头</span>
-              </label>
-              {cfg.header.enabled && (
-                <div className="space-y-2 ml-1 pl-3 border-l-2 border-primary-100">
-                  <TextField label="发文机关" value={cfg.header.orgName} onChange={v => p({ header: { ...cfg.header, orgName: v } })} placeholder="国务院办公厅文件" hint="红色方正小标宋居中" />
-                  <TextField label="发文字号" value={cfg.header.docNumber} onChange={v => p({ header: { ...cfg.header, docNumber: v } })} placeholder="国办发〔2026〕1号" hint="国办发〔2026〕1号" />
-                  <TextField label="签发人" value={cfg.header.signer} onChange={v => p({ header: { ...cfg.header, signer: v } })} placeholder="张三" hint="仅上行文" />
-                </div>
-              )}
-            </SettingsSection>
-
-            {/* 版记设置 */}
-            <SettingsSection title="版记设置（GB/T 9704 §7.4）">
-              <label className="flex items-center gap-2 mb-2">
-                <input type="checkbox" checked={cfg.footerNote.enabled} onChange={e => p({ footerNote: { ...cfg.footerNote, enabled: e.target.checked } })} className="w-4 h-4" />
-                <span className="font-medium">启用版记</span>
-              </label>
-              {cfg.footerNote.enabled && (
-                <div className="space-y-2 ml-1 pl-3 border-l-2 border-primary-100">
-                  <TextField label="抄送" value={cfg.footerNote.cc} onChange={v => p({ footerNote: { ...cfg.footerNote, cc: v } })} placeholder="XX局，XX办" hint="四号仿宋，左空一字" />
-                  <TextField label="印发机关" value={cfg.footerNote.printer} onChange={v => p({ footerNote: { ...cfg.footerNote, printer: v } })} placeholder="XX市人民政府办公室" />
-                  <TextField label="印发日期" value={cfg.footerNote.printDate} onChange={v => p({ footerNote: { ...cfg.footerNote, printDate: v } })} placeholder="2026年1月1日" />
-                </div>
-              )}
-            </SettingsSection>
-
-            {/* 特殊选项 */}
-            <SettingsSection title="特殊选项">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" checked={cfg.special.firstParaBold} onChange={e => p({ special: { ...cfg.special, firstParaBold: e.target.checked } })} className="w-4 h-4" />
-                <span className="text-xs">正文首句加粗</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" checked={cfg.special.heading3Bold} onChange={e => p({ special: { ...cfg.special, heading3Bold: e.target.checked } })} className="w-4 h-4" />
-                <span className="text-xs">三级标题加粗</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" checked={cfg.special.stamp} onChange={e => p({ special: { ...cfg.special, stamp: e.target.checked } })} className="w-4 h-4" />
-                <span className="text-xs">加盖印章</span>
-              </label>
-              {cfg.special.stamp && (
-                <div className="ml-6 mt-2 space-y-2 p-2 bg-primary-50 rounded">
-                  <div>
-                    <label className="text-[10px] text-primary-600 block mb-1">上传印章图片（透明底 PNG）</label>
-                    <input type="file" accept="image/png" onChange={e => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      if (!file.type.includes('png')) { alert('请上传 PNG 格式图片'); return; }
-                      const reader = new FileReader();
-                      reader.onload = () => p({ special: { ...cfg.special, stampImage: reader.result as string } });
-                      reader.readAsDataURL(file);
-                    }} className="text-xs w-full" />
-                    {cfg.special.stampImage && (
-                      <div className="mt-1 flex items-center gap-2">
-                        <img src={cfg.special.stampImage} alt="印章预览" className="w-12 h-12 object-contain border rounded" />
-                        <button onClick={() => p({ special: { ...cfg.special, stampImage: '' } })} className="text-xs text-red-500 hover:underline">移除</button>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <label className="text-[10px] text-primary-600 w-14 shrink-0">盖章页码</label>
-                    <input type="number" value={cfg.special.stampPage} onChange={e => p({ special: { ...cfg.special, stampPage: parseInt(e.target.value) || 0 } })} min={0} className="w-16 border border-primary-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-accent" />
-                    <span className="text-[10px] text-primary-400">0 = 最后一页</span>
-                  </div>
-                </div>
-              )}
-            </SettingsSection>
-
-            {/* 各级标题字体配置 */}
-            <SettingsSection title="标题字体配置">
-              <p className="text-[10px] text-primary-400 mb-2">一级、二级、三级标题统一在此配置中文字体、英数字体和字号</p>
-              {([['heading1', '一级标题'], ['heading2', '二级标题'], ['heading3', '三级标题']] as const).map(([key, label]) => (
-                <div key={key} className="mb-3 p-2 bg-primary-50 rounded">
-                  <p className="text-xs font-medium text-primary-700 mb-1.5">{label}</p>
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <label className="text-[10px] text-primary-600 w-14 shrink-0">中文字体</label>
-                      <select value={cfg[key].fontFamily} onChange={e => p({ [key]: { ...cfg[key], fontFamily: e.target.value } })}
-                        className="flex-1 border border-primary-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-accent">
-                        {CN_FONT_OPTIONS.map(f => <option key={f} value={f}>{f}</option>)}
-                      </select>
-                    </div>
-                    <FontSizeField label="字号" value={cfg[key].fontSize} onChange={v => p({ [key]: { ...cfg[key], fontSize: v } })} />
-                  </div>
-                </div>
-              ))}
-            </SettingsSection>
-          </div>
-        )}
-      </div>
-
-      {/* 恢复默认 */}
-      <Button variant="outline" size="sm" className="w-full" onClick={rst}>
-        <RotateCcw className="h-3 w-3 mr-1" /> 恢复默认（GB/T 9704）
-      </Button>
-    </div>
-    );
-  }, [showAdvanced]);
-
-  /* ---- 规则预览 ---- */
-
-  const RulesPanel = useMemo(() => () => {
-    const cfg = configRef.current;
-    const rules = [
-      { label: '标题', font: cfg.title.fontFamily, size: formatFontSizeLabel(cfg.title.fontSize) },
-      { label: '正文', font: cfg.body.fontFamily, size: formatFontSizeLabel(cfg.body.fontSize), spacing: `${cfg.body.lineSpacing}pt`, indent: `${cfg.body.firstLineIndent}em` },
-      { label: '一级标题', font: cfg.heading1.fontFamily, size: formatFontSizeLabel(cfg.heading1.fontSize) },
-      { label: '二级标题', font: cfg.heading2.fontFamily, size: formatFontSizeLabel(cfg.heading2.fontSize) },
-      { label: '三级标题', font: cfg.heading3.fontFamily, size: formatFontSizeLabel(cfg.heading3.fontSize), bold: cfg.special.heading3Bold ? '加粗' : '' },
-      { label: '页边距', value: `上${cfg.margins.top} 下${cfg.margins.bottom} 左${cfg.margins.left} 右${cfg.margins.right} cm` },
-      ...(cfg.header.enabled ? [{ label: '版头', value: cfg.header.orgName || '（未填写）' }] : []),
-      ...(cfg.footerNote.enabled ? [{ label: '版记', value: `抄送: ${cfg.footerNote.cc || '无'}` }] : []),
-    ];
-    return (
-      <div className="space-y-2">
-        {rules.map((r, i) => (
-          <div key={i} className="flex items-center justify-between py-1.5 px-2 bg-primary-50 rounded text-xs">
-            <span className="font-medium text-primary-700">{r.label}</span>
-            <span className="text-primary-500 text-right">
-              {r.font && `${r.font} `}
-              {r.size && `${r.size} `}
-              {r.spacing && `行距${r.spacing} `}
-              {r.indent && `缩进${r.indent} `}
-              {r.bold && `${r.bold} `}
-              {r.value}
-            </span>
-          </div>
-        ))}
-      </div>
-    );
-  }, []);
 
   /* ---- 主渲染 ---- */
 
@@ -492,8 +499,8 @@ export default function EnhancedA4Preview() {
           <Button variant="ghost" size="sm" onClick={() => setZoom(z => Math.min(150, z + 10))}><ZoomIn className="h-4 w-4" /></Button>
           <Button variant="ghost" size="sm" onClick={async () => {
             try {
-              // 使用 configRef.current 确保读取最新配置（避免闭包捕获旧值）
-              const cfg = configRef.current;
+              // 事件处理器闭包捕获的 config 即当前渲染的最新配置
+              const cfg = config;
               const payload = buildPreviewPayload(paragraphs, tables, cfg);
               // 强制注入版头/版记/页码配置
               if (cfg.header) {
@@ -547,7 +554,7 @@ export default function EnhancedA4Preview() {
               </button>
             </div>
             <div className="p-3">
-              {activeTab === 'format' ? <SettingsPanel /> : <RulesPanel />}
+              {activeTab === 'format' ? <SettingsPanel config={config} patch={patch} reset={reset} showAdvanced={showAdvanced} setShowAdvanced={setShowAdvanced} /> : <RulesPanel config={config} />}
             </div>
           </div>
         )}

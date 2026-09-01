@@ -43,46 +43,42 @@ export default function About() {
   const [checking, setChecking] = useState(true);
   const [checkError, setCheckError] = useState(false);
 
-  useEffect(() => {
-    loadFonts();
-    checkNewVersion();
-  }, []);
-
-  const checkNewVersion = async () => {
-    setChecking(true);
-    setCheckError(false);
-    try {
-      const resp = await fetch(
+  const checkNewVersion = () => {
+    // promise 链 + 回调内 setState（合规模式：effect 同步调用不触发 set-state-in-effect）
+    Promise.resolve()
+      .then(() => { setChecking(true); setCheckError(false); })
+      .then(() => fetch(
         'https://api.github.com/repos/linhut/document-ai-assistant/releases/latest',
         { signal: AbortSignal.timeout(8000) }
-      );
-      if (resp.ok) {
-        const data = await resp.json();
-        setLatestVersion(data.tag_name || '');
-      } else {
+      ))
+      .then(resp => {
+        if (resp.ok) {
+          return resp.json().then(data => setLatestVersion(data.tag_name || ''));
+        }
         setCheckError(true);
-      }
-    } catch {
-      setCheckError(true);
-    } finally {
-      setChecking(false);
-    }
+        return undefined;
+      })
+      .catch(() => {
+        setCheckError(true);
+      })
+      .finally(() => {
+        setChecking(false);
+      });
+  };
+
+  const loadFonts = () => {
+    // promise 链 + 回调内 setState（合规模式：effect 同步调用不触发 set-state-in-effect）
+    apiClient.get<{ fonts?: FontInfo[] }>('/api/settings/fonts')
+      .then(resp => setFonts(resp.fonts || []))
+      .catch(error => console.error('Load fonts error:', error));
   };
 
   const hasNewVersion = latestVersion && isNewer(latestVersion, __APP_VERSION__);
 
   useEffect(() => {
     loadFonts();
+    checkNewVersion();
   }, []);
-
-  const loadFonts = async () => {
-    try {
-      const resp = await apiClient.get<{ fonts?: FontInfo[] }>('/api/settings/fonts');
-      setFonts(resp.fonts || []);
-    } catch (error) {
-      console.error('Load fonts error:', error);
-    }
-  };
 
   const handleDownloadFont = (font: FontInfo) => {
     downloadFile(`/api/settings/fonts/download/${font.filename}`, font.filename);

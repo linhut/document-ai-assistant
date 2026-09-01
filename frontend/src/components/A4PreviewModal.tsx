@@ -68,39 +68,43 @@ export default function A4PreviewModal({
     };
   };
 
-  const loadData = useCallback(async (signal?: AbortSignal) => {
-    try {
-      setLoading(true);
-      setError('');
+  const loadData = useCallback((signal?: AbortSignal) => {
+    // promise 链 + 回调内 setState（合规模式：effect 同步调用不触发 set-state-in-effect）
+    const request: Promise<PreviewResponse> = isTemplateMode
+      ? apiClient.post<PreviewResponse>(`/api/templates/${templateId}/preview`, {}, { timeout: 30000, signal })
+      : docId
+        ? apiClient.get<PreviewResponse>(`/api/documents/${docId}/preview`, { signal })
+        : Promise.reject(new Error('未指定预览目标'));
 
-      let resp: PreviewResponse;
-      if (isTemplateMode) {
-        resp = await apiClient.post(`/api/templates/${templateId}/preview`, {}, { timeout: 30000, signal });
-      } else if (docId) {
-        resp = await apiClient.get(`/api/documents/${docId}/preview`, { signal });
-      } else {
-        setError('未指定预览目标');
-        return;
-      }
-
-      if (!signal?.aborted) {
-        setParagraphs(resp.paragraphs || []);
-        setTables(resp.tables || []);
-        setPageSetup(resp.page_setup || pageSetup);
-      }
-    } catch (err: unknown) {
-      const errObj = (err && typeof err === 'object') ? err as Record<string, unknown> : {};
-      if (errObj.name === 'CanceledError' || errObj.code === 'ERR_CANCELED') return;
-      const resp = (errObj.response && typeof errObj.response === 'object') ? errObj.response as Record<string, unknown> : {};
-      const respData = (resp.data && typeof resp.data === 'object') ? resp.data as Record<string, unknown> : {};
-      const msg = respData.detail || errObj.message || '预览加载失败';
-      setError(typeof msg === 'string' ? msg : JSON.stringify(msg));
-    } finally {
-      if (!signal?.aborted) {
-        setLoading(false);
-      }
-    }
+    request
+      .then(resp => {
+        if (!signal?.aborted) {
+          setParagraphs(resp.paragraphs || []);
+          setTables(resp.tables || []);
+          setPageSetup(resp.page_setup || pageSetup);
+        }
+      })
+      .catch((err: unknown) => {
+        const errObj = (err && typeof err === 'object') ? err as Record<string, unknown> : {};
+        if (errObj.name === 'CanceledError' || errObj.code === 'ERR_CANCELED') return;
+        const resp = (errObj.response && typeof errObj.response === 'object') ? errObj.response as Record<string, unknown> : {};
+        const respData = (resp.data && typeof resp.data === 'object') ? resp.data as Record<string, unknown> : {};
+        const msg = respData.detail || errObj.message || '预览加载失败';
+        setError(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      })
+      .finally(() => {
+        if (!signal?.aborted) {
+          setLoading(false);
+        }
+      });
   }, [isTemplateMode, docId, templateId, pageSetup]);
+
+  // 刷新/重试：事件处理器内先同步重置 loading/error（事件处理器允许同步 setState）
+  const handleReload = () => {
+    setLoading(true);
+    setError('');
+    loadData();
+  };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -157,7 +161,7 @@ export default function A4PreviewModal({
             <span className="text-xs text-primary-500">{subtitleText}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => loadData()} title="刷新">
+            <Button variant="ghost" size="sm" onClick={handleReload} title="刷新">
               <RefreshCw className="h-4 w-4" />
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setZoom(z => Math.max(50, z - 10))}>
@@ -192,7 +196,7 @@ export default function A4PreviewModal({
           ) : error ? (
             <div className="text-center py-20">
               <p className="text-red-500 mb-3">{error}</p>
-              <Button variant="outline" size="sm" onClick={() => loadData()}>重试</Button>
+              <Button variant="outline" size="sm" onClick={handleReload}>重试</Button>
             </div>
           ) : paragraphs.length === 0 ? (
             <div className="text-center py-20 text-muted-foreground">

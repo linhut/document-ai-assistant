@@ -134,7 +134,10 @@ export default function MarkdownOptimize() {
   }, []);
 
   const patchRef = useRef(patch);
-  patchRef.current = patch;
+  // 渲染期间禁止写 ref：改为 effect 内同步（每次渲染后立即更新，事件处理器读取时为最新值）
+  useEffect(() => {
+    patchRef.current = patch;
+  });
 
   // 文种名称（用于下载文件名）
   const docTypeName = useMemo(() => {

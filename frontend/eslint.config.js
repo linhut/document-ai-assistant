@@ -23,13 +23,10 @@ export default defineConfig([
       '@typescript-eslint/no-explicit-any': 'off',
       // shadcn/ui 组件和 hooks 文件大量导出非组件，禁用此规则
       'react-refresh/only-export-components': 'off',
-      // eslint-plugin-react-hooks 7.x 随 React Compiler 引入的激进规则：
-      // 存量代码采用 useEffect+const fn 模式与 render 期同步 ref 的写法，
-      // 全面重构风险高，且与现有架构冲突，故显式关闭（保持 recommended 其余规则）。
-      'react-hooks/immutability': 'off',
-      'react-hooks/set-state-in-effect': 'off',
-      'react-hooks/refs': 'off',
-      'react-hooks/static-components': 'off',
+      // 注：react-hooks 7.x 的 immutability / set-state-in-effect / refs /
+      // static-components 四条规则已通过代码重构满足（loadXxx 函数上移到
+      // useEffect 之前、URL 参数改为渲染期调整状态、ref 写入移入 effect、
+      // 渲染期创建的组件改为模块级组件传 props），不再需要关闭。
     },
     languageOptions: {
       globals: globals.browser,

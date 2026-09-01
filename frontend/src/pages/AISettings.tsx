@@ -85,6 +85,69 @@ export default function AISettings() {
   const currentProvider = PROVIDERS.find(p => p.label === selectedLabel);
   const { confirm } = useToast();
 
+  const loadDefaultConfig = async (signal?: AbortSignal) => {
+    try {
+      const resp = await apiClient.get<{ api_key?: string }>('/api/ai/default', { signal });
+      if (resp.api_key && !apiKey) {
+        // api key exists but is masked (not stored in component state)
+      }
+    } catch (err: unknown) {
+      const e = (err && typeof err === 'object') ? err as Record<string, unknown> : {};
+      if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') return;
+      // 默认配置加载失败不影响正常使用
+      console.warn('加载默认 AI 配置失败');
+    }
+  };
+
+  const loadModelStatus = (signal?: AbortSignal) => {
+    // promise 链 + 回调内 setState（合规模式：effect 同步调用不触发 set-state-in-effect）
+    apiClient.get<{ statuses?: typeof modelStatuses }>('/api/ai/status', { signal })
+      .then(resp => {
+        if (resp.statuses) setModelStatuses(resp.statuses);
+      })
+      .catch((err: unknown) => {
+        const e = (err && typeof err === 'object') ? err as Record<string, unknown> : {};
+        if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') return;
+        // 静默失败
+      });
+  };
+
+  const loadConfig = (signal?: AbortSignal) => {
+    // promise 链 + 回调内 setState（合规模式：effect 同步调用不触发 set-state-in-effect）
+    interface ConfigResponse {
+      exists?: boolean;
+      base_url?: string;
+      model?: string;
+      is_active?: boolean;
+      api_key_masked?: string;
+      default?: { base_url?: string; model?: string; api_key_masked?: string };
+    }
+    apiClient.get<ConfigResponse>(`/api/ai/config/${encodeURIComponent(provider)}`, { signal })
+      .then(response => {
+        if (response.exists) {
+          setBaseUrl(response.base_url || '');
+          setModel(response.model || '');
+          setIsActive(response.is_active ?? true);
+          if (response.api_key_masked) {
+            setHasSavedKey(true);
+          }
+        } else if (response.default) {
+          // 使用默认配置
+          setBaseUrl(response.default.base_url || '');
+          setModel(response.default.model || '');
+          if (response.default.api_key_masked) {
+            // setApiKeyMasked was removed (unused)
+            setHasSavedKey(true);
+          }
+        }
+      })
+      .catch((error: unknown) => {
+        const e = (error && typeof error === 'object') ? error as Record<string, unknown> : {};
+        if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') return;
+        console.error('Load config error:', error);
+      });
+  };
+
   useEffect(() => {
     const controller = new AbortController();
     loadConfig(controller.signal);
@@ -101,65 +164,6 @@ export default function AISettings() {
     return () => { clearInterval(timer); controller.abort(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const loadDefaultConfig = async (signal?: AbortSignal) => {
-    try {
-      const resp = await apiClient.get<{ api_key?: string }>('/api/ai/default', { signal });
-      if (resp.api_key && !apiKey) {
-        // api key exists but is masked (not stored in component state)
-      }
-    } catch (err: unknown) {
-      const e = (err && typeof err === 'object') ? err as Record<string, unknown> : {};
-      if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') return;
-      // 默认配置加载失败不影响正常使用
-      console.warn('加载默认 AI 配置失败');
-    }
-  };
-
-  const loadModelStatus = async (signal?: AbortSignal) => {
-    try {
-      const resp = await apiClient.get<{ statuses?: typeof modelStatuses }>('/api/ai/status', { signal });
-      if (resp.statuses) setModelStatuses(resp.statuses);
-    } catch (err: unknown) {
-      const e = (err && typeof err === 'object') ? err as Record<string, unknown> : {};
-      if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') return;
-      // 静默失败
-    }
-  };
-
-  const loadConfig = async (signal?: AbortSignal) => {
-    try {
-      interface ConfigResponse {
-        exists?: boolean;
-        base_url?: string;
-        model?: string;
-        is_active?: boolean;
-        api_key_masked?: string;
-        default?: { base_url?: string; model?: string; api_key_masked?: string };
-      }
-      const response = await apiClient.get<ConfigResponse>(`/api/ai/config/${encodeURIComponent(provider)}`, { signal });
-      if (response.exists) {
-        setBaseUrl(response.base_url || '');
-        setModel(response.model || '');
-                setIsActive(response.is_active ?? true);
-        if (response.api_key_masked) {
-                    setHasSavedKey(true);
-        }
-      } else if (response.default) {
-        // 使用默认配置
-        setBaseUrl(response.default.base_url || '');
-        setModel(response.default.model || '');
-        if (response.default.api_key_masked) {
-          // setApiKeyMasked was removed (unused)
-          setHasSavedKey(true);
-        }
-      }
-    } catch (error: unknown) {
-      const e = (error && typeof error === 'object') ? error as Record<string, unknown> : {};
-      if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') return;
-      console.error('Load config error:', error);
-    }
-  };
 
   const handleFetchModels = async () => {
     if (!baseUrl) {

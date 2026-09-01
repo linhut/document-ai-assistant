@@ -75,28 +75,31 @@ export default function Templates() {
     }
   ]);
 
+  const loadTemplates = (signal?: AbortSignal) => {
+    // promise 链 + 回调内 setState（合规模式：effect 同步调用不触发 set-state-in-effect）
+    apiClient.get<{ templates?: Template[] }>('/api/templates/list', { signal })
+      .then(response => {
+        if (!signal?.aborted) {
+          setTemplates(response.templates || []);
+        }
+      })
+      .catch((error: unknown) => {
+        const e = (error && typeof error === 'object') ? error as Record<string, unknown> : {};
+        if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') return;
+        console.error('Load templates error:', error);
+      })
+      .finally(() => {
+        if (!signal?.aborted) {
+          setLoading(false);
+        }
+      });
+  };
+
   useEffect(() => {
     const controller = new AbortController();
     loadTemplates(controller.signal);
     return () => controller.abort();
   }, []);
-
-  const loadTemplates = async (signal?: AbortSignal) => {
-    try {
-      const response = await apiClient.get<{ templates?: Template[] }>('/api/templates/list', { signal });
-      if (!signal?.aborted) {
-        setTemplates(response.templates || []);
-      }
-    } catch (error: unknown) {
-      const e = (error && typeof error === 'object') ? error as Record<string, unknown> : {};
-      if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') return;
-      console.error('Load templates error:', error);
-    } finally {
-      if (!signal?.aborted) {
-        setLoading(false);
-      }
-    }
-  };
 
   const handleViewDetails = (template: Template) => {
     setPreviewTemplate({ id: template.id, name: template.name });

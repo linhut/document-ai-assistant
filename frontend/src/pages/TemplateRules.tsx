@@ -36,32 +36,35 @@ export default function TemplateRules() {
   const [template, setTemplate] = useState<Record<string, any> | null>(null);
   const [rules, setRules] = useState<CheckRule[]>([]);
 
+  const loadTemplateRules = (signal?: AbortSignal) => {
+    // promise 链 + 回调内 setState（合规模式：effect 同步调用不触发 set-state-in-effect）
+    apiClient.get<{ rules?: { check_rules?: CheckRule[]; template_name?: string; document_type?: string } }>(`/api/templates/${templateId}`, { signal })
+      .then(response => {
+        if (!signal?.aborted) {
+          setTemplate(response);
+          if (response.rules?.check_rules) {
+            setRules(response.rules.check_rules);
+          }
+        }
+      })
+      .catch((error: unknown) => {
+        const e = (error && typeof error === 'object') ? error as Record<string, any> : {};
+        if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') return;
+        console.error('Load template rules error:', error);
+      })
+      .finally(() => {
+        if (!signal?.aborted) {
+          setLoading(false);
+        }
+      });
+  };
+
   useEffect(() => {
     const controller = new AbortController();
     loadTemplateRules(controller.signal);
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [templateId]);
-
-  const loadTemplateRules = async (signal?: AbortSignal) => {
-    try {
-      const response = await apiClient.get<{ rules?: { check_rules?: CheckRule[]; template_name?: string; document_type?: string } }>(`/api/templates/${templateId}`, { signal });
-      if (!signal?.aborted) {
-        setTemplate(response);
-        if (response.rules?.check_rules) {
-          setRules(response.rules.check_rules);
-        }
-      }
-    } catch (error: unknown) {
-      const e = (error && typeof error === 'object') ? error as Record<string, any> : {};
-      if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') return;
-      console.error('Load template rules error:', error);
-    } finally {
-      if (!signal?.aborted) {
-        setLoading(false);
-      }
-    }
-  };
 
   const addRule = () => {
     const newRule: CheckRule = {

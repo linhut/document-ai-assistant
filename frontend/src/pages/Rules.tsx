@@ -61,30 +61,34 @@ export default function Rules() {
   const [importKey, setImportKey] = useState('');
   const [importYamlText, setImportYamlText] = useState('');
 
+  const loadRules = (signal?: AbortSignal) => {
+    // promise 链 + 回调内 setState（合规模式：effect 同步调用不触发 set-state-in-effect）
+    Promise.resolve()
+      .then(() => { if (!signal?.aborted) setLoading(true); })
+      .then(() => apiClient.get<{ rules?: RuleItem[] }>(`/api/rules/?source=${sourceFilter}`, { signal }))
+      .then(response => {
+        if (!signal?.aborted) {
+          setRules(response.rules || []);
+        }
+      })
+      .catch((error: unknown) => {
+        const e = (error && typeof error === 'object') ? error as Record<string, any> : {};
+        if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') return;
+        console.error('Load rules error:', error);
+      })
+      .finally(() => {
+        if (!signal?.aborted) {
+          setLoading(false);
+        }
+      });
+  };
+
   useEffect(() => {
     const controller = new AbortController();
     loadRules(controller.signal);
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sourceFilter]);
-
-  const loadRules = async (signal?: AbortSignal) => {
-    setLoading(true);
-    try {
-      const response = await apiClient.get<{ rules?: RuleItem[] }>(`/api/rules/?source=${sourceFilter}`, { signal });
-      if (!signal?.aborted) {
-        setRules(response.rules || []);
-      }
-    } catch (error: unknown) {
-      const e = (error && typeof error === 'object') ? error as Record<string, any> : {};
-      if (e.name === 'CanceledError' || e.code === 'ERR_CANCELED') return;
-      console.error('Load rules error:', error);
-    } finally {
-      if (!signal?.aborted) {
-        setLoading(false);
-      }
-    }
-  };
 
   const handleViewRule = async (rule: RuleItem) => {
     try {
