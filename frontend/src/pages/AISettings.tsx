@@ -297,10 +297,8 @@ export default function AISettings() {
       await apiClient.delete(`/api/ai/config/${encodeURIComponent(provider)}`);
       // 重置表单状态
       setApiKey('');
-      setApiKeyMasked('');
       setHasSavedKey(false);
       setIsActive(false);
-      setIsConnected(false);
       setErrorMessage('');
       setSuccessMessage('配置已删除');
       notifyAIConfigChanged(); // 通知全局刷新 AI 状态
