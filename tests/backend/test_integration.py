@@ -7,7 +7,7 @@ Tests the complete workflow: upload -> check -> fix -> download
 """
 
 import time
-import requests
+import httpx
 import pytest
 from pathlib import Path
 
@@ -19,7 +19,7 @@ FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
 def _backend_available() -> bool:
     """检查后端服务是否可用，避免无后端时全流程测试直接失败。"""
     try:
-        resp = requests.get(f"{BASE_URL}/api/health", timeout=2)
+        resp = httpx.get(f"{BASE_URL}/api/health", timeout=2)
         return resp.status_code == 200
     except Exception:
         return False
@@ -60,7 +60,7 @@ def test_complete_workflow():
 
     with open(test_file, "rb") as f:
         files = {"file": (test_file.name, f, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")}
-        response = requests.post(f"{BASE_URL}/api/documents/upload", files=files, headers=headers)
+        response = httpx.post(f"{BASE_URL}/api/documents/upload", files=files, headers=headers)
 
     assert response.status_code == 200, f"Upload failed: {response.text}"
     doc_data = response.json()
@@ -73,7 +73,7 @@ def test_complete_workflow():
 
     # Step 2: Run format check
     print("Step 2: Running format check...")
-    response = requests.post(f"{BASE_URL}/api/check/{doc_id}", json={"document_type": "notice"}, headers=headers)
+    response = httpx.post(f"{BASE_URL}/api/check/{doc_id}", json={"document_type": "notice"}, headers=headers)
 
     assert response.status_code == 200, f"Check failed: {response.text}"
     check_data = response.json()
@@ -86,7 +86,7 @@ def test_complete_workflow():
 
     # Step 3: Get issue details
     print("Step 3: Getting issue details...")
-    response = requests.get(f"{BASE_URL}/api/check/{doc_id}/results", headers=headers)
+    response = httpx.get(f"{BASE_URL}/api/check/{doc_id}/results", headers=headers)
 
     assert response.status_code == 200, f"Get results failed: {response.text}"
     issues = response.json()
@@ -98,7 +98,7 @@ def test_complete_workflow():
 
     # Step 4: Apply automatic fixes
     print("Step 4: Applying automatic fixes...")
-    response = requests.post(
+    response = httpx.post(
         f"{BASE_URL}/api/optimize/{doc_id}", json={"document_type": "notice", "apply_fixes": True}, headers=headers
     )
 
@@ -135,7 +135,7 @@ if __name__ == "__main__":
         print("Waiting for backend to start...")
         for i in range(10):
             try:
-                response = requests.get(f"{BASE_URL}/api/health", timeout=2)
+                response = httpx.get(f"{BASE_URL}/api/health", timeout=2)
                 if response.status_code == 200:
                     print("Backend is ready!")
                     print()
