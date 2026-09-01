@@ -1,4 +1,4 @@
-﻿# Python
+# Python
 __pycache__/
 *.py[cod]
 *.class
@@ -83,6 +83,8 @@ start_*.bat
 start_*.ps1
 backend/*.log
 backend/..*.*.log
+backend/..*.*.txt
+backend/..*.*.tmp
 *.log
 *.tmp
 
@@ -92,3 +94,11 @@ tests/fixtures/create_test_doc.py
 
 *.pid
 *.tmp
+
+# Web 在线版（纯浏览器端）— 仅本地/阿里云部署，不同步 GitHub
+website/web/
+tests/web/
+docs/superpowers/
+
+# 网站临时生成文件（本地调试用，不同步仓库）
+website/tmp/
