@@ -1,5 +1,46 @@
 # 版本发布流程
 
+## 仓库同步规范（发布前必查）
+
+> 非必要代码与文件**一律不得同步到 GitHub 仓库**。发布前必须执行本节检查。
+
+### 1. 发布前检查
+
+```bash
+git status --short --untracked-files=all   # 必须为空输出
+git ls-files | grep -E 'log|tmp|bak|web/|node_modules'   # 应无命中
+```
+
+只有满足以下条件的变更才能提交：
+- 该文件是功能代码、配置、文档或测试，且**仓库运行/发布需要它**
+- 该文件不包含本地调试痕迹、密钥、数据库、构建产物或临时数据
+
+### 2. 严禁同步的文件类型
+
+| 类别 | 示例 | .gitignore 规则 |
+|------|------|-----------------|
+| 日志文件 | `backend/*.log`、`backend/..backend_log3.txt` | `*.log`、`backend/..*.*.txt`、`backend/..*.*.tmp` |
+| 临时/缓存 | `website/tmp/*`、`*.tmp`、`*.pid`、`.pytest_cache/`、`.ruff_cache/` | `website/tmp/`、`*.tmp`、`*.pid` |
+| 本地数据库/密钥 | `data/*.db`、`data/.auth_token`、`data/.encryption_key` | `data/` |
+| 构建产物 | `dist/`、`frontend/release/`、`frontend/dist/`、`*.exe`、`*.dmg` | `dist/`、`frontend/release/` 等 |
+| 依赖目录 | `node_modules/`、`website/web/`（在线版） | `node_modules/`、`website/web/`、`tests/web/`、`docs/superpowers/` |
+| Office 锁文件 | `~$*.docx` | `~$*` |
+| 本地工具脚本 | `启动应用.bat`、`generate_icon.py`、`packaging/build_release.py` | 根目录单文件规则 |
+
+### 3. .gitignore 维护规则
+
+- 新增文件类型时，先加 `.gitignore` 规则，再确认未被 `git add`。
+- **已误提交的文件必须 `git rm --cached`（保留本地文件）或 `git rm`（删除），不能只改 .gitignore**——.gitignore 只对未跟踪文件生效。
+- 规则按目录分组并写注释，便于维护。
+- 本地新增临时文件时，优先放进已忽略目录（如 `website/tmp/`），不要放到仓库根目录。
+
+### 4. 反例（已修正）
+
+以下文件曾误提交进仓库，已移除并纳入 .gitignore，避免再次发生：
+
+- `backend/..backend_log3.txt`（后端调试日志，误以 .txt 后缀绕过日志规则）
+- `website/tmp/files.js`、`website/tmp/files.json`、`website/tmp/*.html`、`website/tmp/*.pdf`（网站文件预览临时产物）
+
 ## 触发方式
 
 推送 `v*` tag 到 GitHub 自动触发 Release workflow：

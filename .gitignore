@@ -92,6 +92,10 @@ backend/..*.*.tmp
 scripts/generate_missing_templates.py
 tests/fixtures/create_test_doc.py
 
+# 测试运行时生成的输出产物（不入库，避免每次跑测试产生噪音变更）
+tests/fixtures/test_notice_fixed.docx
+tests/fixtures/test_output.docx
+
 *.pid
 *.tmp
 
