@@ -4,6 +4,24 @@
 
 ---
 
+## [1.5.3] - 2026-09-03
+
+### 🐛 修复：应用启动失败（1.5.2 回归）
+- 修复 1.5.2 安装后无法启动的问题：`frontend/package.json` 误加 `"type": "module"`，导致 Electron 将 CommonJS 编译产物 `electron/dist/main.js` 按 ES Module 加载，主进程启动即报 `require is not defined`，应用无窗口、后端不启动。已移除该字段，恢复 Electron 标准 CJS 加载；`eslint.config.js` 同步更名为 `eslint.config.mjs`（配置仍为 ESM，不影响 lint）
+- 验证：打包产物冒烟测试通过——Electron 主进程正常、后端 `backend_server.exe` 拉起、`/api/health` 返回 `{"status":"ok","version":"1.5.3"}`、前端页面与全部 API 请求 200
+
+### 🐛 修复：npm ci 依赖安装失败（ERESOLVE）
+- 修复开发者/CI 按 1.5.2 源码执行 `npm ci` 报 `ERESOLVE could not resolve` 的问题：`eslint@10.x` 与 `eslint-plugin-react-hooks@5.2.0`（peer 最高支持 ESLint 9）冲突
+- 升级 `eslint-plugin-react-hooks` 至 **7.x**（7.1.1，peer 支持 ESLint 10），`npm ci` 恢复通过
+
+### 🔧 改进
+- 前端代码重构以满足 react-hooks 7.x 全部规则（immutability / set-state-in-effect / refs / static-components），不再关闭相关规则
+
+### ✅ 测试与 CI
+- `test_integration` 改用 `httpx`，消除未声明的 `requests` 测试依赖
+- CI `backend-test` 补装 `pytest`
+- 全量测试：109 passed, 2 skipped
+
 ## [1.5.2] - 2026-08-19
 
 ### ✨ 新增

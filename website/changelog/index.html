@@ -193,13 +193,34 @@
 
 <main class="container changelog">
 
+  <!-- v1.5.3 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v1.5.3</h2>
+      <span class="version-date">2026-09-03</span>
+      <span class="version-tag latest">Latest</span>
+    </div>
+    <div class="version-body">
+      <h4>🐛 修复</h4>
+      <ul>
+        <li><span class="label label-fixed">修复</span> 1.5.2 安装后无法启动：package.json 误加 "type": "module" 导致 Electron 将 CommonJS 主进程按 ES Module 加载，现已移除并恢复标准加载</li>
+        <li><span class="label label-fixed">修复</span> npm ci 依赖安装失败（ERESOLVE）：eslint-plugin-react-hooks 升级至 7.x 以兼容 ESLint 10</li>
+        <li><span class="label label-fixed">修复</span> test_integration 改用 httpx，消除未声明的 requests 测试依赖；CI 补装 pytest</li>
+      </ul>
+      <h4>🔧 改进</h4>
+      <ul>
+        <li><span class="label label-changed">优化</span> 前端重构以满足 react-hooks 7.x 全部规则（immutability / set-state-in-effect / refs / static-components）</li>
+      </ul>
+    </div>
+  </div>
+
   <!-- v1.5.2 -->
   <div class="version-entry">
     <div class="version-marker"></div>
     <div class="version-header">
       <h2>v1.5.2</h2>
       <span class="version-date">2026-08-19</span>
-      <span class="version-tag latest">Latest</span>
     </div>
     <div class="version-body">
       <h4>✨ 新增</h4>

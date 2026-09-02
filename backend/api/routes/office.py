@@ -77,7 +77,7 @@ async def office_health():
     return {
         "status": "ok",
         "service": "office-bridge",
-        "version": "1.5.2",
+        "version": "1.5.3",
         "capabilities": ["check", "fix", "ai-optimize", "templates", "apply-template"],
     }
 
