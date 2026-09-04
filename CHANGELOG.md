@@ -4,6 +4,25 @@
 
 ---
 
+## [1.5.4] - 2026-09-04
+
+### ✨ 新增：AI 模型一键删除
+- AI 设置页「模型可用性监控」卡片中，每个已添加的 AI 模型行新增删除按钮（垃圾桶图标），点击后二次确认，确认后调用后端删除接口并立即刷新监控列表
+- 删除当前选中的服务商时同步重置表单（清空 API Key 状态、AI 开关）；删除任意模型后全局同步侧边栏/工作台 AI 状态
+
+### 🐛 修复：/api/settings/rule-types 返回 500
+- 根因：`RuleEngine.available_types()` 为实例方法，`settings.py` 中按类方法调用，触发 `missing 1 required positional argument: self`
+- 修复：将 `available_types()` 改为 `@staticmethod`，类方法与实例调用均可用，并补充回归测试
+
+### 🐛 修复：Electron 主进程 ESLint 错误
+- `frontend/electron/main.ts` 中 3 处 ESLint 错误（`require()` 导入、2 处空 catch 块）已修复，`npm run lint` 全量通过（0 错误）
+
+### ✅ 测试与验证
+- 后端全量测试：110 passed, 1 skipped
+- 前端生产构建（`tsc -b && vite build`）通过
+- 全部只读 API 冒烟测试通过；文档核心链路（上传→检查→优化→下载）、Markdown 转换、模板预览、AI 配置管理均实测正常
+- AI 功能链路（配置管理、健康检测、连接重试、错误分类）实测正常；当前两个已配置外部服务商（elysiver 中转 503 / 小米 token-plan 401 失效）存在外部不可用情况，建议更新 API Key 或更换服务商
+
 ## [1.5.3] - 2026-09-03
 
 ### 🐛 修复：应用启动失败（1.5.2 回归）

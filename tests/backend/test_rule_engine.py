@@ -108,6 +108,10 @@ def test_available_document_types():
     assert len(types) > 0
     assert "notice" in types
 
+    # 回归：settings.py 中以 RuleEngine.available_types() 类方法方式调用（曾因缺 self 报 500）
+    types_via_class = RuleEngine.available_types()
+    assert types_via_class == types
+
     print(f"Available document types: {types}")
 
 
