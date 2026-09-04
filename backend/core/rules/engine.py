@@ -59,7 +59,8 @@ class RuleEngine:
         self._rules_cache.clear()
         logger.info("Rules cache cleared")
 
-    def available_types(self) -> list[str]:
+    @staticmethod
+    def available_types() -> list[str]:
         from core.rules.loader import list_available_types
 
         return list_available_types()

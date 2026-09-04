@@ -311,6 +311,31 @@ export default function AISettings() {
     }
   };
 
+  const handleDeleteModel = async (s: { provider: string; model: string; online?: boolean }) => {
+    const label = s.model ? `${s.provider} (${s.model})` : s.provider;
+    const ok = await confirm('确认删除', `确认删除「${label}」的 AI 配置？（将同时删除已保存的 API Key）`);
+    if (!ok) return;
+    try {
+      await apiClient.delete(`/api/ai/config/${encodeURIComponent(s.provider)}`);
+      // 若删除的是当前选中的服务商（custom 前缀兼容），重置表单
+      const isCurrent = s.provider === provider || (s.provider === 'custom' && provider.startsWith('custom:'));
+      if (isCurrent) {
+        setApiKey('');
+        setHasSavedKey(false);
+        setIsActive(false);
+        setErrorMessage('');
+        setSuccessMessage(`「${label}」配置已删除`);
+      } else {
+        setErrorMessage('');
+        setSuccessMessage(`「${label}」配置已删除`);
+      }
+      loadModelStatus(); // 刷新模型监控列表
+      notifyAIConfigChanged(); // 通知全局刷新 AI 状态
+    } catch (error: any) {
+      setErrorMessage(error.response?.data?.detail || '删除失败');
+    }
+  };
+
   return (
     <div className="w-full bg-primary-50">
       <PageHeader title="AI 配置" description="配置 AI 服务提供商和模型" />
@@ -368,6 +393,15 @@ export default function AISettings() {
                       <Badge variant={s.online ? 'default' : 'destructive'} className="text-[10px] px-1.5 py-0">
                         {s.online ? '在线' : s.error || '离线'}
                       </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-primary-400 hover:text-status-error hover:bg-status-error-bg"
+                        title="删除该模型配置"
+                        onClick={() => handleDeleteModel(s)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </div>
                 ))}

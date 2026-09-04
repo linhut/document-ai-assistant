@@ -193,13 +193,36 @@
 
 <main class="container changelog">
 
+  <!-- v1.5.4 -->
+  <div class="version-entry">
+    <div class="version-marker"></div>
+    <div class="version-header">
+      <h2>v1.5.4</h2>
+      <span class="version-date">2026-09-04</span>
+      <span class="version-tag latest">Latest</span>
+    </div>
+    <div class="version-body">
+      <h4>✨ 新增</h4>
+      <ul>
+        <li><span class="label label-added">新增</span> AI 设置页「模型可用性监控」每个模型行新增删除按钮，可一键删除已添加的 AI 模型配置（含 API Key），带二次确认，删除后自动刷新监控列表并全局同步 AI 状态</li>
+      </ul>
+      <h4>🐛 修复</h4>
+      <ul>
+        <li><span class="label label-fixed">修复</span> /api/settings/rule-types 返回 500：RuleEngine.available_types() 实例方法被按类方法调用，已改为 @staticmethod 并补回归测试</li>
+        <li><span class="label label-fixed">修复</span> Electron 主进程 3 处 ESLint 错误（require 导入、空 catch 块），npm run lint 全量通过</li>
+      </ul>
+      <h4>✅ 测试</h4>
+      <ul>
+        <li><span class="label label-added">测试</span> 后端全量测试 110 passed, 1 skipped；前端生产构建通过；全部 API 冒烟测试通过</li>
+      </ul>
+    </div>
+  </div>
   <!-- v1.5.3 -->
   <div class="version-entry">
     <div class="version-marker"></div>
     <div class="version-header">
       <h2>v1.5.3</h2>
       <span class="version-date">2026-09-03</span>
-      <span class="version-tag latest">Latest</span>
     </div>
     <div class="version-body">
       <h4>🐛 修复</h4>

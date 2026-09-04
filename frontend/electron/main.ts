@@ -60,7 +60,7 @@ function getLogPath(): string {
 function log(level: string, msg: string): void {
   const line = `[${new Date().toISOString()}] [${level}] ${msg}\n`;
   console.log(line.trim());
-  try { fs.appendFileSync(getLogPath(), line); } catch {}
+  try { fs.appendFileSync(getLogPath(), line); } catch { /* 日志写入失败不影响主流程 */ }
 }
 
 // ---------------------------------------------------------------------------
@@ -86,9 +86,9 @@ function findPython(): string {
   for (const c of candidates) {
     try {
       const cmd = process.platform === 'win32' ? 'where' : 'which';
-      const result = require('child_process').execSync(`${cmd} ${c}`, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim().split(/\r?\n/)[0];
+      const result = execSync(`${cmd} ${c}`, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }).trim().split(/\r?\n/)[0];
       if (result && fs.existsSync(result)) return result;
-    } catch {}
+    } catch { /* 命令不存在时继续尝试下一个候选 */ }
   }
   // 2. 直接检查常见安装路径
   const commonPaths = process.platform === 'win32'
