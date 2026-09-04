@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""
-(c) 2026 Jose AI (https://www.linhut.cn)
-Licensed under the MIT License. See the LICENSE file for details.
+# (c) 2026 Jose AI (https://www.linhut.cn)
+# https://github.com/linhut/document-ai-assistant
+# Licensed under the MIT License. See the LICENSE file for details.
 
+"""
 公文文档优化器 CLI 接口
 
 支持子命令：

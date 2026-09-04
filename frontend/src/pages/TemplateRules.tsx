@@ -1,8 +1,7 @@
-/*
- * This file is part of the Official Document AI Assistant.
- * (c) 2026 Jose AI (https://www.linhut.cn)
- * Licensed under the MIT License. See the LICENSE file for details.
- */
+// (c) 2026 Jose AI (https://www.linhut.cn)
+// https://github.com/linhut/document-ai-assistant
+// Licensed under the MIT License. See the LICENSE file for details.
+
 /**
  * TemplateRules - 模板规则编辑页面
  * 编辑指定模板的检查和修复规则

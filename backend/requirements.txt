@@ -1,3 +1,7 @@
+# (c) 2026 Jose AI (https://www.linhut.cn)
+# https://github.com/linhut/document-ai-assistant
+# Licensed under the MIT License. See the LICENSE file for details.
+
 fastapi>=0.115.0
 uvicorn[standard]>=0.34.0
 python-docx>=1.1.0

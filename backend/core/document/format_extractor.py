@@ -1,6 +1,7 @@
-# This file is part of the Official Document AI Assistant.
 # (c) 2026 Jose AI (https://www.linhut.cn)
+# https://github.com/linhut/document-ai-assistant
 # Licensed under the MIT License. See the LICENSE file for details.
+
 """
 Format Extractor: 从已排版的 DocumentModel 中自动提取格式信息，
 生成完整的 YAML 规则模板（check_rules + fix_rules）。

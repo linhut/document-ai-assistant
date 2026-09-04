@@ -1,3 +1,9 @@
+<!--
+  (c) 2026 Jose AI (https://www.linhut.cn)
+  https://github.com/linhut/document-ai-assistant
+  Licensed under the MIT License. See the LICENSE file for details.
+-->
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

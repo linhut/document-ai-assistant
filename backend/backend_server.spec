@@ -1,3 +1,7 @@
+# (c) 2026 Jose AI (https://www.linhut.cn)
+# https://github.com/linhut/document-ai-assistant
+# Licensed under the MIT License. See the LICENSE file for details.
+
 # -*- mode: python ; coding: utf-8 -*-
 """
 PyInstaller spec 文件 — FastAPI 后端打包配置

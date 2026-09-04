@@ -1,3 +1,7 @@
+# (c) 2026 Jose AI (https://www.linhut.cn)
+# https://github.com/linhut/document-ai-assistant
+# Licensed under the MIT License. See the LICENSE file for details.
+
 """
 生成 website/tmp/files.json 和 website/tmp/files.js — 扫描 TMP 目录并输出文件清单。
   files.js 通过 <script> 标签注入数据，兼容 file:// 协议（本地直接打开 HTML）。

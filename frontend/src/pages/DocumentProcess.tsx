@@ -1,8 +1,7 @@
-/*
- * This file is part of the Official Document AI Assistant.
- * (c) 2026 Jose AI (https://www.linhut.cn)
- * Licensed under the MIT License. See the LICENSE file for details.
- */
+// (c) 2026 Jose AI (https://www.linhut.cn)
+// https://github.com/linhut/document-ai-assistant
+// Licensed under the MIT License. See the LICENSE file for details.
+
 /**
  * DocumentProcess - 文档处理页面
  * 选择文档、选择类型、开始检查

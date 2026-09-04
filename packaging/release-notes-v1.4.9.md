@@ -1,3 +1,9 @@
+<!--
+  (c) 2026 Jose AI (https://www.linhut.cn)
+  https://github.com/linhut/document-ai-assistant
+  Licensed under the MIT License. See the LICENSE file for details.
+-->
+
 # Release Notes — v1.4.9
 
 > 发布日期：2026-06-30

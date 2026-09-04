@@ -1,3 +1,9 @@
+<!--
+  (c) 2026 Jose AI (https://www.linhut.cn)
+  https://github.com/linhut/document-ai-assistant
+  Licensed under the MIT License. See the LICENSE file for details.
+-->
+
 # AI 公文智能优化助手
 
 <p align="center">
@@ -481,7 +487,7 @@ A: 支持 `.docx`、`.doc`、`.wps` 三种格式。`.doc` 和 `.wps` 文件会�
 
 <!-- star-history:start -->
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/star-history/star-history-dark.svg">
-  <img alt="Star history" src="assets/star-history/star-history-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=linhut/document-ai-assistant&type=Date&theme=dark">
+  <img alt="Star history" src="https://api.star-history.com/svg?repos=linhut/document-ai-assistant&type=Date">
 </picture>
 <!-- star-history:end -->

@@ -1,8 +1,7 @@
-/*
- * This file is part of the Official Document AI Assistant.
- * (c) 2026 Jose AI (https://www.linhut.cn)
- * Licensed under the MIT License. See the LICENSE file for details.
- */
+// (c) 2026 Jose AI (https://www.linhut.cn)
+// https://github.com/linhut/document-ai-assistant
+// Licensed under the MIT License. See the LICENSE file for details.
+
 /**
  * AISettings - AI 配置页面
  * 支持多 Provider、获取模型列表、连接测试、脱敏 API Key

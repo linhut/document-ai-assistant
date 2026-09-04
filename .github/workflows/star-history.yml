@@ -1,9 +1,15 @@
+# (c) 2026 Jose AI (https://www.linhut.cn)
+# https://github.com/linhut/document-ai-assistant
+# Licensed under the MIT License. See the LICENSE file for details.
+
 name: Star History
 
+# 已停用自动调度：star-history 图片不再入库（见 .gitignore 中 assets/star-history/），
+# README 改用在线 API（api.star-history.com）展示。如需重新启用，取消下方注释并调整输出目录。
 on:
-  schedule:
-    - cron: '0 */6 * * *'   # 每 6 小时更新一次
-  workflow_dispatch:          # 支持手动触发
+  workflow_dispatch:          # 仅手动触发
+  # schedule:
+  #   - cron: '0 */6 * * *'   # 每 6 小时更新一次（已停用）
 
 permissions:
   contents: write

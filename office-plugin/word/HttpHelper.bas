@@ -1,3 +1,7 @@
+' (c) 2026 Jose AI (https://www.linhut.cn)
+' https://github.com/linhut/document-ai-assistant
+' Licensed under the MIT License. See the LICENSE file for details.
+
 Attribute VB_Name = "HttpHelper"
 ' ==========================================================================
 '  HttpHelper.bas — HTTP 通信 + Base64 编解码 + 轻量 JSON 解析
