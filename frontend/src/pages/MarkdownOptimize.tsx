@@ -209,6 +209,30 @@ export default function MarkdownOptimize() {
     }
   }, [markdownText, markdownDocType]);
 
+  // 去 AI 味重写（22 文种风格库 + 通用去 AI 味规则 → /api/ai/rewrite）
+  const handleDeAIFy = useCallback(async () => {
+    if (!markdownText.trim()) return;
+    setPolishing(true);
+    setError('');
+    try {
+      const resp = await apiClient.post<{ success: boolean; rewritten?: string; message?: string }>('/api/ai/rewrite', {
+        text: markdownText,
+        document_type: markdownDocType || 'notice',
+        mode: 'deai',
+      }, { timeout: 120000 });
+      if (resp.success && resp.rewritten) {
+        setMarkdownText(resp.rewritten);
+      } else if (resp.message) {
+        setError(resp.message);
+      }
+    } catch (err: unknown) {
+      const e = (err && typeof err === 'object') ? err as Record<string, unknown> : {};
+      setError((e.message as string) || '去 AI 味失败，请检查 AI 配置');
+    } finally {
+      setPolishing(false);
+    }
+  }, [markdownText, markdownDocType]);
+
   // 发送到 A4 编排 — 使用模块级缓存 + URL 参数
   const handleSendToA4 = useCallback(() => {
     if (paragraphs.length === 0) {
@@ -322,6 +346,14 @@ export default function MarkdownOptimize() {
                     <><Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> 润色中...</>
                   ) : (
                     <><Wand2 className="h-3.5 w-3.5 mr-1" /> AI 润色</>
+                  )}
+                </Button>
+                <Button variant="outline" size="sm" className="flex-1"
+                  onClick={handleDeAIFy} disabled={polishing || !markdownText.trim()}>
+                  {polishing ? (
+                    <><Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> 处理中...</>
+                  ) : (
+                    <><Wand2 className="h-3.5 w-3.5 mr-1" /> 去 AI 味</>
                   )}
                 </Button>
                 <Button variant="default" size="sm" className="flex-1"

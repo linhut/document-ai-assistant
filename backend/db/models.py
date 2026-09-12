@@ -63,6 +63,7 @@ class CheckResult(Base):
     original_text = Column(Text, nullable=True)
     suggested_fix = Column(Text, nullable=True)
     reason = Column(Text, nullable=True)
+    standard_ref = Column(String(64), nullable=True)
     status = Column(String(16), default="pending")
     created_at = Column(DateTime, default=_utcnow)
 

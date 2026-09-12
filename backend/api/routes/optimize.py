@@ -1637,6 +1637,7 @@ async def run_optimize(doc_id: int, req: OptimizeRequest | None = None, db: Sess
         output_path=result["output_path"],
         fixes_applied=result["fixes_applied"],
         message=f"优化完成，已应用 {result['fixes_applied']} 项修复",
+        cleaning=result.get("cleaning"),
     )
 
 

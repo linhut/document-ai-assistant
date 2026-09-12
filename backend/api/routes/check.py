@@ -47,6 +47,7 @@ async def run_check(doc_id: int, req: CheckRequest | None = None, db: Session = 
                 original_text=i.original_text,
                 suggested_fix=i.suggested_fix,
                 reason=i.reason,
+                standard_ref=i.standard_ref,
                 status=i.status,
             )
             for i in issues
@@ -68,6 +69,7 @@ async def get_results(doc_id: int, db: Session = Depends(get_db)):
             original_text=i.original_text,
             suggested_fix=i.suggested_fix,
             reason=i.reason,
+            standard_ref=i.standard_ref,
             status=i.status,
         )
         for i in issues
@@ -90,3 +92,39 @@ async def update_issue(
     if not ok:
         raise HTTPException(status_code=404, detail="Issue not found")
     return {"status": new_status}
+
+
+@router.post("/dark-bid/{doc_id}")
+async def dark_bid_check(doc_id: int, db: Session = Depends(get_db)):
+    """暗标/标书合规检查：身份信息泄露扫描（命中片段一律脱敏输出）。"""
+    from core.compliance.dark_bid import dark_bid_check as run_scan
+    from core.document.parser import parse_docx
+
+    doc = svc.get_document(db, doc_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    try:
+        model = parse_docx(doc.file_path)
+        issues = run_scan(model)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Dark-bid check failed for doc {doc_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="暗标合规检查失败，请稍后重试")
+
+    return {
+        "document_id": doc_id,
+        "total_issues": len(issues),
+        "issues": [
+            {
+                "rule_id": i.rule_id,
+                "severity": i.severity,
+                "name": i.name,
+                "location": i.location,
+                "original_text": i.original_text,
+                "suggested_fix": i.suggested_fix,
+                "reason": i.reason,
+            }
+            for i in issues
+        ],
+    }

@@ -10,6 +10,46 @@
 
 ---
 
+## [1.6.0] - 2026-09-12
+
+### ✨ 新增：标准证据链与要素语义校验
+- 检查结果携带 GB/T 9704-2012 条款号（`standard_ref`），旧库自动增量补列；`scripts/gen_audit_matrix.py` 自动生成标准证据矩阵 `docs/gbt9704-audit-matrix.md`（22 文种 879 条规则）
+- 要素语义校验（CHK-S 系列）：发文字号（六角括号/年份/顺序号补零）、成文日期（格式/合理性/中文数字）、发文机关署名完整性
+
+### ✨ 新增：特殊版式与版式档案
+- `layout_profile`（letter 信函双线 / formal 红头预印套打预留 37–130mm / command 命令间距）+ `joint_orgs` 联合行文机关标志
+
+### ✨ 新增：AI 写作风格库与内容能力
+- 公文写作风格库：22 文种画像 + 9 条去 AI 味规则 + 4 种润色模式；`POST /api/ai/rewrite`（Markdown 优化页已接入"去 AI 味"按钮）
+- 保持版式内容编辑：run 级 diff 应用（`modifier.apply_paragraph_edits`），AI 改文不破坏格式
+- 格式清洗：压缩连续空格（含全角）、行首尾清理、空行合并；优化响应返回 `cleaning` 报告
+
+### ✨ 新增：暗标合规与标准包
+- 暗标/标书合规检查：身份证（GB 11643 校验位）/手机号/邮箱/银行卡检测，命中片段强制脱敏；校审中心"暗标扫描"按钮
+- 标准包机制（official < pack < custom < user）：`rules/packs/` + `/api/settings/standard-packs`；设置页下拉切换
+
+### ✨ 新增：导出与质量保障
+- PDF 双输出：LibreOffice → docx2pdf 最佳努力转换，`GET /api/documents/{id}/export/pdf?download=1`；校审中心"导出 PDF"按钮
+- 视觉回归：5 文种黄金样本 + 平均感知哈希 + `visual-regression.yml` CI
+- SKILL 发行版：`skill/`（SKILL.md + install.sh/install.ps1 + zip 包）
+
+### 🔧 前端改进
+- zustand 全局状态（`src/store/app-store.ts`），Sidebar/Workspace/RightPanel 统一 AI 状态
+- 校审中心：问题卡片显示标准条款、暗标扫描面板、导出 PDF
+- 设置页：格式标准包下拉
+- Markdown 优化页：去 AI 味按钮；优化成功提示附清洗明细
+
+### 📚 文档
+- 新增 `docs/architecture-analysis.md`（架构剖析）、`docs/usability-test-report.md`（可用性测试）、`docs/platform-compat-check.md`（跨平台代码级检查）、`docs/gbt9704-audit-matrix.md`（证据矩阵）
+
+### ✅ 测试与验证
+- 后端全量测试：187 passed, 3 skipped（新增 11 个测试文件）
+- 前端生产构建（`tsc -b && vite build`）与 ESLint 全量通过
+- 可用性测试：API 全流程 14/14 通过（`scripts/usability_test.py` 可复跑）
+- 代码级跨平台检查通过（Linux/macOS 静态评估，实机复验见平台文档）
+
+---
+
 ## [1.5.4] - 2026-09-04
 
 ### ✨ 新增：AI 模型一键删除

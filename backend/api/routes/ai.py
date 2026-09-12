@@ -21,7 +21,7 @@ from ai.manager import (
     mask_api_key,
 )
 from services import document_service as doc_svc
-from api.schemas.api_models import ApplyAIRequest
+from api.schemas.api_models import ApplyAIRequest, AIRewriteRequest
 from utils.logger import logger
 from utils.crypto import encrypt_value, decrypt_value
 
@@ -355,6 +355,43 @@ async def ai_analyze(doc_id: int, provider: str = "openai", document_type: str =
             "success": False,
             "message": "AI 分析失败，请稍后重试",
         }
+
+
+@router.post("/rewrite")
+async def ai_rewrite(req: AIRewriteRequest, db: Session = Depends(get_db)):
+    """公文风格润色 / 去 AI 味重写（使用当前激活的 AI 配置与文种风格库）。"""
+    try:
+        # 优先取激活配置，其次默认配置
+        config = db.query(AIConfig).filter(AIConfig.is_active).first()
+        if config:
+            api_key = decrypt_value(config.api_key_encrypted) or ""
+            base_url, model, provider_name = config.base_url, config.model, config.provider
+        else:
+            default = get_default_config()
+            api_key = default["api_key"]
+            base_url = default["base_url"]
+            model = default["model"]
+            provider_name = default["provider"]
+
+        if not api_key:
+            return {"success": False, "message": "未配置可用的 AI 服务，请先在 AI 设置中配置并启用"}
+
+        from ai.style_library import build_rewrite_instruction
+
+        instruction = build_rewrite_instruction(req.document_type or "notice", req.mode or "deai")
+        ai_provider = create_provider(provider_name, api_key, base_url, model)
+        try:
+            rewritten = await ai_provider.rewrite(req.text, context=instruction)
+        finally:
+            try:
+                await ai_provider.close()
+            except Exception:
+                pass
+
+        return {"success": True, "provider": provider_name, "rewritten": rewritten}
+    except Exception as e:
+        logger.error(f"AI rewrite failed: {e}", exc_info=True)
+        return {"success": False, "message": "AI 润色失败，请稍后重试"}
 
 
 @router.post("/apply/{doc_id}")

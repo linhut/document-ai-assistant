@@ -47,6 +47,7 @@ class CheckIssueResponse(BaseModel):
     original_text: Optional[str] = None
     suggested_fix: Optional[str] = None
     reason: Optional[str] = None
+    standard_ref: Optional[str] = None
     status: str = "pending"
 
 
@@ -65,6 +66,13 @@ class CheckRequest(BaseModel):
 
 class IssueActionRequest(BaseModel):
     action: str  # accept / dismiss
+
+
+# --- AI 风格润色 ---
+class AIRewriteRequest(BaseModel):
+    text: str
+    document_type: str = "notice"
+    mode: str = "deai"  # deai / polish / concise / formal
 
 
 # --- Optimize ---
@@ -89,6 +97,7 @@ class OptimizeResponse(BaseModel):
     output_path: str
     fixes_applied: int = 0
     message: str = ""
+    cleaning: Optional[dict[str, Any]] = None
 
 
 # --- AI ---

@@ -164,8 +164,14 @@ API keys stored encrypted via Fernet (`backend/utils/crypto.py`). Encryption key
 
 ## Known Gaps
 
-- **Workspace page** uses hardcoded mock data (no live API)
+- ~~**Workspace page** uses hardcoded mock data (no live API)~~ — **已修复**：Workspace 现为真实 API 数据驱动（统计数据、最近文档均来自后端）
 - **TemplateRules save** is not implemented (TODO alert only)
 - **Inconsistent API patterns**: some pages call `apiClient` directly, others use typed modules in `src/api/`
 - **Navigation**: some pages use `window.location.href` instead of React Router's `useNavigate`
 - **No global state management**: each page manages own state with useState/useEffect
+
+## 规则统计口径与证据链
+
+- 规则数量统计以 `docs/gbt9704-audit-matrix.md`（`python scripts/gen_audit_matrix.py` 生成）为准：每个文种生效检查规则 38–41 条、修复规则 34 条（公共基础层 + 文种层三层合并）
+- 检查结果（CheckResult / `/api/check`）附带 `standard_ref` 字段（GB/T 9704-2012 条款号），映射见 `backend/core/rules/standard_refs.py`
+- 文号/日期/署名等要素语义校验见 `backend/core/rules/semantic.py`（CHK-S 系列规则，已接入 RuleEngine.check / check_and_fix）

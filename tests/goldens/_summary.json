@@ -1,0 +1,37 @@
+[
+  {
+    "type": "notice",
+    "docx": "C:\\Users\\Administrator\\Documents\\公文文档优化器\\tests\\goldens\\notice\\notice.docx",
+    "renderable": false,
+    "pages": 0,
+    "baseline": "C:\\Users\\Administrator\\Documents\\公文文档优化器\\tests\\goldens\\notice\\notice.baseline.json"
+  },
+  {
+    "type": "report",
+    "docx": "C:\\Users\\Administrator\\Documents\\公文文档优化器\\tests\\goldens\\report\\report.docx",
+    "renderable": false,
+    "pages": 0,
+    "baseline": "C:\\Users\\Administrator\\Documents\\公文文档优化器\\tests\\goldens\\report\\report.baseline.json"
+  },
+  {
+    "type": "request",
+    "docx": "C:\\Users\\Administrator\\Documents\\公文文档优化器\\tests\\goldens\\request\\request.docx",
+    "renderable": false,
+    "pages": 0,
+    "baseline": "C:\\Users\\Administrator\\Documents\\公文文档优化器\\tests\\goldens\\request\\request.baseline.json"
+  },
+  {
+    "type": "meeting",
+    "docx": "C:\\Users\\Administrator\\Documents\\公文文档优化器\\tests\\goldens\\meeting\\meeting.docx",
+    "renderable": false,
+    "pages": 0,
+    "baseline": "C:\\Users\\Administrator\\Documents\\公文文档优化器\\tests\\goldens\\meeting\\meeting.baseline.json"
+  },
+  {
+    "type": "letter",
+    "docx": "C:\\Users\\Administrator\\Documents\\公文文档优化器\\tests\\goldens\\letter\\letter.docx",
+    "renderable": false,
+    "pages": 0,
+    "baseline": "C:\\Users\\Administrator\\Documents\\公文文档优化器\\tests\\goldens\\letter\\letter.baseline.json"
+  }
+]

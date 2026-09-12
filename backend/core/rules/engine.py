@@ -13,6 +13,7 @@ from typing import Any
 from core.document.models import DocumentModel
 from core.rules.manager import load_rules_merged
 from core.rules.checker import check_document, CheckIssue
+from core.rules.semantic import semantic_check
 from core.rules.fixer import apply_fixes
 from utils.logger import logger
 
@@ -37,6 +38,7 @@ class RuleEngine:
     def check(self, model: DocumentModel, doc_type: str) -> list[CheckIssue]:
         rules = self.load_rules(doc_type)
         issues = check_document(model, rules)
+        issues.extend(semantic_check(model, doc_type))
         logger.info(f"Check complete: {len(issues)} issues found")
         return issues
 
@@ -51,6 +53,7 @@ class RuleEngine:
     ) -> tuple[list[CheckIssue], DocumentModel]:
         rules = self.load_rules(doc_type)
         issues = check_document(model, rules)
+        issues.extend(semantic_check(model, doc_type))
         logger.info(f"Found {len(issues)} issues before fixing")
         fixed_model = apply_fixes(model, rules, selected_rule_ids)
         logger.info(f"Applied fixes for type: {doc_type}")

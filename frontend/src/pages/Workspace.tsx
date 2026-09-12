@@ -29,7 +29,7 @@ import {
   GlobeLock,
 } from 'lucide-react';
 import apiClient from '@/api/client';
-import { detectActiveAI, AI_CONFIG_CHANGED } from '@/lib/ai-status';
+import { useAIStatus } from '@/store/app-store';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -151,8 +151,9 @@ export default function Workspace() {
   const [healthOk, setHealthOk] = useState<boolean | null>(null);
   const [backendVersion, setBackendVersion] = useState<string>('');
   const [ruleCount, setRuleCount] = useState<number>(0);
-  const [aiModel, setAiModel] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const { aiStatus, refreshAIStatus } = useAIStatus();
+  const aiModel = aiStatus && aiStatus.active ? `${aiStatus.provider ?? 'AI'} / ${aiStatus.model ?? '默认'}` : '';
 
   // Network access state
   const [webAccess, setWebAccess] = useState(true);
@@ -160,7 +161,7 @@ export default function Workspace() {
   const [togglingWeb, setTogglingWeb] = useState(false);
 
   // Stable refs so the fetch function doesn't change identity on every render
-  const stateRef = useRef({ setDocuments, setHealthOk, setBackendVersion, setRuleCount, setAiModel, setLoading });
+  const stateRef = useRef({ setDocuments, setHealthOk, setBackendVersion, setRuleCount, setLoading });
 
   useEffect(() => {
     const controller = new AbortController();
@@ -168,11 +169,10 @@ export default function Workspace() {
 
     async function loadDashboard() {
       try {
-        const [docRes, healthRes, ruleRes, aiRes, netRes] = await Promise.allSettled([
+        const [docRes, healthRes, ruleRes, netRes] = await Promise.allSettled([
           apiClient.get<DocumentItem[] | { documents?: DocumentItem[] }>('/api/documents/?skip=0&limit=50', { signal }),
           apiClient.get<HealthResponse>('/api/health', { signal }),
           apiClient.get<RulesResponse>('/api/rules/?source=all', { signal }),
-          detectActiveAI(signal),
           apiClient.get<{ web_access_enabled?: boolean; lan_url?: string }>('/api/settings/network', { signal }),
         ]);
 
@@ -202,14 +202,6 @@ export default function Workspace() {
           stateRef.current.setRuleCount(r.total ?? 0);
         }
 
-        // AI config — 自动检测已启用的服务商
-        if (aiRes.status === 'fulfilled') {
-          const a = aiRes.value;
-          stateRef.current.setAiModel(
-            a && a.exists && a.active ? `${a.provider ?? 'AI'} / ${a.model ?? '默认'}` : ''
-          );
-        }
-
         // Network access status
         if (netRes.status === 'fulfilled') {
           const n = netRes.value as Record<string, unknown>;
@@ -226,23 +218,13 @@ export default function Workspace() {
     }
 
     void loadDashboard();
-    // 监听 AI 配置变更，刷新 AI 状态显示
-    const onAIChanged = () => {
-      detectActiveAI(signal).then(a => {
-        if (!signal.aborted) {
-          stateRef.current.setAiModel(
-            a && a.exists && a.active ? `${a.provider ?? 'AI'} / ${a.model ?? '默认'}` : ''
-          );
-        }
-      }).catch((err) => {
-        if (err?.name !== 'CanceledError' && err?.code !== 'ERR_CANCELED') {
-          console.error('Failed to refresh AI status:', err);
-        }
-      });
-    };
-    window.addEventListener(AI_CONFIG_CHANGED, onAIChanged);
-    return () => { controller.abort(); window.removeEventListener(AI_CONFIG_CHANGED, onAIChanged); };
+    return () => { controller.abort(); };
   }, []);
+
+  // AI 配置状态：首次进入刷新（store 监听 AI_CONFIG_CHANGED 自动同步后续变更）
+  useEffect(() => {
+    void refreshAIStatus();
+  }, [refreshAIStatus]);
 
   /* ---- Toggle web access ---- */
   const handleToggleWebAccess = async () => {

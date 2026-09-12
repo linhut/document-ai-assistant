@@ -5,7 +5,9 @@
     "subject": "",
     "created": "2013-12-23 23:15:00+00:00",
     "modified": "2013-12-23 23:15:00+00:00",
-    "category": ""
+    "category": "",
+    "layout_profile": null,
+    "layout_options": {}
   },
   "page_setup": {
     "paper_width_mm": 210.01,

@@ -194,3 +194,31 @@ async def toggle_network_access(body: NetworkToggleRequest):
         "need_restart": True,
         "message": f"已{'开启' if body.enabled else '关闭'}局域网访问，重启后端后生效",
     }
+
+
+class StandardPackRequest(BaseModel):
+    pack: str | None = None  # 标准包名；None/空串表示停用
+
+
+@router.get("/standard-packs")
+async def get_standard_packs():
+    """获取可用标准包与当前激活包。"""
+    from core.rules.packs import get_active_pack, list_standard_packs
+
+    return {
+        "packs": list_standard_packs(),
+        "active": get_active_pack(),
+    }
+
+
+@router.post("/standard-packs")
+async def set_standard_pack(body: StandardPackRequest):
+    """激活/停用标准包（切换后规则缓存立即失效）。"""
+    from core.rules.engine import invalidate_rule_cache
+    from core.rules.packs import set_active_pack
+
+    ok = set_active_pack(body.pack or None)
+    if not ok:
+        return {"success": False, "message": f"标准包不存在: {body.pack}"}
+    invalidate_rule_cache()
+    return {"success": True, "pack": body.pack or None}

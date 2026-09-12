@@ -164,6 +164,7 @@ def check_document(db: Session, doc_id: int, doc_type: str | None = None) -> dic
                     original_text=issue.original_text,
                     suggested_fix=issue.suggested_fix,
                     reason=issue.reason,
+                    standard_ref=issue.standard_ref,
                 )
             )
         doc.status = "checked"
@@ -221,6 +222,14 @@ def optimize_document(
         logger.error(f"parse_docx failed for doc {doc_id} during optimize: {e}")
         raise ValueError(f"文档解析失败，请确认文件格式正确（.docx/.doc/.wps）: {str(e)}")
 
+    # 格式清洗（压缩连续空格/去除行首尾空格/合并空行）——优化前置步骤
+    cleaning_report: dict = {}
+    if apply_fixes:
+        from core.document.modifier import clean_document
+
+        cleaning_report = clean_document(model)
+        logger.info(f"Format cleaning done: {cleaning_report}")
+
     # 规则检查 + 修复
     try:
         if apply_fixes:
@@ -270,4 +279,5 @@ def optimize_document(
         "output_path": str(out_path),
         "output_name": out_name,
         "fixes_applied": len(issues) if apply_fixes else 0,
+        "cleaning": cleaning_report,
     }

@@ -1,0 +1,50 @@
+# (c) 2026 Jose AI (https://www.linhut.cn)
+# https://github.com/linhut/document-ai-assistant
+# Licensed under the MIT License. See the LICENSE file for details.
+
+# ============================================================
+# 企业公文标准包（示例，原创编写）
+# 演示标准包机制：对企业公文常用格式做覆盖（官方 < 标准包 < 自定义 < 用户）
+# 激活方式：POST /api/settings/standard-packs {"pack": "enterprise"}
+# ============================================================
+
+template_name: "企业公文标准包（示例）"
+document_type: common
+
+# --- 页面设置（企业常用 A4，页边距略小于党政机关） ---
+page_setup:
+  paper_size: A4
+  paper_width_mm: 210
+  paper_height_mm: 297
+  margins:
+    top: 3.0cm
+    bottom: 3.0cm
+    left: 2.5cm
+    right: 2.5cm
+
+# --- 大标题：企业公文多采用黑体（覆盖官方小标宋） ---
+doc_title:
+  font: "黑体"
+  size: 22pt
+
+# --- 正文：企业公文常用四号（14pt）仿宋 ---
+body:
+  font: "仿宋_GB2312"
+  size: 14pt
+  line_spacing: 28pt
+
+# --- 检查规则：与官方同 field 的规则按优先级覆盖（field 去重） ---
+check_rules:
+  - id: CHK-E001
+    name: "企业大标题字体检查"
+    severity: P1
+    field: title.font
+    expected: "黑体"
+    message: "企业公文标题应使用黑体（标准包规则）"
+
+fix_rules:
+  - id: FIX-E001
+    ref_check: CHK-E001
+    action: set_font
+    target: doc_title
+    value: "黑体"

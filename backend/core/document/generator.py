@@ -22,6 +22,7 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
 from core.document.models import DocumentModel, Paragraph, Run, Table as TableModel, HeaderFooter
+from core.document.special_layout import apply_layout_profile
 from core.document.font_utils import (
     set_run_font,
     validate_document_fonts,
@@ -80,6 +81,9 @@ def generate_docx(model: DocumentModel, output_path: Path | str) -> Path:
 
     # 4. Update headers and footers
     _update_headers_footers(doc, model)
+
+    # 4.5 特殊版式（信函双线/红头预留/命令间距/联合行文）
+    apply_layout_profile(doc, model)
 
     # 5. Update metadata
     _update_metadata(doc, model)

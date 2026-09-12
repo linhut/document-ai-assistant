@@ -219,6 +219,71 @@ BLANK_LINE_MODE_DELETE_SINGLE = "delete_single"
 BLANK_LINE_MODE_KEEP_SINGLE = "keep_single"
 
 
+def clean_document(model: DocumentModel, clean_blank_lines: bool = True) -> dict:
+    """
+    格式清洗（原创实现）：压缩连续空格（含全角空格）、去除行首行尾空格、合并连续空行。
+
+    作为优化流程的清洗前置步骤，减少后续规则检查与修复的噪音。
+    返回清洗报告：{paragraphs_cleaned, spaces_collapsed, edges_stripped, blank_lines_removed}
+    """
+    report = {
+        "paragraphs_cleaned": 0,
+        "spaces_collapsed": 0,
+        "edges_stripped": 0,
+        "blank_lines_removed": 0,
+    }
+    for para in model.paragraphs:
+        changed = False
+        for run in para.runs:
+            if not run.text:
+                continue
+            t = run.text
+            # 连续 ASCII 空格压缩为 1 个
+            if "  " in t:
+                report["spaces_collapsed"] += len(re.findall(r" {2,}", t))
+                t = re.sub(r" {2,}", " ", t)
+                changed = True
+            # 连续全角空格压缩为 1 个
+            if "\u3000\u3000" in t:
+                report["spaces_collapsed"] += len(re.findall(r"\u3000{2,}", t))
+                t = re.sub(r"\u3000{2,}", "\u3000", t)
+                changed = True
+            if t != run.text:
+                run.text = t
+
+        # 段落级行首行尾空格清理（仅首 run 头部与末 run 尾部，避免误删段内单词间隔）
+        text_runs = [r for r in para.runs if r.text]
+        if text_runs:
+            head = text_runs[0]
+            lead = len(head.text) - len(head.text.lstrip(" \u3000"))
+            if lead:
+                head.text = head.text[lead:]
+                changed = True
+            tail = text_runs[-1] if text_runs else None
+            if tail is not None and tail is not head:
+                trail = len(tail.text) - len(tail.text.rstrip(" \u3000"))
+                if trail:
+                    tail.text = tail.text[:-trail]
+                    changed = True
+            elif tail is head and tail.text:
+                trail = len(tail.text) - len(tail.text.rstrip(" \u3000"))
+                if trail:
+                    tail.text = tail.text[:-trail] if len(tail.text) > trail else ""
+                    changed = True
+
+        if changed:
+            report["paragraphs_cleaned"] += 1
+            # 同步段落文本，保证检查/语义校验读到清洗后的内容
+            para.text = "".join(r.text for r in para.runs)
+
+    if clean_blank_lines:
+        before = len(model.paragraphs)
+        remove_extra_blank_lines(model, BLANK_LINE_MODE_KEEP_SINGLE)
+        report["blank_lines_removed"] = before - len(model.paragraphs)
+
+    return report
+
+
 def fix_bold_range(model: DocumentModel) -> int:
     """
     正文段落加粗范围修复：
@@ -464,6 +529,41 @@ def replace_paragraph_text(model: DocumentModel, para_index: int, new_text: str)
             para.runs[0].text = new_text
             for r in para.runs[1:]:
                 r.text = ""
+
+
+def apply_paragraph_edits(model: DocumentModel, edits: dict[int, str]) -> int:
+    """
+    保持版式的批量文本替换（run 级 diff 应用，单一变更点）。
+
+    edits: {paragraph_index: 新文本}；越界索引与空文本自动跳过。
+    返回实际生效的段落数。未变化的段落不计数。
+    """
+    from core.document.content_diff import plan_run_updates
+
+    applied = 0
+    for index, new_text in edits.items():
+        if not isinstance(index, int) or not isinstance(new_text, str):
+            continue
+        if not (0 <= index < len(model.paragraphs)):
+            continue
+        para = model.paragraphs[index]
+        plan = plan_run_updates(para, new_text)
+        if not plan:
+            continue
+        if -1 in plan:
+            para.text = new_text
+            if para.runs:
+                para.runs[0].text = new_text
+                for r in para.runs[1:]:
+                    r.text = ""
+            applied += 1
+            continue
+        for run_idx, run_text in plan.items():
+            if 0 <= run_idx < len(para.runs):
+                para.runs[run_idx].text = run_text
+        para.text = new_text
+        applied += 1
+    return applied
 
 
 # ---------------------------------------------------------------------------

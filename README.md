@@ -22,7 +22,7 @@
   <img src="https://img.shields.io/badge/node-20+-green" alt="node">
   <img src="https://img.shields.io/badge/electron-35-blue" alt="electron">
   <img src="https://img.shields.io/badge/license-MIT-brightgreen" alt="license">
-  <img src="https://img.shields.io/badge/tests-39%20passed-brightgreen" alt="tests">
+  <img src="https://img.shields.io/badge/tests-120%2B%20passed-brightgreen" alt="tests">
   <img src="https://img.shields.io/github/stars/linhut/document-ai-assistant?style=social" alt="stars">
   <img src="https://img.shields.io/github/forks/linhut/document-ai-assistant?style=social" alt="forks">
 </p>
@@ -91,8 +91,10 @@
 
 ## 📋 功能特性
 
-- **格式检测** — 依据 GB/T 9704 标准自动检查公文格式（字体、字号、缩进、行距、页边距等），190 条检查规则
-- **智能修复** — 一键自动修复格式问题，180 条修复规则，生成优化后的 .docx 文档
+- **格式检测** — 依据 GB/T 9704 标准自动检查公文格式（字体、字号、缩进、行距、页边距等），每个文种生效 38–41 条检查规则（公共基础层 + 文种层三层合并）
+- **智能修复** — 一键自动修复格式问题，每个文种 34 条修复规则，生成优化后的 .docx 文档
+- **标准证据链** — 每条检查规则关联 GB/T 9704-2012 对应条款（standard_ref），自动生成标准证据矩阵 `docs/gbt9704-audit-matrix.md`
+- **要素语义校验** — 对文号、成文日期、发文机关署名等要素做语义级校验（CHK-S 系列规则），发现"格式正确但语义错误"的问题
 - **AI 深度分析** — 接入大模型进行语义级分析，按 22 种文种定制检查规则，发现规则引擎无法识别的问题
 - **22 种文种** — 支持通知、报告、请示、会议纪要、决定、决议、函、通报等全部法定公文文种
 - **多 AI 服务商** — 支持 DeepSeek、通义千问、智谱、Moonshot、MiniMax、腾讯混元、豆包等 23+ 服务商

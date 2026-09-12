@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from core.document.models import DocumentModel
+from core.rules.standard_refs import resolve_standard_ref
 from utils.logger import logger
 
 
@@ -27,6 +28,7 @@ class CheckIssue:
     original_text: str = ""
     suggested_fix: str = ""
     reason: str = ""
+    standard_ref: str = ""
 
 
 def check_document(model: DocumentModel, rules: dict[str, Any]) -> list[CheckIssue]:
@@ -120,6 +122,12 @@ def check_document(model: DocumentModel, rules: dict[str, Any]) -> list[CheckIss
 
     # Additional heuristic checks (not from YAML)
     issues.extend(_check_common_issues(model))
+
+    # 证据链：为每条问题附加 GB/T 9704 标准条款依据（规则显式声明优先）
+    rule_map = {r.get("id"): r for r in check_rules if r.get("id")}
+    for issue in issues:
+        rule = rule_map.get(issue.rule_id)
+        issue.standard_ref = resolve_standard_ref(rule) if rule else ""
 
     logger.info(f"Check complete: {len(issues)} issues found")
     return issues

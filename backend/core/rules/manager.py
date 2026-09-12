@@ -55,20 +55,21 @@ def list_rule_files(source: str = "all") -> list[dict]:
     return result
 
 
-def load_rules_merged(doc_type: str = "") -> dict[str, Any]:
+def load_rules_merged(doc_type: str = "", pack: str | None = None) -> dict[str, Any]:
     """
     Load and merge rules for a document type with priority:
-    official < custom < user
+    official < [standard pack] < custom < user
+
+    Args:
+        doc_type: 文种（可选，为空时只加载公共层）
+        pack: 标准包名；None 时使用当前激活的标准包（无激活包则纯官方规则）
     """
     _ensure_dirs()
+    from core.rules.packs import resolve_pack_dirs
+
     merged: dict[str, Any] = {}
 
-    layers = [
-        ("official", OFFICIAL_RULES_DIR),
-        ("custom", CUSTOM_RULES_DIR),
-        ("user", USER_RULES_DIR),
-    ]
-    for _source, dir_path in layers:
+    for _source, dir_path in resolve_pack_dirs(pack):
         # Load common
         common_file = dir_path / "_common.yaml"
         if common_file.exists():

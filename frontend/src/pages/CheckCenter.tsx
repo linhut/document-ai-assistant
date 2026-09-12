@@ -12,7 +12,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Download, Loader2, CheckSquare, Square, FileText,
   AlertCircle, AlertTriangle, Info, Sparkles, Send,
-  Zap, Cpu, Settings2,
+  Zap, Cpu, Settings2, ShieldAlert, FileDown,
 } from 'lucide-react';
 import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,7 @@ interface CheckIssue {
   original_text: string;
   suggested_fix: string;
   reason: string;
+  standard_ref?: string;
 }
 
 interface AIResult {
@@ -131,6 +132,19 @@ export default function CheckCenter() {
   const [a4RefreshKey, setA4RefreshKey] = useState(0);
   const aiTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  /* ---- 暗标合规扫描状态 ---- */
+  interface DarkBidIssue {
+    rule_id: string;
+    severity: string;
+    name: string;
+    location: string;
+    original_text: string;
+    suggested_fix: string;
+    reason: string;
+  }
+  const [darkBid, setDarkBid] = useState<{ total_issues: number; issues: DarkBidIssue[] } | null>(null);
+  const [darkBidLoading, setDarkBidLoading] = useState(false);
+
   /* ---- 初始化：URL 参数 → 状态（渲染期调整，避免 effect 内同步 setState） ---- */
   // 用 null 作为首帧哨兵：保证首次渲染必然进入一次调整分支（即使参数为空串）
   const paramsKey = searchParams.toString();
@@ -207,11 +221,11 @@ export default function CheckCenter() {
 
   // 按 rule_id + check_type 分组，同类型问题合并显示（使用 useMemo 避免每次渲染重复计算）
   const groupedIssues = useMemo(() => {
-    const map = new Map<string, { key: string; severity: string; check_type: string; rule_id: string; reason: string; suggested_fix: string; issues: CheckIssue[] }>();
+    const map = new Map<string, { key: string; severity: string; check_type: string; rule_id: string; reason: string; suggested_fix: string; standard_ref: string; issues: CheckIssue[] }>();
     for (const issue of filteredIssues) {
       const gKey = issue.rule_id || `${issue.check_type}__${issue.reason}`;
       if (!map.has(gKey)) {
-        map.set(gKey, { key: gKey, severity: issue.severity, check_type: issue.check_type, rule_id: issue.rule_id, reason: issue.reason, suggested_fix: issue.suggested_fix, issues: [] });
+        map.set(gKey, { key: gKey, severity: issue.severity, check_type: issue.check_type, rule_id: issue.rule_id, reason: issue.reason, suggested_fix: issue.suggested_fix, standard_ref: issue.standard_ref ?? '', issues: [] });
       }
       map.get(gKey)!.issues.push(issue);
     }
@@ -229,6 +243,25 @@ export default function CheckCenter() {
     const ids = filteredIssues.map(i => i.id);
     const allSel = ids.every(id => selectedIds.has(id));
     setSelectedIds(prev => { const n = new Set(prev); ids.forEach(id => allSel ? n.delete(id) : n.add(id)); return n; });
+  };
+
+  /* ---- 暗标合规扫描 ---- */
+  const handleDarkBidScan = async () => {
+    if (!docId) return;
+    setDarkBidLoading(true);
+    try {
+      const r = await apiClient.post<{ total_issues: number; issues: DarkBidIssue[] }>(`/api/check/dark-bid/${docId}`);
+      setDarkBid(r);
+      if (r.total_issues > 0) {
+        warning('暗标扫描', `发现 ${r.total_issues} 项敏感信息，请及时脱敏`);
+      } else {
+        success('暗标扫描', '未发现身份信息泄露');
+      }
+    } catch (e: any) {
+      showError('暗标扫描失败', e?.response?.data?.detail || '请稍后重试');
+    } finally {
+      setDarkBidLoading(false);
+    }
   };
 
   /* ---- 修复操作 ---- */
@@ -251,8 +284,16 @@ export default function CheckCenter() {
     try {
       const payload: Record<string, any> = { document_type: documentType, apply_fixes: true };
       if (selectedRuleIds) payload.selected_rule_ids = selectedRuleIds;
-      const r = await apiClient.post<{ fixes_applied: number }>(`/api/optimize/${docId}`, payload);
-      success('成功', `已应用 ${r.fixes_applied} 个修复`);
+      const r = await apiClient.post<{ fixes_applied: number; cleaning?: { spaces_collapsed?: number; blank_lines_removed?: number; edges_stripped?: number } }>(`/api/optimize/${docId}`, payload);
+      const c = r.cleaning;
+      const cleanNote = c && (c.blank_lines_removed || c.spaces_collapsed || c.edges_stripped)
+        ? `，已清理 ${[
+            c.blank_lines_removed ? `${c.blank_lines_removed} 个空行` : '',
+            c.spaces_collapsed ? `${c.spaces_collapsed} 处多余空格` : '',
+            c.edges_stripped ? `${c.edges_stripped} 处行首尾空格` : '',
+          ].filter(Boolean).join('、')}`
+        : '';
+      success('成功', `已应用 ${r.fixes_applied} 个修复${cleanNote}`);
       setIsOptimized(true);
       setA4RefreshKey(k => k + 1);
       if (docId) await fetchResults(docId);
@@ -268,6 +309,10 @@ export default function CheckCenter() {
 
   const handleDownload = () => {
     if (docId) downloadFile(`/api/optimize/${docId}/download`, `optimized_${docId}.docx`);
+  };
+
+  const handlePdfExport = () => {
+    if (docId) downloadFile(`/api/documents/${docId}/export/pdf?download=1`, `文档_${docId}.pdf`, 180000);
   };
 
   /* ---- AI 分析 ---- */
@@ -409,6 +454,11 @@ export default function CheckCenter() {
             </Button>
           )}
           {docId && (
+            <Button variant="outline" onClick={handlePdfExport}>
+              <FileDown className="h-4 w-4 mr-1" />导出 PDF
+            </Button>
+          )}
+          {docId && (
             <Button variant="outline" onClick={() => setShowA4Preview(true)}>
               <FileText className="h-4 w-4 mr-1" />A4 预览
             </Button>
@@ -416,6 +466,11 @@ export default function CheckCenter() {
           {docId && (
             <Button variant="outline" onClick={() => navigate(`/document/enhanced-preview?docId=${docId}`)}>
               <Settings2 className="h-4 w-4 mr-1" />实时排版
+            </Button>
+          )}
+          {docId && (
+            <Button variant="outline" onClick={handleDarkBidScan} disabled={darkBidLoading}>
+              <ShieldAlert className="h-4 w-4 mr-1" />{darkBidLoading ? '扫描中...' : '暗标扫描'}
             </Button>
           )}
         </div>}
@@ -442,6 +497,34 @@ export default function CheckCenter() {
           </Button>
         </div>
       </div>
+
+      {/* ===== 暗标合规扫描结果面板 ===== */}
+      {darkBid && (
+        <div className="px-4 md:px-6 lg:px-8 py-3 bg-white border-b border-primary-100">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4 text-severity-p0" />
+              暗标合规扫描：{darkBid.total_issues} 项
+            </span>
+            <Button variant="ghost" size="sm" onClick={() => setDarkBid(null)} className="text-xs">关闭</Button>
+          </div>
+          {darkBid.issues.length === 0 ? (
+            <p className="text-xs text-status-success">未发现身份信息泄露</p>
+          ) : (
+            <div className="space-y-1.5 max-h-40 overflow-y-auto">
+              {darkBid.issues.map((it, idx) => (
+                <div key={idx} className="text-xs bg-primary-50 rounded px-2 py-1.5">
+                  <span className="text-severity-p0 font-medium mr-2">{it.severity}</span>
+                  <span className="font-medium mr-2">{it.name}</span>
+                  <span className="text-muted-foreground mr-2">{it.location}</span>
+                  <code className="bg-white px-1 rounded">{it.original_text}</code>
+                  <p className="text-muted-foreground mt-0.5">{it.reason}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ===== 双栏主体 ===== */}
       <div className="flex-1 flex overflow-hidden min-h-0">
@@ -490,7 +573,12 @@ export default function CheckCenter() {
                             <Badge className={`${cfg.badge} text-[10px] px-1.5 py-0`}>{group.severity}</Badge>
                             <span className="text-sm font-medium">{group.check_type}</span>
                             {count > 1 && <span className="text-xs text-primary-500 bg-primary-100 px-1.5 py-0.5 rounded-full">{count} 处</span>}
-                            {group.rule_id && <span className="text-[10px] text-primary-400 ml-auto">{group.rule_id}</span>}
+                            <span className="ml-auto flex items-center gap-1.5">
+                              {group.standard_ref && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent-light/40 text-accent" title="GB/T 9704-2012 条款">条款 {group.standard_ref}</span>
+                              )}
+                              {group.rule_id && <span className="text-[10px] text-primary-400">{group.rule_id}</span>}
+                            </span>
                           </div>
                           {group.suggested_fix && (
                             <p className="text-xs text-status-success mb-1">→ {group.suggested_fix}</p>

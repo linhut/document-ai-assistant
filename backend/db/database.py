@@ -79,11 +79,22 @@ def _set_wal_mode(dbapi_connection, connection_record):
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
+def _ensure_column(table: str, column: str, ddl: str) -> None:
+    """轻量列迁移：旧库缺列时补充（幂等，不重建表）。"""
+    with engine.connect() as conn:
+        cols = [row[1] for row in conn.exec_driver_sql(f"PRAGMA table_info({table})")]
+        if column not in cols:
+            conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
+            conn.commit()
+
+
 def init_db() -> None:
-    """Create all tables if they do not exist."""
+    """Create all tables if they do not exist (with lightweight column migration)."""
     from db.models import Document, DocumentVersion, CheckResult, AIConfig, Rule  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
+    # 旧版本数据库增量补列
+    _ensure_column("check_results", "standard_ref", "VARCHAR(64)")
 
 
 def get_db():

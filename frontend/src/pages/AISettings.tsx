@@ -80,9 +80,41 @@ export default function AISettings() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [modelStatuses, setModelStatuses] = useState<Array<{ provider: string; model: string; online: boolean; latency_ms?: number; error?: string }>>([]);
+  // 格式标准包
+  const [packs, setPacks] = useState<string[]>([]);
+  const [activePack, setActivePack] = useState('');
+  const [packLoading, setPackLoading] = useState(false);
 
   const currentProvider = PROVIDERS.find(p => p.label === selectedLabel);
   const { confirm } = useToast();
+
+  // 加载格式标准包列表
+  useEffect(() => {
+    apiClient.get<{ packs: string[]; active: string | null }>('/api/settings/standard-packs')
+      .then(r => {
+        setPacks(r.packs || []);
+        setActivePack(r.active || '');
+      })
+      .catch(() => { /* 静默失败 */ });
+  }, []);
+
+  const handlePackChange = async (pack: string) => {
+    setPackLoading(true);
+    try {
+      const r = await apiClient.post<{ success: boolean; message?: string }>('/api/settings/standard-packs', { pack: pack || null });
+      if (r.success) {
+        setActivePack(pack);
+        setSuccessMessage(pack ? `已切换标准包：${pack}` : '已恢复官方规则');
+      } else {
+        setErrorMessage(r.message || '切换失败');
+      }
+    } catch (e: unknown) {
+      const err = (e && typeof e === 'object') ? e as Record<string, any> : {};
+      setErrorMessage(err?.response?.data?.detail || '切换失败，请重试');
+    } finally {
+      setPackLoading(false);
+    }
+  };
 
   const loadDefaultConfig = async (signal?: AbortSignal) => {
     try {
@@ -359,6 +391,31 @@ export default function AISettings() {
                   />
                 </span>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 格式标准包 */}
+        <Card className="border-primary-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">格式标准包</CardTitle>
+            <CardDescription>切换企业/行业格式基准（官方 &lt; 标准包 &lt; 自定义 &lt; 用户）</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <select
+                className="h-9 rounded-md border border-primary-200 bg-white px-3 text-sm"
+                value={activePack}
+                disabled={packLoading || packs.length === 0}
+                onChange={(e) => handlePackChange(e.target.value)}
+              >
+                <option value="">官方规则（默认）</option>
+                {packs.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+              {packLoading && <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />}
+              <span className="text-xs text-muted-foreground">
+                {packs.length === 0 ? '未发现标准包' : `当前：${activePack || '官方规则'}`}
+              </span>
             </div>
           </CardContent>
         </Card>

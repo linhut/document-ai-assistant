@@ -15,7 +15,7 @@ import {
   Compass, CheckCircle2, FileText, Settings, Home,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { detectActiveAI, AI_CONFIG_CHANGED, type AIStatus } from '@/lib/ai-status';
+import { useAIStatus } from '@/store/app-store';
 import apiClient from '@/api/client';
 
 /* ------------------------------------------------------------------ */
@@ -42,34 +42,32 @@ function InfoRow({ icon: Icon, label, value }: { icon: React.ComponentType<{ cla
 
 /** 工作台：系统状态 */
 function SystemStatus() {
-  const [ai, setAi] = useState<AIStatus | null>(null);
   const [rules, setRules] = useState<number>(0);
   const [fonts, setFonts] = useState<number>(0);
+  // AI 状态：全局 store 统一管理
+  const { aiStatus, aiLoading, refreshAIStatus } = useAIStatus();
+
+  useEffect(() => {
+    void refreshAIStatus();
+  }, [refreshAIStatus]);
 
   useEffect(() => {
     let ok = true;
-    const loadData = () => {
-      Promise.allSettled([
-        detectActiveAI(),
-        apiClient.get('/api/rules/?source=all'),
-        apiClient.get('/api/settings/fonts'),
-      ]).then(([aiR, ruleR, fontR]) => {
-        if (!ok) return;
-        if (aiR.status === 'fulfilled') setAi(aiR.value);
-        if (ruleR.status === 'fulfilled') {
-          const d = ruleR.value as Record<string, any>;
-          setRules(Array.isArray(d) ? d.length : (d?.total as number) ?? 0);
-        }
-        if (fontR.status === 'fulfilled') {
-          const d = fontR.value as Record<string, any>;
-          setFonts(Array.isArray(d) ? d.length : (d?.total as number) ?? 0);
-        }
-      });
-    };
-    loadData();
-    // 监听 AI 配置变更事件
-    window.addEventListener(AI_CONFIG_CHANGED, loadData);
-    return () => { ok = false; window.removeEventListener(AI_CONFIG_CHANGED, loadData); };
+    Promise.allSettled([
+      apiClient.get('/api/rules/?source=all'),
+      apiClient.get('/api/settings/fonts'),
+    ]).then(([ruleR, fontR]) => {
+      if (!ok) return;
+      if (ruleR.status === 'fulfilled') {
+        const d = ruleR.value as Record<string, any>;
+        setRules(Array.isArray(d) ? d.length : (d?.total as number) ?? 0);
+      }
+      if (fontR.status === 'fulfilled') {
+        const d = fontR.value as Record<string, any>;
+        setFonts(Array.isArray(d) ? d.length : (d?.total as number) ?? 0);
+      }
+    });
+    return () => { ok = false; };
   }, []);
 
   return (
@@ -78,9 +76,9 @@ function SystemStatus() {
         <div className="flex items-center gap-2">
           <Cpu className="h-4 w-4 text-accent" />
           <span className="text-xs font-medium">AI 模型</span>
-          {ai !== null && <StatusDot active={ai.active} />}
+          {!aiLoading && <StatusDot active={aiStatus?.active ?? false} />}
         </div>
-        <p className="text-xs text-muted-foreground">{ai ? `${ai.provider} · ${ai.model}` : '未配置'}</p>
+        <p className="text-xs text-muted-foreground">{aiStatus ? `${aiStatus.provider} · ${aiStatus.model}` : '未配置'}</p>
       </div>
       <InfoRow icon={Shield} label="规则引擎" value={`${rules} 条`} />
       <InfoRow icon={Type} label="字体库" value={`${fonts} 个`} />

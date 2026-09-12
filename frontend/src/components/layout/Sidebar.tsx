@@ -27,7 +27,7 @@ import {
   X,
   Pen,
 } from 'lucide-react';
-import { detectActiveAI, AI_CONFIG_CHANGED, type AIStatus } from '../../lib/ai-status';
+import { useAIStatus } from '@/store/app-store';
 
 interface SidebarProps {
   collapsed?: boolean;
@@ -62,8 +62,11 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   const location = useLocation();
   const [templatesExpanded, setTemplatesExpanded] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const [aiReady, setAiReady] = useState<boolean | null>(null);
-  const [aiInfo, setAiInfo] = useState<AIStatus | null>(null);
+
+  // AI 状态：全局 store 统一管理（AISettings 变更后自动同步）
+  const { aiStatus, aiLoading, refreshAIStatus } = useAIStatus();
+  const aiReady = aiStatus?.active ?? false;
+  const aiInfo = aiStatus;
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -72,21 +75,9 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Fetch AI configuration status — 检测所有 provider，不硬编码
   useEffect(() => {
-    let cancelled = false;
-    const refresh = async () => {
-      const status = await detectActiveAI();
-      if (!cancelled) {
-        setAiReady(status?.active ?? false);
-        setAiInfo(status);
-      }
-    };
-    refresh();
-    // 监听 AI 配置变更事件（AISettings 保存/切换后触发）
-    window.addEventListener(AI_CONFIG_CHANGED, refresh);
-    return () => { cancelled = true; window.removeEventListener(AI_CONFIG_CHANGED, refresh); };
-  }, []);
+    void refreshAIStatus();
+  }, [refreshAIStatus]);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -292,7 +283,7 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
         {/* 底部：AI 状态指示器 + 版本信息 */}
         <div className={`border-t border-primary-200 ${isCollapsed ? 'p-2' : 'p-4'} space-y-2`}>
           {/* AI 状态指示器 */}
-          {aiReady !== null && (
+          {!aiLoading && (
             <div
               className={`flex items-center gap-2 ${isCollapsed ? 'justify-center' : ''}`}
               title={isCollapsed ? (aiReady ? `AI 就绪: ${aiInfo?.provider}` : 'AI 未配置') : undefined}

@@ -1,0 +1,39 @@
+# 视觉回归 CI（最佳努力：渲染环境缺失时跳过渲染比对，仅保留黄金样本生成与哈希比对）
+# 需 LibreOffice 才能启用 PDF/PNG 渲染环节；纯函数哈希比对在任何环境都可运行。
+name: visual-regression
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  visual-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install system deps (LibreOffice for rendering)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libreoffice-writer
+
+      - name: Install Python deps
+        run: |
+          pip install -r backend/requirements.txt
+          pip install Pillow PyMuPDF
+
+      - name: Generate golden samples & baselines
+        run: python scripts/visual_regression/generate_goldens.py
+        continue-on-error: true
+
+      - name: Compare visual regression
+        run: python scripts/visual_regression/compare.py
+        # 渲染环境（字体等）在 CI 与本地有差异时可能产生少量像素差异，
+        # 允许告警但不阻断主交付流程；如需严格模式加 --strict。
+        continue-on-error: true

@@ -122,6 +122,10 @@ class DocumentMetadata(BaseModel):
     created: Optional[str] = None
     modified: Optional[str] = None
     category: Optional[str] = None
+    # 特殊版式：letter(信函式) / formal(正式发文-红头预印套打) / command(命令式)
+    layout_profile: Optional[str] = None
+    # 版式参数：reserve_top_mm(红头预留高度) / joint_orgs(联合行文机关列表) / detached_attachment(附件分装)
+    layout_options: dict = Field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------

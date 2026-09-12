@@ -268,3 +268,36 @@ async def get_document_preview(doc_id: int, db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Preview generation failed: {e}")
         raise HTTPException(status_code=500, detail=f"预览生成失败: {str(e)}")
+
+
+@router.get("/{doc_id}/export/pdf")
+async def export_pdf(doc_id: int, download: int = 0, db: Session = Depends(get_db)):
+    """导出文档为 PDF（最佳努力：LibreOffice → docx2pdf）。?download=1 时直接下发文件。"""
+    from config import OUTPUT_DIR
+    from services.pdf_export import convert_docx_to_pdf
+
+    doc = svc.get_document(db, doc_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    source = None
+    if doc.optimized_path:
+        p = Path(doc.optimized_path)
+        if p.exists():
+            source = p
+    if source is None:
+        source = Path(doc.file_path)
+    if not source.exists():
+        raise HTTPException(status_code=404, detail="Document file not found")
+
+    pdf_dir = OUTPUT_DIR / "pdf"
+    pdf_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        pdf = convert_docx_to_pdf(source, pdf_dir)
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    if download:
+        from fastapi.responses import FileResponse
+
+        return FileResponse(str(pdf), media_type="application/pdf", filename=pdf.name)
+    return {"success": True, "pdf_path": str(pdf), "pdf_name": pdf.name}
