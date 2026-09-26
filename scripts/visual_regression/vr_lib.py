@@ -45,7 +45,12 @@ def image_average_hash(image, size: int = 8) -> int:
     if isinstance(image, str) or isinstance(image, Path):
         image = Image.open(image)
     gray = image.convert("L").resize((size, size), Image.LANCZOS)
-    pixels = list(gray.getdata())
+    # Pillow 14（2027-10）移除 Image.getdata；get_flattened_data 为替代 API，
+    # 带兼容分支以支持旧版本 Pillow（CI 与本地版本可能不同）
+    if hasattr(gray, "get_flattened_data"):
+        pixels = list(gray.get_flattened_data())
+    else:
+        pixels = list(gray.getdata())
     mean = sum(pixels) / len(pixels)
     digest = 0
     for i, p in enumerate(pixels):

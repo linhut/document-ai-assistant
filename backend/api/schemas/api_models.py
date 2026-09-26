@@ -109,11 +109,6 @@ class AIProofreadRequest(BaseModel):
     text: str
 
 
-class AIRewriteRequest(BaseModel):
-    text: str
-    context: str = ""
-
-
 class AIConfigRequest(BaseModel):
     provider: str
     api_key: str

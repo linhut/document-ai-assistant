@@ -96,6 +96,8 @@ async def update_issue(
 
 @router.post("/dark-bid/{doc_id}")
 async def dark_bid_check(doc_id: int, db: Session = Depends(get_db)):
+    from utils.logger import logger
+
     """暗标/标书合规检查：身份信息泄露扫描（命中片段一律脱敏输出）。"""
     from core.compliance.dark_bid import dark_bid_check as run_scan
     from core.document.parser import parse_docx

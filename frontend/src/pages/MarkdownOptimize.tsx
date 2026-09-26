@@ -32,6 +32,18 @@ import type { DocParagraph, DocTable } from '@/lib/types';
 /*  最大缓存 100 条，每条 5 分钟 TTL 自动过期                           */
 /* ------------------------------------------------------------------ */
 
+/** 判断是否为 AI 配置类错误（未配置/401/403 等），用于引导跳转 AI 设置页 */
+function isAiConfigError(input: unknown): boolean {
+  const s = typeof input === 'string' ? input : JSON.stringify(input ?? '');
+  const lower = s.toLowerCase();
+  return (
+    lower.includes('401') || lower.includes('403') ||
+    lower.includes('unauthorized') || lower.includes('forbidden') ||
+    lower.includes('未配置') || lower.includes('api key') ||
+    lower.includes('no active ai') || lower.includes('没有启用')
+  );
+}
+
 interface CacheEntry {
   paragraphs: DocParagraph[];
   tables: DocTable[];
@@ -86,6 +98,8 @@ export default function MarkdownOptimize() {
   const [paragraphs, setParagraphs] = useState<DocParagraph[]>([]);
   const [tables, setTables] = useState<DocTable[]>([]);
   const [error, setError] = useState('');
+  // AI 配置相关错误标记：为真时在错误提示旁显示「去 AI 设置」跳转入口
+  const [aiError, setAiError] = useState(false);
   const [zoom, setZoom] = useState(85);
   const [panelOpen, setPanelOpen] = useState(true);
 
@@ -204,6 +218,7 @@ export default function MarkdownOptimize() {
     } catch (err: unknown) {
       const e = (err && typeof err === 'object') ? err as Record<string, unknown> : {};
       setError((e.message as string) || 'AI 润色失败，请检查 AI 配置');
+      setAiError(isAiConfigError(err));
     } finally {
       setPolishing(false);
     }
@@ -214,6 +229,7 @@ export default function MarkdownOptimize() {
     if (!markdownText.trim()) return;
     setPolishing(true);
     setError('');
+    setAiError(false);
     try {
       const resp = await apiClient.post<{ success: boolean; rewritten?: string; message?: string }>('/api/ai/rewrite', {
         text: markdownText,
@@ -224,10 +240,12 @@ export default function MarkdownOptimize() {
         setMarkdownText(resp.rewritten);
       } else if (resp.message) {
         setError(resp.message);
+        setAiError(isAiConfigError(resp.message));
       }
     } catch (err: unknown) {
       const e = (err && typeof err === 'object') ? err as Record<string, unknown> : {};
       setError((e.message as string) || '去 AI 味失败，请检查 AI 配置');
+      setAiError(isAiConfigError(err));
     } finally {
       setPolishing(false);
     }
@@ -371,7 +389,18 @@ export default function MarkdownOptimize() {
                 </Button>
               )}
               {error && (
-                <div className="p-2 bg-red-50 border border-red-200 rounded text-xs text-red-600">{error}</div>
+                <div className="p-2 bg-red-50 border border-red-200 rounded text-xs text-red-600 flex items-center gap-2 flex-wrap">
+                  <span>{error}</span>
+                  {aiError && (
+                    <button
+                      type="button"
+                      onClick={() => navigate('/settings/ai')}
+                      className="underline text-red-700 hover:text-red-900 shrink-0 cursor-pointer"
+                    >
+                      去 AI 设置 →
+                    </button>
+                  )}
+                </div>
               )}
             </div>
 

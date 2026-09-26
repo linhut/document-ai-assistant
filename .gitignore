@@ -109,3 +109,8 @@ website/tmp/
 
 # Star history 自动生成图（改为在线链接展示，不入库）
 assets/star-history/
+
+# 本地工具目录/IDE 状态（不纳入仓库）
+.atomcode/
+.claude/
+.workbuddy/

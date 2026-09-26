@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.5.4-blue" alt="version">
+  <img src="https://img.shields.io/badge/version-1.6.1-blue" alt="version">
   <img src="https://img.shields.io/badge/python-3.12+-green" alt="python">
   <img src="https://img.shields.io/badge/node-20+-green" alt="node">
   <img src="https://img.shields.io/badge/electron-35-blue" alt="electron">
@@ -323,7 +323,7 @@ Electron Shell
         │     ├── Parser: 段落/Run/表格/版头版记/行距(EMU→pt)
         │     ├── Generator: 段落替换 + 表格定位插入(insert_after_index)
         │     └── Modifier: 加粗范围裁剪/Markdown转换/标点规范化
-        ├── Rule Engine: 190+ 条检查 + 180+ 条修复 (YAML 配置)
+        ├── Rule Engine: 88 基础规则 × 22 文种合并（每文种生效 38–41 条检查 / 34 条修复，YAML 配置）
         │     └── 三级合并: official < custom < user
         ├── AI Manager: 23+ 服务商 (Strategy 模式)
         │     └── 模型健康检测: 每 60s 自动探测可用性 + 延迟
@@ -400,11 +400,11 @@ Electron Shell
 | 维度 | 本项目 | AIPoliDoc | 小恐龙公文助手 |
 |---|---|---|---|
 | AI 分析 | ✅ 23+ 服务商 | ✅ 仅 DeepSeek | ❌ 无 |
-| 规则检查 | ✅ 190 条规则 | ❌ 无 | ❌ 无 |
+| 规则检查 | ✅ 22 文种 × 38–41 条/文种（证据矩阵 879 条） | ❌ 无 | ❌ 无 |
 | 文种覆盖 | 22 种法定文种 | 学术论文为主 | 通用公文 |
 | 独立运行 | ✅ 桌面应用 | ✅ 桌面应用 | ❌ 需 Word |
 | 开源 | ✅ MIT | ✅ MIT | ❌ 闭源 |
-| 自动修复 | ✅ 180 条修复规则 | ❌ | ✅ 格式化 |
+| 自动修复 | ✅ 34 条修复规则/文种（三层合并） | ❌ | ✅ 格式化 |
 | AI 建议应用 | ✅ 勾选应用 | ❌ | ❌ |
 | 测试覆盖 | ✅ 39 个测试 | ❌ | ❌ |
 

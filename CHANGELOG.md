@@ -10,6 +10,39 @@
 
 ---
 
+## [1.6.1] - 2026-09-26
+
+### 🚀 性能优化
+- 前端构建分包（Vite 8 函数式 `manualChunks`）：主 chunk **588KB → 195KB（-67%）**，react/ui/vendor 独立缓存，信创纯 Web 模式首屏提速明显
+- 主 chunk 告警线调整至 800KB，构建输出无告警
+
+### 🔧 架构优化（消除反向依赖）
+- 版头/版记/页码注入函数下沉至 `core/document/layout_injector.py`（8 个函数约 600 行），`document_service` 与路由层统一从其导入，消除 service→route 反向依赖（Q1）
+- `wfp_cli.py` 新增 `--header-config/--footer-config/--page-number-config`（JSON 文件）及 `--org-name/--doc-number/--signer` 便捷参数——CLI 优化输出现与桌面端一致支持版头注入
+- 固定 `format --apply-fixes` 默认值逻辑（`store_true+default=True` → `BooleanOptionalAction`，支持 `--no-apply-fixes`）
+
+### 🗄 数据库
+- 引入版本化迁移框架：`db/database.py` `_MIGRATIONS` + SQLite `PRAGMA user_version`，旧库自动增量补列、幂等可重放；新增字段在 `_MIGRATIONS` 追加条目即可
+
+### ♻️ 兼容性（Python 3.14 / Pillow 14 / 多平台）
+- 修复 `asyncio.get_event_loop()` 弃用告警（`ai_structure_analyzer.py`）：统一 `_run_async` 协程执行器，兼容 FastAPI 事件循环线程 / 同步线程 / CLI 三类环境
+- 修复 Pillow `Image.getdata()` 弃用（`vr_lib.py`）：`get_flattened_data` 兼容分支，避免 Pillow 14（2027-10）升级后视觉回归脚本崩溃
+
+### ✨ 用户体验
+- Markdown 优化页：AI 润色/去 AI 味失败时若为配置类错误（401/403/未配置），错误提示旁显示「去 AI 设置 →」跳转入口
+
+### 📚 文档与仓库
+- README 规则统计口径统一为证据矩阵口径（22 文种 × 38–41 条/文种生效，修复规则 34 条/文种）
+- CLAUDE.md Known Gaps 更新（TemplateRules 保存、页面临终跳转、zustand 覆盖范围均已核实修正）
+- `data/` 遗留测试文档移入 `docs/archive/`；`.gitignore` 排除 `.atomcode/.claude/.workbuddy` 本地工具目录
+- CLAUDE.md/README 版本号统一为 1.6.1
+
+### ✅ 质量验证
+- 后端全量测试：**187 passed, 3 skipped**（含优化后回归）；前端 ESLint 零告警、`tsc -b && vite build` 通过
+- CLI 端到端验证：`optimize --header-config` 注入版头后文档可重解析且内容正确
+
+---
+
 ## [1.6.0] - 2026-09-12
 
 ### ✨ 新增：标准证据链与要素语义校验

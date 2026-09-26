@@ -14,11 +14,31 @@ AI Structure Analyzer — 基于AI的文档结构智能分析
 """
 
 from __future__ import annotations
+import asyncio
+import concurrent.futures
 import json
 import re
 
 from core.document.models import DocumentModel
 from utils.logger import logger
+
+
+def _run_async(coro):
+    """在同步上下文中运行协程，兼容三类环境（避免 asyncio.get_event_loop 弃用）：
+
+    1. 无运行中事件循环（CLI/测试/普通线程）→ asyncio.run 新建并关闭 loop
+    2. 事件循环线程内同步调用（FastAPI async 端点 → 同步 service）→ 投递到
+       新线程执行，避免同线程 run_until_complete 死锁
+    3. 其他已存在 loop 的场景 → 同样投递新线程隔离执行
+    """
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+    if loop is not None and loop.is_running():
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            return pool.submit(asyncio.run, coro).result(timeout=60)
+    return asyncio.run(coro)
 
 
 # 分类提示词模板
@@ -107,9 +127,7 @@ def classify_with_ai(model: DocumentModel, provider_name: str = "openai") -> boo
     if len(paragraphs_text) < 3:
         logger.info("Too few paragraphs for AI structure analysis")
         try:
-            import asyncio
-
-            asyncio.get_event_loop().run_until_complete(provider.close())
+            _run_async(provider.close())
         except Exception:
             pass
         return False
@@ -120,24 +138,7 @@ def classify_with_ai(model: DocumentModel, provider_name: str = "openai") -> boo
     # 调用AI
     try:
         logger.info(f"Calling AI ({provider_name}) for structure analysis of {len(paragraphs_text)} paragraphs")
-        # provider.analyze() 是 async 函数，需要使用 asyncio 运行
-        import asyncio
-
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # 如果事件循环正在运行，使用 run_coroutine_threadsafe
-                import concurrent.futures
-
-                with concurrent.futures.ThreadPoolExecutor() as pool:
-                    result = pool.submit(asyncio.run, provider.analyze(prompt, task_type="classification")).result(
-                        timeout=30
-                    )
-            else:
-                result = loop.run_until_complete(provider.analyze(prompt, task_type="classification"))
-        except RuntimeError:
-            # 没有事件循环，直接运行
-            result = asyncio.run(provider.analyze(prompt, task_type="classification"))
+        result = _run_async(provider.analyze(prompt, task_type="classification"))
         raw_response = result.raw_response if hasattr(result, "raw_response") else str(result)
     except Exception as e:
         logger.error(f"AI structure analysis failed: {e}")
@@ -145,9 +146,7 @@ def classify_with_ai(model: DocumentModel, provider_name: str = "openai") -> boo
     finally:
         # 关闭 provider 的 HTTP 连接
         try:
-            import asyncio as _asyncio
-
-            _asyncio.run(provider.close())
+            _run_async(provider.close())
         except Exception:
             pass
 

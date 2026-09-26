@@ -10,7 +10,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT / "scripts" / "visual_regression"))
 
-import pytest  # noqa: E402
 from PIL import Image  # noqa: E402
 
 from vr_lib import (  # noqa: E402

@@ -16,6 +16,11 @@ from config import UPLOAD_DIR, OUTPUT_DIR
 from db.models import Document, CheckResult
 from core.document.parser import parse_docx
 from core.document.generator import generate_docx
+from core.document.layout_injector import (
+    _inject_header_to_docx,
+    _inject_footer_to_docx,
+    _inject_page_number_to_docx,
+)
 from core.rules.engine import RuleEngine
 from utils.file_utils import file_sha256
 from utils.logger import logger
@@ -250,10 +255,8 @@ def optimize_document(
         logger.error(f"generate_docx failed for doc {doc_id}: {e}")
         raise ValueError(f"文档生成失败: {str(e)}")
 
-    # 版头/版记注入
+    # 版头/版记注入（layout_injector 为 core 层能力，CLI/office-plugin 可复用）
     try:
-        from api.routes.optimize import _inject_header_to_docx, _inject_footer_to_docx, _inject_page_number_to_docx
-
         if header_config and header_config.get("enabled", True):
             _inject_header_to_docx(str(out_path), header_config)
         if footer_note_config and footer_note_config.get("enabled", True):

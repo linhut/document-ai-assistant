@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 AI 公文智能优化助手 (AI Official Document Optimization Assistant) — a desktop application for Chinese government document formatting based on **GB/T 9704** standards. Users upload `.docx` files, the system checks formatting against YAML-defined rules, and auto-fixes issues.
 
 **Stack**: Electron 35 + React 19 (frontend) ↔ FastAPI + python-docx (backend) ↔ SQLite
-**Version**: 1.5.4 | **Port**: 8765 | **Language**: Python 3.12+, Node 20+
+**Version**: 1.6.1 | **Port**: 8765 | **Language**: Python 3.12+, Node 20+
 
 ## Commands
 
@@ -165,10 +165,11 @@ API keys stored encrypted via Fernet (`backend/utils/crypto.py`). Encryption key
 ## Known Gaps
 
 - ~~**Workspace page** uses hardcoded mock data (no live API)~~ — **已修复**：Workspace 现为真实 API 数据驱动（统计数据、最近文档均来自后端）
-- **TemplateRules save** is not implemented (TODO alert only)
-- **Inconsistent API patterns**: some pages call `apiClient` directly, others use typed modules in `src/api/`
-- **Navigation**: some pages use `window.location.href` instead of React Router's `useNavigate`
-- **No global state management**: each page manages own state with useState/useEffect
+- ~~**TemplateRules save** is not implemented~~ — **已修复**：`TemplateRules.tsx` 保存走 `PUT /api/templates/{id}/rules`（templates.py 端点已就绪）
+- ~~**Navigation**: some pages use `window.location.href`~~ — **已修复**：全面改用 `useNavigate()`/`useSearchParams()`（HashRouter 兼容）
+- **Inconsistent API patterns**: 部分页面直接调 `apiClient`（12 页面约 45 处），typed 模块仅 `src/api/check.ts` / `documents.ts` 两个，建议渐进迁移
+- **Global state 覆盖有限**: zustand（`src/store/app-store.ts`）当前仅覆盖 AI 状态；文档配置、会话级缓存仍为页面自管，跨页一致性问题需按需扩展
+- **无 schema 迁移框架历史遗留**: 已引入版本化迁移（`db/database.py` `_MIGRATIONS` + `PRAGMA user_version`），旧库首次启动自动升到 v1；新增字段在 `_MIGRATIONS` 追加条目即可
 
 ## 规则统计口径与证据链
 
